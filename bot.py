@@ -1,20 +1,29 @@
 """
-Telegram Mini App Botini ishga tushirish uchun oddiy va 100% bepul skript.
-Kutubxona: pip install aiogram
+Telegram Mini App Boti
+Ushbu skript .env faylidagi tokenni xavfsiz o'qiydi.
 """
 
+import os
 import asyncio
 import logging
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 from aiogram.types import WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
 
-# BotFather'dan olingan bepul bot tokeningizni bu yerga qo'ying:
-BOT_TOKEN = "SIZNING_BOT_TOKENINGIZ"
+# .env faylini o'qish (alohida kutubxonasiz xavfsiz usul)
+def get_bot_token():
+    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    if os.path.exists(env_path):
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("BOT_TOKEN="):
+                    return line.strip().split("=", 1)[1]
+    return os.getenv("BOT_TOKEN", "")
 
-# Vercel yoki ngrok orqali chiqqan Mini App havolangiz:
-# (Lokal test uchun: ngrok http 5173 orqali olingan https:// havola)
-WEB_APP_URL = "https://sizning-app.vercel.app"
+BOT_TOKEN = get_bot_token()
+
+# Vercel havolangiz (Vercel'dan havola olganingizda shu yerga yozasiz)
+WEB_APP_URL = os.getenv("WEB_APP_URL", "https://sizning-app.vercel.app")
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -25,20 +34,21 @@ async def cmd_start(message: types.Message):
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="🚀 O'quv platformasini ochish",
+                    text="🚀 To-Do & AI Appni ochish",
                     web_app=WebAppInfo(url=WEB_APP_URL)
                 )
             ]
         ]
     )
     await message.answer(
-        f"Salom, {message.from_user.first_name}!\n\n"
-        "O'quv platformasi va AI murabbiyingiz tayyor. Quyidagi tugmani bosing:",
+        f"Salom, {message.from_user.first_name}! 👋\n\n"
+        "Shaxsiy rejalashtiruvchi va AI tahlilchi ilovangiz tayyor.\n"
+        "Quyidagi tugmani bosib ochishingiz mumkin:",
         reply_markup=kb
     )
 
 async def main():
-    print("Bot ishga tushdi...")
+    print("Bot muvaffaqiyatli ishga tushdi! Telegram orqali /start yozib tekshirishingiz mumkin...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":

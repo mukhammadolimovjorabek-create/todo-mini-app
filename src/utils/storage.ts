@@ -1,7 +1,7 @@
 import type { Task, DayStats, TaskCategory, TaskPriority } from '../types';
 
-const TASKS_KEY = 'todo_tasks_v1';
-const STATS_KEY = 'todo_stats_v1';
+const TASKS_KEY = 'todo_tasks_v2';
+const STATS_KEY = 'todo_stats_v2';
 
 export const today = () => new Date().toISOString().slice(0, 10);
 

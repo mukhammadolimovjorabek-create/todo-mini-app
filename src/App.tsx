@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { ScreenType, TelegramUser } from './types';
 import { getTelegramWebApp, getTelegramUser } from './utils/telegram';
-import { seedDemoData } from './utils/storage';
 import { ScreenHome } from './components/ScreenHome';
 import { ScreenAI } from './components/ScreenAI';
 import { ScreenAnalytics } from './components/ScreenAnalytics';
@@ -17,9 +16,6 @@ export function App() {
   });
 
   useEffect(() => {
-    // Seed demo tasks on first launch
-    seedDemoData();
-
     // Init Telegram WebApp
     const tg = getTelegramWebApp();
     if (tg) {
