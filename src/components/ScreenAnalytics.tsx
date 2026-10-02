@@ -14,10 +14,14 @@ import {
   Globe,
   Lock,
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  Swords,
+  UserPlus,
+  RotateCcw
 } from 'lucide-react';
 import { getLast7Days, loadTasks, getCategoryColor, getCategoryLabel, shortDay, getCustomProfile } from '../utils/storage';
 import { calculateUserPoints, getGlobalRank } from '../utils/points';
+import { loadFriends, addDemoFriend, resetFriends, type InvitedFriend } from '../utils/friends';
 import type { DayStats, TaskCategory } from '../types';
 import { triggerHaptic } from '../utils/telegram';
 
@@ -81,17 +85,36 @@ export const ScreenAnalytics: React.FC = () => {
   const myName = userProfile.displayName || 'Siz (Men)';
   const myAvatar = userProfile.avatarUrl || '';
 
+  // Taklif qilingan do'stlar holati (Boshida 0 ta do'st)
+  const [friendsList, setFriendsList] = useState<InvitedFriend[]>(loadFriends());
+
+  const handleAddDemoFriend = () => {
+    triggerHaptic('medium');
+    const updated = addDemoFriend();
+    setFriendsList([...updated]);
+  };
+
+  const handleResetFriends = () => {
+    triggerHaptic('light');
+    const empty = resetFriends();
+    setFriendsList([...empty]);
+  };
+
   // Foydalanuvchining real balli (Agar 0 bo'lsa qat'iy 0!)
   const scoreData = calculateUserPoints();
   const myPoints = scoreData.totalPoints;
   const globalInfo = getGlobalRank(myPoints);
 
-  // Do'stlar ro'yxati (Nakrutka yetakchining bali yetib bo'ladigan qilib 28 ball etib belgilangan)
+  // Musobaqa ro'yxati (Faqat siz va haqiqatda taklif qilingan do'stlar)
   const leaderboard: FriendRank[] = [
-    { id: '1', name: 'Jasur', avatar: 'J', points: 28, streak: 4 },
-    { id: '3', name: 'Malika', avatar: 'M', points: 16, streak: 3 },
-    { id: '4', name: 'Bekzod', avatar: 'B', points: 8, streak: 1 },
-    { id: '2', name: myName, avatar: myAvatar || '★', points: myPoints, streak: scoreData.streakDays, isMe: true },
+    { id: 'me', name: myName, avatar: myAvatar || '★', points: myPoints, streak: scoreData.streakDays, isMe: true },
+    ...friendsList.map((f) => ({
+      id: f.id,
+      name: f.name,
+      avatar: f.avatar,
+      points: f.points,
+      streak: f.streak,
+    })),
   ].sort((a, b) => b.points - a.points);
 
   const myRankIndex = leaderboard.findIndex((u) => u.isMe);
@@ -311,212 +334,440 @@ export const ScreenAnalytics: React.FC = () => {
           {/* ══════════════ 1-VARIANT: DO'STLARIM ORASIDA ══════════════ */}
           {scopeTab === 'friends' && (
             <>
-              {/* Haftalik musobaqa banneri */}
-              <div className="px-5">
-                <div
-                  className="rounded-[2rem] p-5 text-white relative overflow-hidden shadow-xl"
-                  style={{ background: 'linear-gradient(135deg, #1e1552 0%, #351e8c 100%)' }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="inline-flex items-center space-x-1 bg-[#c4f82a] text-[#121124] px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider mb-1.5">
-                        <Trophy size={11} />
-                        <span>Do'stlar Musobaqasi</span>
-                      </div>
-                      <h2 className="text-xl font-black">Hafta Lideri bo'ling!</h2>
-                      <p className="text-xs text-[#b8ace8] mt-1">Siz va taklif qilgan do'stlaringiz reytingi</p>
-                    </div>
-                    <div className="w-14 h-14 rounded-2xl bg-[#c4f82a]/20 border border-[#c4f82a]/30 flex items-center justify-center text-3xl">
-                      🥇
-                    </div>
-                  </div>
-
-                  {/* Sizning o'rningiz */}
-                  <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
-                    <span className="text-purple-200">Sizning o'rningiz (do'stlar orasida):</span>
-                    <span className="font-black text-[#c4f82a] text-sm">
-                      {myPoints > 0 ? `#${myRank} - ${myPoints} ball` : "O'rinsiz - 0 ball"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Do'stlar reytingi ro'yxati (Faqat siz va taklif qilingan do'stlar) */}
-              <div className="px-5">
-                <div className="bg-white rounded-[2rem] p-5 shadow-xs border border-slate-100">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-1.5">
-                      <Crown size={16} className="text-amber-500" />
-                      <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider">Do'stlaringiz Natijalari</h3>
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-bold">{leaderboard.length} ta do'st</span>
-                  </div>
-
-                  {/* Leaderboard ro'yxati */}
-                  <div className="space-y-2.5">
-                    {leaderboard.map((item, index) => {
-                      const isZero = item.points === 0;
-                      const rank = index + 1;
-                      const rankDisplay = isZero ? '—' : rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
-                      return (
-                        <div
-                          key={item.id}
-                          className={`flex items-center justify-between p-3 rounded-2xl transition-all ${
-                            item.isMe
-                              ? 'bg-[#121124] text-white shadow-md ring-2 ring-[#c4f82a]'
-                              : 'bg-slate-50 text-slate-800 border border-slate-100'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            {/* O'rin medali */}
-                            <div className="w-6 text-center font-black text-sm text-slate-400">
-                              {rankDisplay}
-                            </div>
-
-                            {/* Avatar (Rasm yoki Harf) */}
-                            <div
-                              className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs overflow-hidden shrink-0 ${
-                                item.isMe
-                                  ? 'bg-[#c4f82a] text-[#121124]'
-                                  : 'bg-indigo-100 text-[#7052ff]'
-                              }`}
-                            >
-                              {item.avatar && (item.avatar.startsWith('data:') || item.avatar.startsWith('http')) ? (
-                                <img src={item.avatar} alt="avatar" className="w-full h-full object-cover" />
-                              ) : (
-                                item.avatar || item.name[0]
-                              )}
-                            </div>
-
-                            {/* Ism va streak */}
-                            <div>
-                              <div className="flex items-center space-x-1.5">
-                                <p className={`text-xs font-black ${item.isMe ? 'text-white' : 'text-slate-900'}`}>
-                                  {item.name}
-                                </p>
-                                {item.isMe ? (
-                                  <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-md ${
-                                    isZero ? 'bg-amber-400/20 text-amber-300' : 'bg-[#c4f82a] text-[#121124]'
-                                  }`}>
-                                    {isZero ? 'Siz (Ball yo\'q)' : 'Siz'}
-                                  </span>
-                                ) : (
-                                  <span className="text-[9px] font-bold bg-indigo-50 text-[#7052ff] px-1.5 py-0.2 rounded-md border border-indigo-100">
-                                    Do'stingiz
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center space-x-1 mt-0.5">
-                                <Flame size={10} className={item.streak > 0 ? 'text-amber-400' : 'text-slate-500'} />
-                                <span className={`text-[10px] font-semibold ${item.isMe ? 'text-white/70' : 'text-slate-400'}`}>
-                                  {item.streak} kun streak
-                                </span>
-                              </div>
-                            </div>
+              {/* ──────────────── HOLAT 1: HALI DO'STLAR YO'Q (0 TA DO'ST) ──────────────── */}
+              {friendsList.length === 0 && (
+                <div className="space-y-4">
+                  {/* Banner */}
+                  <div className="px-5">
+                    <div
+                      className="rounded-[2rem] p-5 text-white relative overflow-hidden shadow-xl"
+                      style={{ background: 'linear-gradient(135deg, #1e1552 0%, #351e8c 100%)' }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="inline-flex items-center space-x-1 bg-[#c4f82a] text-[#121124] px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider mb-1.5">
+                            <Trophy size={11} />
+                            <span>Do'stlar Musobaqasi</span>
                           </div>
+                          <h2 className="text-xl font-black leading-tight">Yolg'iz rejalashdan zerikdingizmi?</h2>
+                          <p className="text-xs text-[#b8ace8] mt-1">Do'stingiz bilan musobaqalashing!</p>
+                        </div>
+                        <div className="w-14 h-14 rounded-2xl bg-[#c4f82a]/20 border border-[#c4f82a]/30 flex items-center justify-center text-3xl">
+                          👥
+                        </div>
+                      </div>
 
-                          {/* Ball */}
-                          <div className="text-right">
-                            <p className={`text-sm font-black ${
-                              item.isMe ? (isZero ? 'text-slate-300' : 'text-[#c4f82a]') : 'text-[#7052ff]'
-                            }`}>
-                              {item.points}
-                            </p>
-                            <p className={`text-[9px] font-bold ${item.isMe ? 'text-white/60' : 'text-slate-400'}`}>
-                              ball
+                      <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+                        <span className="text-purple-200">Musobaqa holati:</span>
+                        <span className="font-black text-[#c4f82a] text-sm">Hali do'st taklif qilinmagan</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 1-do'stni taklif qilishga qiziqtiruvchi maxsus karta */}
+                  <div className="px-5">
+                    <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-11 h-11 rounded-2xl bg-[#7052ff]/10 text-[#7052ff] flex items-center justify-center shrink-0">
+                          <Swords size={22} />
+                        </div>
+                        <div>
+                          <h3 className="font-black text-slate-900 text-sm">1-do'stingizni taklif qiling! ⚔️</h3>
+                          <p className="text-[11px] text-slate-500">Kim ko'p vazifa bajarsa — o'sha Hafta G'olibi!</p>
+                        </div>
+                      </div>
+
+                      {/* Nega do'st bilan musobaqalashish 10x yaxshi? */}
+                      <div className="space-y-2.5">
+                        <div className="flex items-start space-x-3 bg-purple-50/70 p-3 rounded-2xl border border-purple-100">
+                          <span className="text-base leading-none">🚀</span>
+                          <div>
+                            <p className="text-xs font-black text-slate-900">3 barobar ko'proq motivatsiya</p>
+                            <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                              Do'stingiz bilan birga rejalashtirish dangasalikni butunlay unutishning eng yaxshi usuli.
                             </p>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
 
-                  {/* Qanday ball to'planadi tushuntirish */}
-                  <div className="mt-4 pt-4 border-t border-slate-100 text-[11px] text-slate-500 space-y-1">
-                    <p className="font-bold text-slate-700">🎯 Aniq ball berish qoidalari:</p>
-                    <p>• 🔴 Yuqori vazifa bajarilsa: <b className="text-red-500">+3 ball</b></p>
-                    <p>• 🟡 O'rta vazifa bajarilsa: <b className="text-amber-500">+2 ball</b></p>
-                    <p>• 🟢 Past vazifa bajarilsa: <b className="text-emerald-600">+1 ball</b></p>
-                    <p>• 🔥 Kunlik uzluksiz streak: <b className="text-amber-500">kuniga +2 bonus</b></p>
+                        <div className="flex items-start space-x-3 bg-amber-50/70 p-3 rounded-2xl border border-amber-100">
+                          <span className="text-base leading-none">⚡</span>
+                          <div>
+                            <p className="text-xs font-black text-slate-900">1-ga-1 jonli bellashuv</p>
+                            <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                              Do'stingizning har bir bajargan vazifasini ko'rib turasiz va o'zaro o'zib ketishga intilasiz!
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start space-x-3 bg-emerald-50/70 p-3 rounded-2xl border border-emerald-100">
+                          <span className="text-base leading-none">🎁</span>
+                          <div>
+                            <p className="text-xs font-black text-slate-900">+10 ball bonus</p>
+                            <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                              Do'stingiz taklif havolangiz orqali ilovani ochganda, ikkalangizga ham bonus beriladi!
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bosh Harakat Tugmasi */}
+                      <button
+                        onClick={shareScoreToTelegram}
+                        className="w-full py-3.5 px-4 rounded-2xl bg-[#7052ff] hover:bg-[#6242f6] text-white text-sm font-black shadow-lg shadow-indigo-500/30 flex items-center justify-center space-x-2 active:scale-95 transition-all"
+                      >
+                        <UserPlus size={17} />
+                        <span>Telegram orqali 1-do'stni chorlash 🚀</span>
+                      </button>
+
+                      {/* Havola nusxalash tugmasi */}
+                      <button
+                        onClick={copyReferralLink}
+                        className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center space-x-2 active:scale-95 transition-all"
+                      >
+                        {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} className="text-slate-500" />}
+                        <span>{copied ? 'Shaxsiy havolangiz nusxalandi!' : 'Shaxsiy taklif havolasidan nusxa olish'}</span>
+                      </button>
+
+                      {/* 🛠️ Localhost sinov qismi */}
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                        <span className="text-[10px] text-slate-400 font-bold">🛠️ Localhost Sinov:</span>
+                        <button
+                          onClick={handleAddDemoFriend}
+                          className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-[#7052ff] text-[11px] font-black border border-indigo-200 active:scale-95 transition-all flex items-center space-x-1"
+                        >
+                          <UserPlus size={12} />
+                          <span>1 ta do'st qo'shish (Demo)</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* ── YANADA TUSHUNARLI VA JOZIBALI QO'LLANMA KARTASI ── */}
-              <div className="px-5">
-                <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 space-y-4">
-                  {/* Sarlavha va Maqsad */}
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <span className="w-6 h-6 rounded-full bg-[#121124] text-[#c4f82a] flex items-center justify-center text-xs font-black">💡</span>
-                      <h3 className="font-black text-slate-900 text-sm">Do'stni qanday taklif qilasiz?</h3>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                      Yolg'iz rejalashtirishdan zerikdingizmi? <b>Do'stlaringiz bilan musobaqalashing!</b> Kim ko'proq vazifa bajarsa, o'sha 1-o'ringa ko'tariladi.
-                    </p>
-                  </div>
+              {/* ──────────────── HOLAT 2: 1 TA DO'ST TAKLIF QILINGAN HOLAT ──────────────── */}
+              {friendsList.length === 1 && (
+                <div className="space-y-4">
+                  {/* 1-ga-1 duel banneri */}
+                  <div className="px-5">
+                    <div
+                      className="rounded-[2rem] p-5 text-white relative overflow-hidden shadow-xl"
+                      style={{ background: 'linear-gradient(135deg, #1e1552 0%, #351e8c 100%)' }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="inline-flex items-center space-x-1 bg-[#c4f82a] text-[#121124] px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider mb-1.5">
+                            <Swords size={11} />
+                            <span>1-ga-1 Do'stona Duel</span>
+                          </div>
+                          <h2 className="text-xl font-black">{friendsList[0].name} bilan musobaqa!</h2>
+                          <p className="text-xs text-[#b8ace8] mt-1">Kim ko'p vazifa bajarsa, o'sha 1-o'rinda!</p>
+                        </div>
+                        <div className="w-14 h-14 rounded-2xl bg-[#c4f82a]/20 border border-[#c4f82a]/30 flex items-center justify-center text-3xl">
+                          ⚔️
+                        </div>
+                      </div>
 
-                  {/* 3 ta aniq vertikal qadam */}
-                  <div className="space-y-2.5">
-                    {/* 1-qadam */}
-                    <div className="flex items-start space-x-3 bg-purple-50/60 p-3 rounded-2xl border border-purple-100">
-                      <div className="w-8 h-8 rounded-xl bg-[#7052ff] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
-                        1
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-slate-900">Do'stingizga havola yuboring</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                          Pastdagi tugmani bosing va Telegram orqali do'stingizga yoki guruhga taklifnoma tashlang.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* 2-qadam */}
-                    <div className="flex items-start space-x-3 bg-amber-50/60 p-3 rounded-2xl border border-amber-100">
-                      <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
-                        2
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-slate-900">Do'stingiz havolani ochadi</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                          Do'stingiz Telegram havolani ochishi bilan, u sizning do'stlar ro'yxatingizda avtomatik paydo bo'ladi.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* 3-qadam */}
-                    <div className="flex items-start space-x-3 bg-emerald-50/60 p-3 rounded-2xl border border-emerald-100">
-                      <div className="w-8 h-8 rounded-xl bg-[#c4f82a] text-[#121124] flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
-                        3
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-slate-900">Kim ko'p vazifa bajarsa — o'sha G'olib!</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                          Har bir bajarilgan vazifa sizga ochko beradi va siz do'stingizdan o'zib ketasiz! 🏆
-                        </p>
+                      <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+                        <span className="text-purple-200">Sizning o'rningiz:</span>
+                        <span className="font-black text-[#c4f82a] text-sm">
+                          {myPoints > 0 ? `#${myRank} - ${myPoints} ball` : "O'rinsiz - 0 ball"}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Katta Bosh Harakat Tugmasi (Katta Neon CTA) */}
-                  <button
-                    onClick={shareScoreToTelegram}
-                    className="w-full py-3.5 px-4 rounded-2xl bg-[#7052ff] hover:bg-[#6242f6] text-white text-sm font-black shadow-lg shadow-indigo-500/30 flex items-center justify-center space-x-2 active:scale-95 transition-all"
-                  >
-                    <Share2 size={17} />
-                    <span>Telegram orqali do'stlarni chorlash 🚀</span>
-                  </button>
+                  {/* 2 kishilik duel reyting jadvali */}
+                  <div className="px-5">
+                    <div className="bg-white rounded-[2rem] p-5 shadow-xs border border-slate-100">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-1.5">
+                          <Swords size={16} className="text-[#7052ff]" />
+                          <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider">Hozirgi Duel Natijasi</h3>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-bold">2 ishtirokchi</span>
+                      </div>
 
-                  {/* Havola nusxalash tugmasi */}
-                  <button
-                    onClick={copyReferralLink}
-                    className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center space-x-2 active:scale-95 transition-all"
-                  >
-                    {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} className="text-slate-500" />}
-                    <span>{copied ? 'Shaxsiy havolangiz nusxalandi!' : 'Shaxsiy taklif havolasidan nusxa olish'}</span>
-                  </button>
+                      <div className="space-y-2.5">
+                        {leaderboard.map((item, index) => {
+                          const isZero = item.points === 0;
+                          const rank = index + 1;
+                          const rankDisplay = isZero ? '—' : rank === 1 ? '🥇' : '🥈';
+                          return (
+                            <div
+                              key={item.id}
+                              className={`flex items-center justify-between p-3 rounded-2xl transition-all ${
+                                item.isMe
+                                  ? 'bg-[#121124] text-white shadow-md ring-2 ring-[#c4f82a]'
+                                  : 'bg-slate-50 text-slate-800 border border-slate-100'
+                              }`}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className="w-6 text-center font-black text-sm text-slate-400">
+                                  {rankDisplay}
+                                </div>
+                                <div
+                                  className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs overflow-hidden shrink-0 ${
+                                    item.isMe ? 'bg-[#c4f82a] text-[#121124]' : 'bg-indigo-100 text-[#7052ff]'
+                                  }`}
+                                >
+                                  {item.avatar && (item.avatar.startsWith('data:') || item.avatar.startsWith('http')) ? (
+                                    <img src={item.avatar} alt="avatar" className="w-full h-full object-cover" />
+                                  ) : (
+                                    item.avatar || item.name[0]
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="flex items-center space-x-1.5">
+                                    <p className={`text-xs font-black ${item.isMe ? 'text-white' : 'text-slate-900'}`}>
+                                      {item.name}
+                                    </p>
+                                    <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-md ${
+                                      item.isMe
+                                        ? (isZero ? 'bg-amber-400/20 text-amber-300' : 'bg-[#c4f82a] text-[#121124]')
+                                        : 'bg-indigo-50 text-[#7052ff] border border-indigo-100'
+                                    }`}>
+                                      {item.isMe ? (isZero ? 'Siz (Ball yo\'q)' : 'Siz') : 'Do\'stingiz'}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-1 mt-0.5">
+                                    <Flame size={10} className={item.streak > 0 ? 'text-amber-400' : 'text-slate-500'} />
+                                    <span className={`text-[10px] font-semibold ${item.isMe ? 'text-white/70' : 'text-slate-400'}`}>
+                                      {item.streak} kun streak
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="text-right">
+                                <p className={`text-sm font-black ${item.isMe ? (isZero ? 'text-slate-300' : 'text-[#c4f82a]') : 'text-[#7052ff]'}`}>
+                                  {item.points}
+                                </p>
+                                <p className={`text-[9px] font-bold ${item.isMe ? 'text-white/60' : 'text-slate-400'}`}>
+                                  ball
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ── ENG MUHIM: DO'STLARNI KO'PAYTIRISHGA UNDAYDIGAN G'OYA VA CHAQIRIQ ── */}
+                  <div className="px-5">
+                    <div className="bg-gradient-to-br from-[#1e1552] to-[#121124] rounded-[2rem] p-5 text-white shadow-xl relative overflow-hidden space-y-4">
+                      <div className="absolute top-0 right-0 w-36 h-36 bg-[#c4f82a]/10 rounded-full blur-2xl pointer-events-none" />
+
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 rounded-xl bg-[#c4f82a] text-[#121124] flex items-center justify-center font-black">
+                          👑
+                        </div>
+                        <div>
+                          <h4 className="font-black text-sm text-white">Ajoyib start! Endi "Do'stlar Ligasi"ni oching! 🏆</h4>
+                          <p className="text-[10px] text-purple-200 font-semibold">1 ta do'st chaqirdingiz • Yana 2 ta qoldi</p>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        1-ga-1 duel ajoyib boshlanish! Lekin haqiqiy hayajonli va shiddatli musobaqa kamida <b>3 kishi</b> bo'lganda boshlanadi:
+                      </p>
+
+                      <div className="space-y-2 text-xs">
+                        <div className="bg-white/10 p-3 rounded-2xl border border-white/10 flex items-start space-x-2.5">
+                          <span className="text-sm">🏆</span>
+                          <div>
+                            <p className="font-black text-white text-xs">1. Shaxsiy "Do'stlar Mini-Ligasi" ochiladi</p>
+                            <p className="text-[11px] text-purple-200 mt-0.5">
+                              3+ do'st bo'lganda maxsus liga jadvali paydo bo'lib, har haftalik Chempionlik Kubogi o'ynaladi!
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="bg-white/10 p-3 rounded-2xl border border-white/10 flex items-start space-x-2.5">
+                          <span className="text-sm">🥇</span>
+                          <div>
+                            <p className="font-black text-white text-xs">2. To'liq 3 talik shohsupa (Medallar)</p>
+                            <p className="text-[11px] text-purple-200 mt-0.5">
+                              1-o'rin 🥇, 2-o'rin 🥈 va 3-o'rin 🥉 bo'lib, o'zaro haqiqiy sovrinli poyga bo'ladi.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="bg-white/10 p-3 rounded-2xl border border-white/10 flex items-start space-x-2.5">
+                          <span className="text-sm">🔥</span>
+                          <div>
+                            <p className="font-black text-white text-xs">3. Jamoaviy Streak Bonusi (+15 ball)</p>
+                            <p className="text-[11px] text-purple-200 mt-0.5">
+                              Agar guruhdagi barcha do'stlar bugun o'z vazifalarini bajarsa, barchaga birdaniga bonus ochkolar beriladi!
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Yana do'st chaqirish CTA */}
+                      <button
+                        onClick={shareScoreToTelegram}
+                        className="w-full py-3.5 px-4 rounded-2xl bg-[#c4f82a] hover:bg-[#b0e817] text-[#121124] text-xs font-black shadow-lg flex items-center justify-center space-x-2 active:scale-95 transition-all"
+                      >
+                        <UserPlus size={16} />
+                        <span>Yana do'stlarni chorlash (+2 do'st qoldi) 🚀</span>
+                      </button>
+
+                      {/* Localhost boshqaruv paneli */}
+                      <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[10px]">
+                        <span className="text-purple-300">🛠️ Localhost Sinov:</span>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={handleAddDemoFriend}
+                            className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold transition-all"
+                          >
+                            ➕ Yana 1 ta do'st qo'shish
+                          </button>
+                          <button
+                            onClick={handleResetFriends}
+                            className="px-2.5 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 font-bold transition-all flex items-center space-x-1"
+                          >
+                            <RotateCcw size={10} />
+                            <span>Tozalash (0 ta qilish)</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* ──────────────── HOLAT 3: 2 VA UNDAN KO'P DO'STLAR (TO'LIQ DO'STLAR LIGASI) ──────────────── */}
+              {friendsList.length >= 2 && (
+                <div className="space-y-4">
+                  {/* Liga Banneri */}
+                  <div className="px-5">
+                    <div
+                      className="rounded-[2rem] p-5 text-white relative overflow-hidden shadow-xl"
+                      style={{ background: 'linear-gradient(135deg, #1e1552 0%, #351e8c 100%)' }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="inline-flex items-center space-x-1 bg-[#c4f82a] text-[#121124] px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider mb-1.5">
+                            <Trophy size={11} />
+                            <span>Do'stlar Mini-Ligasi</span>
+                          </div>
+                          <h2 className="text-xl font-black">Hafta Lideri bo'ling!</h2>
+                          <p className="text-xs text-[#b8ace8] mt-1">Siz va {friendsList.length} ta do'stingiz reytingi</p>
+                        </div>
+                        <div className="w-14 h-14 rounded-2xl bg-[#c4f82a]/20 border border-[#c4f82a]/30 flex items-center justify-center text-3xl">
+                          🥇
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+                        <span className="text-purple-200">Sizning o'rningiz:</span>
+                        <span className="font-black text-[#c4f82a] text-sm">
+                          {myPoints > 0 ? `#${myRank} - ${myPoints} ball` : "O'rinsiz - 0 ball"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* To'liq leaderboard */}
+                  <div className="px-5">
+                    <div className="bg-white rounded-[2rem] p-5 shadow-xs border border-slate-100">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-1.5">
+                          <Crown size={16} className="text-amber-500" />
+                          <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider">Do'stlar Natijalari</h3>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-bold">{leaderboard.length} ishtirokchi</span>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {leaderboard.map((item, index) => {
+                          const isZero = item.points === 0;
+                          const rank = index + 1;
+                          const rankDisplay = isZero ? '—' : rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+                          return (
+                            <div
+                              key={item.id}
+                              className={`flex items-center justify-between p-3 rounded-2xl transition-all ${
+                                item.isMe
+                                  ? 'bg-[#121124] text-white shadow-md ring-2 ring-[#c4f82a]'
+                                  : 'bg-slate-50 text-slate-800 border border-slate-100'
+                              }`}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className="w-6 text-center font-black text-sm text-slate-400">
+                                  {rankDisplay}
+                                </div>
+                                <div
+                                  className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs overflow-hidden shrink-0 ${
+                                    item.isMe ? 'bg-[#c4f82a] text-[#121124]' : 'bg-indigo-100 text-[#7052ff]'
+                                  }`}
+                                >
+                                  {item.avatar && (item.avatar.startsWith('data:') || item.avatar.startsWith('http')) ? (
+                                    <img src={item.avatar} alt="avatar" className="w-full h-full object-cover" />
+                                  ) : (
+                                    item.avatar || item.name[0]
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="flex items-center space-x-1.5">
+                                    <p className={`text-xs font-black ${item.isMe ? 'text-white' : 'text-slate-900'}`}>
+                                      {item.name}
+                                    </p>
+                                    <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-md ${
+                                      item.isMe
+                                        ? (isZero ? 'bg-amber-400/20 text-amber-300' : 'bg-[#c4f82a] text-[#121124]')
+                                        : 'bg-indigo-50 text-[#7052ff] border border-indigo-100'
+                                    }`}>
+                                      {item.isMe ? (isZero ? 'Siz (Ball yo\'q)' : 'Siz') : 'Do\'stingiz'}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-1 mt-0.5">
+                                    <Flame size={10} className={item.streak > 0 ? 'text-amber-400' : 'text-slate-500'} />
+                                    <span className={`text-[10px] font-semibold ${item.isMe ? 'text-white/70' : 'text-slate-400'}`}>
+                                      {item.streak} kun streak
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="text-right">
+                                <p className={`text-sm font-black ${item.isMe ? (isZero ? 'text-slate-300' : 'text-[#c4f82a]') : 'text-[#7052ff]'}`}>
+                                  {item.points}
+                                </p>
+                                <p className={`text-[9px] font-bold ${item.isMe ? 'text-white/60' : 'text-slate-400'}`}>
+                                  ball
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Tugmalar */}
+                      <button
+                        onClick={shareScoreToTelegram}
+                        className="w-full mt-4 py-3 px-4 rounded-xl bg-[#7052ff] hover:bg-[#6242f6] text-white text-xs font-black flex items-center justify-center space-x-2 transition-all active:scale-95"
+                      >
+                        <UserPlus size={14} />
+                        <span>Yana yangi do'stlarni chorlash 🚀</span>
+                      </button>
+
+                      {/* Localhost reset */}
+                      <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                        <span className="text-slate-400 font-bold">🛠️ Localhost:</span>
+                        <button
+                          onClick={handleResetFriends}
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center space-x-1"
+                        >
+                          <RotateCcw size={10} />
+                          <span>Do'stlar ro'yxatini tozalash (0 ta qilish)</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
