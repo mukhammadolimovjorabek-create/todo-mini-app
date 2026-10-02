@@ -6,7 +6,6 @@ import { triggerHaptic } from '../utils/telegram';
 import { loadTasks, today, addTask, updateStats } from '../utils/storage';
 
 const QUICK_PROMPTS = [
-  'Yarim soat kitob o\'qimoqchiman, muhim',
   'Bugun qanday ketdi? Tahlil qil',
   'Nega bu qadar kam bajardim?',
   'Meni motivatsiya qil',
@@ -35,7 +34,7 @@ export const ScreenAI: React.FC<Props> = ({ onTaskCreated }) => {
     setMessages([
       {
         role: 'assistant',
-        content: `Salom! Men sizning **Smart AI Murabbiyingizman** 🤖\n\n💡 **Tezkor vazifa qo'shish:** Menga shunchaki: *"Bugun men yarim soat kitob o'qimoqchiman va bu vazifa muhim"* deb yozsangiz, men uni o'zim daqiqasini belgilab, ro'yxatingizga avtomatik qo'shib beraman!\n\nYoki kuningizni tahlil qilish uchun biror savol bering.`,
+        content: `Salom! Men sizning **Smart AI Murabbiyingizman** 🤖\n\nBugungi vazifalaringizni tahlil qilish, motivatsiya olish yoki yangi reja tuzish uchun menga savol bering! Quyidagi tezkor savollardan ham foydalanishingiz mumkin.`,
       },
     ]);
   }, []);
