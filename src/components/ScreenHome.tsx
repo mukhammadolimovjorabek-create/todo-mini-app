@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, CheckCircle2, Circle, Flag, Tag, ChevronDown, X, Clock } from 'lucide-react';
+import { Plus, Trash2, CheckCircle2, Circle, Flag, Tag, ChevronDown, X, Clock, Zap } from 'lucide-react';
 import type { Task, TaskCategory, TaskPriority } from '../types';
 import {
   loadTasks, addTask, toggleTask, deleteTask,
   getCategoryColor, getCategoryLabel,
   getPriorityColor, getPriorityLabel,
-  today, updateStats,
+  today, updateStats, getLast7Days,
 } from '../utils/storage';
 import { triggerHaptic } from '../utils/telegram';
 
@@ -64,6 +64,21 @@ export const ScreenHome: React.FC<{ userName: string }> = ({ userName }) => {
   const done = tasks.filter((t) => t.done).length;
   const total = tasks.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
+  const pendingCount = total - done;
+
+  // Streak hisoblash (2-rasmdagi seriya uchun)
+  const weekDays = getLast7Days().reverse();
+  let currentStreak = 0;
+  for (const d of weekDays) {
+    if (d.done > 0) currentStreak++;
+    else break;
+  }
+  const nextStreak = currentStreak + (done > 0 ? 1 : 1);
+
+  // SVG Circular ring hisobi
+  const ringRadius = 26;
+  const ringCircumference = 2 * Math.PI * ringRadius;
+  const ringOffset = ringCircumference - (pct / 100) * ringCircumference;
 
   const filtered = filterCat === 'all' ? tasks : tasks.filter((t) => t.category === filterCat);
 
@@ -72,45 +87,73 @@ export const ScreenHome: React.FC<{ userName: string }> = ({ userName }) => {
   const greeting = hour < 12 ? 'Xayrli tong' : hour < 17 ? 'Xayrli kun' : 'Xayrli kech';
 
   return (
-    <div className="flex flex-col min-h-full bg-[#f0f2ff] pb-24">
+    <div className="flex flex-col min-h-full bg-[#f6f7fb] pb-28">
       {/* ── Header ── */}
-      <div className="px-5 pt-6 pb-4">
-        <p className="text-sm font-semibold text-indigo-400">{greeting},</p>
-        <h1 className="text-2xl font-extrabold text-slate-900 leading-tight">{userName}! 👋</h1>
-        <p className="text-xs text-slate-500 mt-0.5">
+      <div className="px-5 pt-6 pb-2">
+        <p className="text-xs font-semibold text-slate-400">{greeting},</p>
+        <h1 className="text-2xl font-black text-slate-900 leading-tight tracking-tight">{userName}! 👋</h1>
+        <p className="text-[11px] text-slate-400 mt-0.5 font-medium">
           {new Date().toLocaleDateString('uz-UZ', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
 
-        {/* ── Progress Card ── */}
-        <div
-          className="mt-4 rounded-3xl p-5 text-white relative overflow-hidden shadow-lg"
-          style={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #ec4899 100%)' }}
-        >
-          {/* Decorative circles */}
-          <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-white/10" />
-          <div className="absolute -bottom-8 -right-2 w-20 h-20 rounded-full bg-white/10" />
-
-          <div className="relative z-10">
-            <p className="text-xs font-semibold text-white/70 uppercase tracking-widest mb-1">Bugungi progress</p>
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-4xl font-black">{pct}%</p>
-                <p className="text-sm text-white/80 mt-1">{done} / {total} vazifa bajarildi</p>
-              </div>
-              <div className="text-right">
-                <div className="w-16 h-16 rounded-full border-4 border-white/30 flex items-center justify-center bg-white/10">
-                  <span className="text-2xl">{pct >= 80 ? '🔥' : pct >= 50 ? '💪' : '⚡'}</span>
-                </div>
-              </div>
+        {/* ── 2-rasmdagi zamonaviy to'q binafsha Progress Card ── */}
+        <div className="mt-4 rounded-[2rem] p-5 bg-[#1e1552] text-white shadow-xl relative overflow-hidden">
+          <div className="flex items-center justify-between">
+            {/* Chap tomon: Foiz va vazifalar soni */}
+            <div>
+              <p className="text-[11px] font-extrabold text-[#9e91db] tracking-wider uppercase">
+                BUGUNGI PROGRESS
+              </p>
+              <p className="text-5xl font-black text-white tracking-tight my-1.5">
+                {pct}%
+              </p>
+              <p className="text-xs font-semibold text-[#b8ace8]">
+                {done} / {total} vazifa bajarildi
+              </p>
             </div>
 
-            {/* Progress Bar */}
-            <div className="mt-4 h-2.5 bg-white/20 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-white rounded-full transition-all duration-700"
-                style={{ width: `${pct}%` }}
-              />
+            {/* O'ng tomon: Circular neon progress ring va chaqmoq ⚡ */}
+            <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
+              <svg className="w-20 h-20 -rotate-90" viewBox="0 0 64 64">
+                {/* Background ring */}
+                <circle
+                  cx="32"
+                  cy="32"
+                  r={ringRadius}
+                  stroke="#33247d"
+                  strokeWidth="5"
+                  fill="none"
+                />
+                {/* Neon Lime progress arc */}
+                <circle
+                  cx="32"
+                  cy="32"
+                  r={ringRadius}
+                  stroke="#c4f82a"
+                  strokeWidth="5"
+                  strokeDasharray={ringCircumference}
+                  strokeDashoffset={ringOffset}
+                  strokeLinecap="round"
+                  fill="none"
+                  className="transition-all duration-700 ease-out"
+                />
+              </svg>
+              {/* Markaziy yashil chaqmoq belgisi */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Zap size={22} className="text-[#c4f82a] fill-[#c4f82a]" />
+              </div>
             </div>
+          </div>
+
+          {/* 2-rasmdagi och laym-yashil streak banner */}
+          <div className="mt-4 bg-[#c4f82a] text-[#121124] rounded-2xl p-3.5 shadow-sm">
+            <p className="text-xs font-black tracking-tight leading-snug">
+              {total === 0
+                ? "Bugungi rejalaringizni kiriting va seriyani boshlang!"
+                : pendingCount === 0
+                ? "Ajoyib! Bugungi barcha vazifalar bajarildi 🔥"
+                : `Yana ${pendingCount} ta vazifa, va ${nextStreak} kunlik seriya ochiladi`}
+            </p>
           </div>
         </div>
       </div>
@@ -235,13 +278,12 @@ export const ScreenHome: React.FC<{ userName: string }> = ({ userName }) => {
         )}
       </div>
 
-      {/* ── FAB ── */}
+      {/* ── 1-rasmdagi zamonaviy binafsha FAB (+) tugmasi ── */}
       <button
         onClick={() => { triggerHaptic('heavy'); setShowModal(true); }}
-        className="fixed bottom-24 right-5 w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center active:scale-90 transition-all z-30"
-        style={{ background: 'linear-gradient(135deg, #6366f1, #ec4899)', boxShadow: '0 8px 30px rgba(99,102,241,0.45)' }}
+        className="fixed bottom-24 right-5 w-14 h-14 rounded-full bg-[#7052ff] hover:bg-[#6242f6] text-white shadow-xl shadow-indigo-500/40 flex items-center justify-center active:scale-90 transition-all z-30"
       >
-        <Plus size={26} strokeWidth={2.5} />
+        <Plus size={26} strokeWidth={2.8} />
       </button>
 
       {/* ── Add Task Modal ── */}
