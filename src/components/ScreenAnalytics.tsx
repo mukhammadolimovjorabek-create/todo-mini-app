@@ -306,6 +306,45 @@ export const ScreenAnalytics: React.FC = () => {
             </div>
           </div>
 
+          {/* ── 3 QADAMLI VIZUAL QO'LLANMA (Qanday ishlaydi?) ── */}
+          <div className="px-5">
+            <div className="bg-white rounded-[2rem] p-4 shadow-xs border border-slate-100">
+              <div className="flex items-center space-x-2 mb-3">
+                <span className="w-6 h-6 rounded-full bg-[#121124] text-[#c4f82a] flex items-center justify-center text-xs font-black">?</span>
+                <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider">Do'stlar musobaqasi qanday ishlaydi?</h3>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 text-center">
+                {/* 1-qadam */}
+                <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 flex flex-col items-center">
+                  <div className="w-8 h-8 rounded-xl bg-purple-100 text-[#7052ff] flex items-center justify-center font-black text-sm mb-1.5">
+                    🔗
+                  </div>
+                  <p className="text-[11px] font-black text-slate-900 leading-tight">1. Havola yuboring</p>
+                  <p className="text-[9px] text-slate-400 font-semibold mt-1">Do'stingizga taklifnoma tashlang</p>
+                </div>
+
+                {/* 2-qadam */}
+                <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 flex flex-col items-center">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-black text-sm mb-1.5">
+                    👥
+                  </div>
+                  <p className="text-[11px] font-black text-slate-900 leading-tight">2. Do'st bo'ling</p>
+                  <p className="text-[9px] text-slate-400 font-semibold mt-1">U kirgach, reytingingizda paydo bo'ladi</p>
+                </div>
+
+                {/* 3-qadam */}
+                <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 flex flex-col items-center">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-black text-sm mb-1.5">
+                    🏆
+                  </div>
+                  <p className="text-[11px] font-black text-slate-900 leading-tight">3. O'zib keting!</p>
+                  <p className="text-[9px] text-slate-400 font-semibold mt-1">Vazifa bajaring va ball to'plang</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Do'stlarni taklif qilish va Ulashish tugmalari */}
           <div className="px-5 grid grid-cols-2 gap-2.5">
             <button
