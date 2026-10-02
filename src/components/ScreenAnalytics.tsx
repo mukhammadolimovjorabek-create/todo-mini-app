@@ -306,61 +306,81 @@ export const ScreenAnalytics: React.FC = () => {
             </div>
           </div>
 
-          {/* ── 3 QADAMLI VIZUAL QO'LLANMA (Qanday ishlaydi?) ── */}
+          {/* ── YANADA TUSHUNARLI VA JOZIBALI QO'LLANMA KARTASI ── */}
           <div className="px-5">
-            <div className="bg-white rounded-[2rem] p-4 shadow-xs border border-slate-100">
-              <div className="flex items-center space-x-2 mb-3">
-                <span className="w-6 h-6 rounded-full bg-[#121124] text-[#c4f82a] flex items-center justify-center text-xs font-black">?</span>
-                <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider">Do'stlar musobaqasi qanday ishlaydi?</h3>
+            <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 space-y-4">
+              
+              {/* Sarlavha va Maqsad */}
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="w-6 h-6 rounded-full bg-[#121124] text-[#c4f82a] flex items-center justify-center text-xs font-black">💡</span>
+                  <h3 className="font-black text-slate-900 text-sm">Bu nima va qanday ishlaydi?</h3>
+                </div>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  Yolg'iz rejalashtirishdan zerikdingizmi? <b>Do'stlaringiz bilan musobaqalashing!</b> Kim bugun ko'proq vazifasini bajarsa, o'sha 1-o'ringa ko'tariladi.
+                </p>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 text-center">
+              {/* 3 ta aniq vertikal qadam */}
+              <div className="space-y-2.5">
                 {/* 1-qadam */}
-                <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-xl bg-purple-100 text-[#7052ff] flex items-center justify-center font-black text-sm mb-1.5">
-                    🔗
+                <div className="flex items-start space-x-3 bg-purple-50/60 p-3 rounded-2xl border border-purple-100">
+                  <div className="w-8 h-8 rounded-xl bg-[#7052ff] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
+                    1
                   </div>
-                  <p className="text-[11px] font-black text-slate-900 leading-tight">1. Havola yuboring</p>
-                  <p className="text-[9px] text-slate-400 font-semibold mt-1">Do'stingizga taklifnoma tashlang</p>
+                  <div>
+                    <p className="text-xs font-black text-slate-900">Do'stingizga havola yuboring</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                      Pastdagi tugmani bosing va Telegram orqali do'stingizga yoki guruhga taklifnoma tashlang.
+                    </p>
+                  </div>
                 </div>
 
                 {/* 2-qadam */}
-                <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-black text-sm mb-1.5">
-                    👥
+                <div className="flex items-start space-x-3 bg-amber-50/60 p-3 rounded-2xl border border-amber-100">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
+                    2
                   </div>
-                  <p className="text-[11px] font-black text-slate-900 leading-tight">2. Do'st bo'ling</p>
-                  <p className="text-[9px] text-slate-400 font-semibold mt-1">U kirgach, reytingingizda paydo bo'ladi</p>
+                  <div>
+                    <p className="text-xs font-black text-slate-900">Do'stingiz ilovani ochadi</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                      U havolani bosib ilovani ochishi bilan, sizning ro'yxatingizda avtomatik paydo bo'ladi.
+                    </p>
+                  </div>
                 </div>
 
                 {/* 3-qadam */}
-                <div className="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-black text-sm mb-1.5">
-                    🏆
+                <div className="flex items-start space-x-3 bg-emerald-50/60 p-3 rounded-2xl border border-emerald-100">
+                  <div className="w-8 h-8 rounded-xl bg-[#c4f82a] text-[#121124] flex items-center justify-center font-black text-xs shrink-0 shadow-sm">
+                    3
                   </div>
-                  <p className="text-[11px] font-black text-slate-900 leading-tight">3. O'zib keting!</p>
-                  <p className="text-[9px] text-slate-400 font-semibold mt-1">Vazifa bajaring va ball to'plang</p>
+                  <div>
+                    <p className="text-xs font-black text-slate-900">Kim ko'p vazifa bajarsa — o'sha G'olib!</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                      Har bir bajarilgan vazifa sizga ochko beradi va siz do'stingizdan o'zib ketasiz! 🏆
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Do'stlarni taklif qilish va Ulashish tugmalari */}
-          <div className="px-5 grid grid-cols-2 gap-2.5">
-            <button
-              onClick={shareScoreToTelegram}
-              className="py-3 px-4 rounded-2xl bg-[#7052ff] hover:bg-[#6242f6] text-white text-xs font-black shadow-lg shadow-indigo-500/30 flex items-center justify-center space-x-2 active:scale-95 transition-all"
-            >
-              <Share2 size={15} />
-              <span>Natijani ulashish</span>
-            </button>
-            <button
-              onClick={copyReferralLink}
-              className="py-3 px-4 rounded-2xl bg-white border border-slate-200 text-slate-800 text-xs font-black shadow-xs flex items-center justify-center space-x-2 active:scale-95 transition-all"
-            >
-              {copied ? <Check size={15} className="text-emerald-500" /> : <Copy size={15} className="text-slate-500" />}
-              <span>{copied ? 'Havola olindi!' : 'Havola olish'}</span>
-            </button>
+              {/* Katta Bosh Harakat Tugmasi (Katta Neon CTA) */}
+              <button
+                onClick={shareScoreToTelegram}
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#7052ff] hover:bg-[#6242f6] text-white text-sm font-black shadow-lg shadow-indigo-500/30 flex items-center justify-center space-x-2 active:scale-95 transition-all"
+              >
+                <Share2 size={17} />
+                <span>Telegram orqali do'stlarni chorlash 🚀</span>
+              </button>
+
+              {/* Havola nusxalash tugmasi */}
+              <button
+                onClick={copyReferralLink}
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center space-x-2 active:scale-95 transition-all"
+              >
+                {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} className="text-slate-500" />}
+                <span>{copied ? 'Shaxsiy havolangiz nusxalandi!' : 'Shaxsiy taklif havolasidan nusxa olish'}</span>
+              </button>
+            </div>
           </div>
 
           {/* Reyting shohsupasi / Top 3 */}
