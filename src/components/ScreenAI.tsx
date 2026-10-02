@@ -99,8 +99,13 @@ export const ScreenAI: React.FC<Props> = ({ onTaskCreated }) => {
     }
 
     if (isListening) {
+      speechRef.current.stopListening();
       setIsListening(false);
       triggerHaptic('light');
+      // Agar biror gap yozilgan bo'lsa, uni avtomatik yuboramiz
+      if (input.trim()) {
+        sendMessage(input);
+      }
     } else {
       triggerHaptic('medium');
       setIsListening(true);
@@ -108,15 +113,16 @@ export const ScreenAI: React.FC<Props> = ({ onTaskCreated }) => {
       speechRef.current.startListening(
         (transcript, isFinal) => {
           setInput(transcript);
-          if (isFinal) {
+          if (isFinal && transcript.trim().length > 3) {
+            speechRef.current?.stopListening();
             setIsListening(false);
-            // Avtomatik AI ga yuborish
             sendMessage(transcript);
           }
         },
         (error) => {
           console.warn('Ovoz tanish xatosi:', error);
           setIsListening(false);
+          alert(typeof error === 'string' ? error : 'Mikrofon bilan ishlashda xatolik yuz berdi.');
         },
         () => {
           setIsListening(false);
