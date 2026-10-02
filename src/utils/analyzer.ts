@@ -134,6 +134,64 @@ ${remaining > 120 ? '⚠️ Juda ko\'p vaqt kerak. Qaysilarini keyinga qoldirish
 
 // ────────── Main export ──────────
 
+// Asosiy Gemini API Kaliti (Base64 shifrlangan)
+const getGeminiKey = (): string => {
+  try {
+    return atob('QVEuQWI4Uk42S2dhS0pXdUZWTGd1ZzB5eHlZZzZRMVdYMmNUUW0tZGpfTEJhT0RCZFJfVXc=');
+  } catch {
+    return '';
+  }
+};
+
+// ────────── Gemini API chaqiruvi ──────────
+async function callGemini(
+  systemPrompt: string,
+  userMessage: string,
+  history: ChatMessage[],
+  apiKey: string
+): Promise<string> {
+  const contents = [
+    ...history.slice(-6).map((m) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    })),
+    {
+      role: 'user',
+      parts: [{ text: userMessage }],
+    },
+  ];
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      systemInstruction: {
+        parts: [{ text: systemPrompt }],
+      },
+      contents,
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 500,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Gemini API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!reply) {
+    throw new Error('Gemini javob bermadi');
+  }
+  return reply;
+}
+
+// ────────── Main export: Gemini -> Groq -> Offline Fallback ──────────
+
 export const analyzeWithAI = async (
   userMessage: string,
   history: ChatMessage[],
@@ -148,14 +206,34 @@ Qoidalar:
 1. Har doim ANIQ raqamlar (%) va real vazifa nomlarini mention qil
 2. Motivatsiya — sentimental emas, AMALIY bo'lsin
 3. Tavsiya — bajarish mumkin bo'lgan konkret qadamlar
-4. Javob: 4-6 gap, qisqa, punchy`;
+4. Javob: 4-6 gap, qisqa, tushunarli, motivatsiyali`;
 
-  // Groq API
-  if (groqKey && groqKey.trim().length > 10) {
+  // 1-qadam: Birinchi navbatda Google Gemini API orqali javob olishga urinish
+  try {
+    const geminiKey = getGeminiKey();
+    if (geminiKey) {
+      const geminiReply = await callGemini(
+        systemPrompt,
+        userMessage,
+        history,
+        geminiKey
+      );
+      return geminiReply;
+    }
+  } catch (geminiErr) {
+    console.warn('Gemini API xatolik berdi yoki limiti tugadi. Groq / Offline rejimga o\'tilmoqda:', geminiErr);
+  }
+
+  // 2-qadam: Agar Gemini ishlamasa yoki limiti tugasa, Groq API (Llama 3.3) ga o'tish
+  const activeGroqKey = groqKey || localStorage.getItem('groq_api_key');
+  if (activeGroqKey && activeGroqKey.trim().length > 10) {
     try {
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey.trim()}` },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${activeGroqKey.trim()}`,
+        },
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
           messages: [
@@ -172,10 +250,12 @@ Qoidalar:
         const reply = data.choices?.[0]?.message?.content;
         if (reply) return reply;
       }
-    } catch { /* fallback */ }
+    } catch (groqErr) {
+      console.warn('Groq API ham xatolik berdi. Offline rejimga o\'tilmoqda:', groqErr);
+    }
   }
 
-  // Offline smart analyzer
+  // 3-qadam: Agar internet yoki API xatolik bersa, 100% kafolatlangan Smart Offline Murabbiy
   await new Promise((r) => setTimeout(r, 600));
   const todayTasks = loadTasks().filter((t) => t.createdAt === today());
   return offlineAnalyze(userMessage, todayTasks);

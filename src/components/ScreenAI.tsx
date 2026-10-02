@@ -116,12 +116,15 @@ export const ScreenAI: React.FC = () => {
               </div>
             </div>
           </div>
-          {groqKey && (
-            <div className="mt-3 flex items-center space-x-1.5 text-xs text-emerald-300 font-semibold">
+          <div className="mt-3 flex items-center justify-between text-[11px] text-white/90 font-bold border-t border-white/15 pt-2.5">
+            <div className="flex items-center space-x-1.5 text-emerald-300">
               <CheckCircle2 size={13} />
-              <span>Groq Llama-3.3 ulangan</span>
+              <span>Google Gemini AI (Asosiy)</span>
             </div>
-          )}
+            <span className="text-white/60 font-semibold text-[10px]">
+              Zaxira: Groq Llama-3.3
+            </span>
+          </div>
         </div>
 
         {/* ── Quick prompts ── */}

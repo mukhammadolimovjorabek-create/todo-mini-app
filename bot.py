@@ -36,7 +36,7 @@ def get_bot_token():
     return os.getenv("BOT_TOKEN", "")
 
 BOT_TOKEN = get_bot_token()
-WEB_APP_URL = os.getenv("WEB_APP_URL", "https://todo-mini-app-mu.vercel.app")
+WEB_APP_URL = os.getenv("WEB_APP_URL", "https://todo-mini-app-eight.vercel.app")
 
 # Foydalanuvchilar bazasini yuklash / saqlash
 def load_users():
