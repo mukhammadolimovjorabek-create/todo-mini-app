@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { getLast7Days, loadTasks, getCategoryColor, getCategoryLabel, shortDay, getCustomProfile } from '../utils/storage';
 import { calculateUserPoints, getGlobalRank } from '../utils/points';
-import { loadFriends, addDemoFriend, resetFriends, type InvitedFriend } from '../utils/friends';
+import { loadFriends, type InvitedFriend } from '../utils/friends';
 import type { DayStats, TaskCategory } from '../types';
 import { triggerHaptic } from '../utils/telegram';
 
@@ -36,7 +36,7 @@ interface FriendRank {
 }
 
 export const ScreenAnalytics: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'stats' | 'leaderboard'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'leaderboard'>('leaderboard');
   const [scopeTab, setScopeTab] = useState<'friends' | 'global'>('friends');
   const [week, setWeek] = useState<DayStats[]>([]);
   const [catBreakdown, setCatBreakdown] = useState<{ cat: TaskCategory; done: number; total: number }[]>([]);
@@ -84,19 +84,7 @@ export const ScreenAnalytics: React.FC = () => {
   const myAvatar = userProfile.avatarUrl || '';
 
   // Taklif qilingan do'stlar holati (Boshida 0 ta do'st)
-  const [friendsList, setFriendsList] = useState<InvitedFriend[]>(loadFriends());
-
-  const handleAddDemoFriend = () => {
-    triggerHaptic('medium');
-    const updated = addDemoFriend();
-    setFriendsList([...updated]);
-  };
-
-  const handleResetFriends = () => {
-    triggerHaptic('light');
-    const empty = resetFriends();
-    setFriendsList([...empty]);
-  };
+  const [friendsList] = useState<InvitedFriend[]>(loadFriends());
 
   // Foydalanuvchining real balli (Agar 0 bo'lsa qat'iy 0!)
   const scoreData = calculateUserPoints();
@@ -332,44 +320,6 @@ export const ScreenAnalytics: React.FC = () => {
           {/* ══════════════ 1-VARIANT: DO'STLARIM ORASIDA ══════════════ */}
           {scopeTab === 'friends' && (
             <>
-              {/* 🛠️ Localhost Sinov Rejimi (Faqat localhostda ikkala holatni ko'rish uchun) */}
-              <div className="px-5">
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-2.5 flex items-center justify-between">
-                  <span className="text-[11px] font-black text-amber-900 flex items-center space-x-1">
-                    <span>🛠️ Localhost ko'rinishi:</span>
-                  </span>
-                  <div className="flex space-x-1.5">
-                    <button
-                      onClick={() => {
-                        triggerHaptic('light');
-                        handleResetFriends();
-                      }}
-                      className={`px-2.5 py-1 rounded-xl text-[11px] font-black transition-all ${
-                        friendsList.length === 0
-                          ? 'bg-[#121124] text-[#c4f82a] shadow-sm'
-                          : 'bg-white text-slate-600 hover:bg-slate-100'
-                      }`}
-                    >
-                      0 ta do'st (Boshlang'ich)
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (friendsList.length === 0) {
-                          handleAddDemoFriend();
-                        }
-                      }}
-                      className={`px-2.5 py-1 rounded-xl text-[11px] font-black transition-all ${
-                        friendsList.length > 0
-                          ? 'bg-[#121124] text-[#c4f82a] shadow-sm'
-                          : 'bg-white text-slate-600 hover:bg-slate-100'
-                      }`}
-                    >
-                      1 ta do'st chaqirilganda
-                    </button>
-                  </div>
-                </div>
-              </div>
-
               {/* ──────────────── 1-BOSQICH: HALI 1 TA HAM DO'ST CHAQIRILMAGAN HOLAT (0 TA DO'ST) ──────────────── */}
               {friendsList.length === 0 && (
                 <div className="space-y-4">
