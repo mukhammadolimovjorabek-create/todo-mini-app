@@ -15,15 +15,18 @@ from aiogram.types import (
     InlineKeyboardMarkup, 
     InlineKeyboardButton,
     ReplyKeyboardMarkup,
-    KeyboardButton
+    KeyboardButton,
+    FSInputFile
 )
 
 ADMIN_ID = 5466728043
-USERS_FILE = os.path.join(os.path.dirname(__file__), "users.json")
+BASE_DIR = os.path.dirname(__file__)
+USERS_FILE = os.path.join(BASE_DIR, "users.json")
+BANNER_PATH = os.path.join(BASE_DIR, "welcome_banner.jpg")
 
 # .env faylidan tokenni o'qish
 def get_bot_token():
-    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    env_path = os.path.join(BASE_DIR, ".env")
     if os.path.exists(env_path):
         with open(env_path, "r", encoding="utf-8") as f:
             for line in f:
@@ -32,9 +35,10 @@ def get_bot_token():
     return os.getenv("BOT_TOKEN", "")
 
 BOT_TOKEN = get_bot_token()
+# Vercel'dagi domeningiz
 WEB_APP_URL = os.getenv("WEB_APP_URL", "https://todo-mini-app-mu.vercel.app")
 
-# Foydalanuvchilar bazasini yuklash / saqlash (oddiy va xavfsiz JSON fayl)
+# Foydalanuvchilar bazasini yuklash / saqlash
 def load_users():
     if os.path.exists(USERS_FILE):
         try:
@@ -64,7 +68,7 @@ def save_user(user_id: int, user_info: dict):
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-# Admin uchun maxsus Reply Keyboard (pastdagi tugma)
+# Admin uchun maxsus menyu tugmasi
 admin_kb = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="📊 Hisobot")]
@@ -83,34 +87,50 @@ async def cmd_start(message: types.Message):
     # Bazaga yozish va yangi foydalanuvchini aniqlash
     is_new, total_users = save_user(user_id, user_info)
     
-    # Inline Web App ochish tugmasi
+    # Katta qulay "Ilovani ochish" tugmasi
     inline_kb = InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="🚀 To-Do & AI Appni ochish",
+                    text="🚀 Ilovani ochish (To-Do & AI)",
                     web_app=WebAppInfo(url=WEB_APP_URL)
                 )
             ]
         ]
     )
     
-    # Foydalanuvchiga xush kelibsiz xabari
-    # Agar admin bo'lsa, unga "📊 Hisobot" tugmasi ham beriladi
-    reply_markup = admin_kb if user_id == ADMIN_ID else None
-    
-    await message.answer(
-        f"Salom, {message.from_user.first_name}! 👋\n\n"
-        "Shaxsiy rejalashtiruvchi va AI tahlilchi ilovangiz tayyor.\n"
-        "Quyidagi tugmani bosib ochishingiz mumkin:",
-        reply_markup=inline_kb
+    caption_text = (
+        f"Assalomu alaykum, <b>{message.from_user.first_name}</b>! 👋\n\n"
+        "🎯 <b>Smart To-Do & AI</b> — kuningizni samarali rejalashtirish va "
+        "sun'iy intellekt orqali tahlil qilish platformasiga xush kelibsiz!\n\n"
+        "✨ <b>Asosiy imkoniyatlar:</b>\n"
+        "• Kunlik vazifalar va vaqt (taymer) belgilash\n"
+        "• Sun'iy intellekt (AI) murabbiy tahlili va motivatsiya\n"
+        "• Kunlik seriya (streak) va o'sish statistikasi\n\n"
+        "👇 <i>Boshlash uchun quyidagi tugmani bosing:</i>"
     )
     
-    # Agar admin bo'lsa, pastki menyu tugmasini ham chiqarish
-    if user_id == ADMIN_ID and reply_markup:
-        await message.answer("Siz bot adminsiz. Quyidagi menyu orqali hisobotni ko'rishingiz mumkin:", reply_markup=reply_markup)
+    # Agar rasm mavjud bo'lsa, rasm bilan yuboramiz
+    if os.path.exists(BANNER_PATH):
+        try:
+            photo = FSInputFile(BANNER_PATH)
+            await message.answer_photo(
+                photo=photo,
+                caption=caption_text,
+                parse_mode="HTML",
+                reply_markup=inline_kb
+            )
+        except Exception:
+            # Rasm yuborishda xatolik bo'lsa, oddiy matn qilib yuboriladi
+            await message.answer(caption_text, parse_mode="HTML", reply_markup=inline_kb)
+    else:
+        await message.answer(caption_text, parse_mode="HTML", reply_markup=inline_kb)
+        
+    # Agar admin bo'lsa, pastdagi hisobot menyusini ham chiqarish
+    if user_id == ADMIN_ID:
+        await message.answer("Siz bot adminsiz. Pastdagi tugma orqali hisobotni ko'rishingiz mumkin:", reply_markup=admin_kb)
     
-    # Agar yangi foydalanuvchi bo'lsa va bu siz bo'lmasangiz, faqat sizga (ADMIN) xabar boradi
+    # Agar yangi foydalanuvchi bo'lsa va bu admin bo'lmasa, adminga xabar boradi
     if is_new and user_id != ADMIN_ID:
         try:
             username_txt = f"(@{message.from_user.username})" if message.from_user.username else ""
@@ -128,15 +148,12 @@ async def cmd_start(message: types.Message):
 @dp.message(F.text == "📊 Hisobot")
 @dp.message(Command("stats"))
 async def show_stats(message: types.Message):
-    # Faqat sizga (ADMIN) ruxsat beriladi
     if message.from_user.id != ADMIN_ID:
         return
         
     users = load_users()
     total_users = len(users)
     today_str = datetime.now().strftime("%Y-%m-%d")
-    
-    # Bugun qo'shilganlarni hisoblash
     today_users = sum(1 for u in users.values() if u.get("joined_at", "").startswith(today_str))
     
     report_text = (
@@ -151,7 +168,11 @@ async def show_stats(message: types.Message):
     await message.answer(report_text, parse_mode="HTML")
 
 async def main():
-    print("Bot muvaffaqiyatli ishga tushdi! Admin ID:", ADMIN_ID)
+    print("=" * 50)
+    print("Bot muvaffaqiyatli ishga tushdi!")
+    print(f"Admin ID: {ADMIN_ID}")
+    print("Telegramda /start bosib tekshirishingiz mumkin.")
+    print("=" * 50)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":

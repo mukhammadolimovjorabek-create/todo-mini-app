@@ -17,6 +17,16 @@ export function App() {
   });
   const [taskStats, setTaskStats] = useState({ pending: 0, pct: 0 });
 
+  const updateStatsFromStorage = () => {
+    const allToday = loadTasks().filter((t) => t.createdAt === today());
+    const done = allToday.filter((t) => t.done).length;
+    const total = allToday.length;
+    setTaskStats({
+      pending: total - done,
+      pct: total ? Math.round((done / total) * 100) : 0,
+    });
+  };
+
   useEffect(() => {
     // Init Telegram WebApp
     const tg = getTelegramWebApp();
@@ -30,16 +40,6 @@ export function App() {
     const u = getTelegramUser();
     if (u) setUser(u);
 
-    // Vazifalar hisobi
-    const updateStatsFromStorage = () => {
-      const allToday = loadTasks().filter((t) => t.createdAt === today());
-      const done = allToday.filter((t) => t.done).length;
-      const total = allToday.length;
-      setTaskStats({
-        pending: total - done,
-        pct: total ? Math.round((done / total) * 100) : 0,
-      });
-    };
     updateStatsFromStorage();
   }, [screen]);
 
@@ -50,7 +50,7 @@ export function App() {
       {/* Phone frame on desktop */}
       <div className="w-full max-w-md min-h-screen md:min-h-[820px] md:max-h-[900px] bg-[#f6f7fb] md:rounded-[2.8rem] shadow-2xl overflow-y-auto overflow-x-hidden relative flex flex-col border-0 md:border-8 md:border-slate-800">
         <div className="flex-1">
-          {screen === 'home'      && <ScreenHome userName={user.first_name} />}
+          {screen === 'home'      && <ScreenHome userName={user.first_name} onTasksChange={updateStatsFromStorage} />}
           {screen === 'ai'        && <ScreenAI />}
           {screen === 'analytics' && <ScreenAnalytics />}
           {screen === 'profile'   && <ScreenProfile user={user} />}

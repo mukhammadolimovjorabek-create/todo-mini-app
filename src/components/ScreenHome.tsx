@@ -19,7 +19,12 @@ const CAT_EMOJIS: Record<TaskCategory, string> = {
 // Quick duration presets (minutes)
 const DURATION_PRESETS = [15, 30, 60, 90, 120];
 
-export const ScreenHome: React.FC<{ userName: string }> = ({ userName }) => {
+interface ScreenHomeProps {
+  userName: string;
+  onTasksChange?: () => void;
+}
+
+export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filterCat, setFilterCat] = useState<TaskCategory | 'all'>('all');
   const [showModal, setShowModal] = useState(false);
@@ -29,10 +34,10 @@ export const ScreenHome: React.FC<{ userName: string }> = ({ userName }) => {
   const [newDuration, setNewDuration] = useState<number | null>(null);
   const [swipedId, setSwipedId] = useState<string | null>(null);
 
-
   const reload = useCallback(() => {
     setTasks(loadTasks().filter((t) => t.createdAt === today()));
-  }, []);
+    onTasksChange?.();
+  }, [onTasksChange]);
 
   useEffect(() => {
     reload();
@@ -41,13 +46,17 @@ export const ScreenHome: React.FC<{ userName: string }> = ({ userName }) => {
 
   const handleToggle = (id: string) => {
     triggerHaptic('medium');
-    setTasks(toggleTask(id).filter((t) => t.createdAt === today()));
+    const updated = toggleTask(id).filter((t) => t.createdAt === today());
+    setTasks(updated);
+    onTasksChange?.();
   };
 
   const handleDelete = (id: string) => {
     triggerHaptic('heavy');
-    setTasks(deleteTask(id).filter((t) => t.createdAt === today()));
+    const updated = deleteTask(id).filter((t) => t.createdAt === today());
+    setTasks(updated);
     setSwipedId(null);
+    onTasksChange?.();
   };
 
   const handleAdd = () => {
@@ -59,6 +68,7 @@ export const ScreenHome: React.FC<{ userName: string }> = ({ userName }) => {
     setShowModal(false);
     reload();
     updateStats();
+    onTasksChange?.();
   };
 
   const done = tasks.filter((t) => t.done).length;
