@@ -17,6 +17,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { getLast7Days, loadTasks, getCategoryColor, getCategoryLabel, shortDay, getCustomProfile } from '../utils/storage';
+import { calculateUserPoints, getGlobalRank } from '../utils/points';
 import type { DayStats, TaskCategory } from '../types';
 import { triggerHaptic } from '../utils/telegram';
 
@@ -55,25 +56,15 @@ export const ScreenAnalytics: React.FC = () => {
     })).filter((b) => b.total > 0);
     setCatBreakdown(breakdown);
 
-    // Streak
-    let streak = 0;
-    const sortedDays = [...days].reverse();
-    for (const d of sortedDays) {
-      if (d.done > 0) streak++;
-      else break;
-    }
-
-    // Ballarni hisoblash (PDF Phase 6 qoidasi: Yuqori=3, O'rta=2, Past=1, Streak=kuniga +1)
-    let calculatedPoints = 0;
-    allTasks.filter((t) => t.done).forEach((t) => {
-      if (t.priority === 'high') calculatedPoints += 3;
-      else if (t.priority === 'medium') calculatedPoints += 2;
-      else calculatedPoints += 1;
+    // Aniq ballar tizimi (Yuqori=3, O'rta=2, Past=1, Streak=kuniga +2)
+    const scoreData = calculateUserPoints();
+    setAllTime({
+      total: allTasks.length,
+      done,
+      streak: scoreData.streakDays,
+      points: scoreData.totalPoints,
     });
-    calculatedPoints += streak * 2;
-
-    setAllTime({ total: allTasks.length, done, streak, points: calculatedPoints });
-  }, []);
+  }, [activeTab]);
 
   const maxDone = Math.max(...week.map((d) => d.done), 1);
   const weekTotal = week.reduce((a, b) => a + b.total, 0);
@@ -90,16 +81,21 @@ export const ScreenAnalytics: React.FC = () => {
   const myName = userProfile.displayName || 'Siz (Men)';
   const myAvatar = userProfile.avatarUrl || '';
 
-  // Do'stlar ro'yxati (Foydalanuvchi o'z profili va ballari bilan)
-  const myPoints = Math.max(allTime.points, 24);
+  // Foydalanuvchining real balli (Agar 0 bo'lsa qat'iy 0!)
+  const scoreData = calculateUserPoints();
+  const myPoints = scoreData.totalPoints;
+  const globalInfo = getGlobalRank(myPoints);
+
+  // Do'stlar ro'yxati (Nakrutka yetakchining bali yetib bo'ladigan qilib 28 ball etib belgilangan)
   const leaderboard: FriendRank[] = [
-    { id: '1', name: 'Jasur', avatar: 'J', points: 68, streak: 6 },
-    { id: '2', name: myName, avatar: myAvatar || '★', points: myPoints, streak: Math.max(allTime.streak, 2), isMe: true },
-    { id: '3', name: 'Malika', avatar: 'M', points: 34, streak: 3 },
-    { id: '4', name: 'Bekzod', avatar: 'B', points: 22, streak: 1 },
+    { id: '1', name: 'Jasur', avatar: 'J', points: 28, streak: 4 },
+    { id: '3', name: 'Malika', avatar: 'M', points: 16, streak: 3 },
+    { id: '4', name: 'Bekzod', avatar: 'B', points: 8, streak: 1 },
+    { id: '2', name: myName, avatar: myAvatar || '★', points: myPoints, streak: scoreData.streakDays, isMe: true },
   ].sort((a, b) => b.points - a.points);
 
-  const myRank = leaderboard.findIndex((u) => u.isMe) + 1;
+  const myRankIndex = leaderboard.findIndex((u) => u.isMe);
+  const myRank = myPoints > 0 ? myRankIndex + 1 : null;
 
   // Shaxsiy referral link
   const botUsername = 'aitasklistbot';
@@ -338,7 +334,9 @@ export const ScreenAnalytics: React.FC = () => {
                   {/* Sizning o'rningiz */}
                   <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
                     <span className="text-purple-200">Sizning o'rningiz (do'stlar orasida):</span>
-                    <span className="font-black text-[#c4f82a] text-sm">#{myRank} - {myPoints} ball</span>
+                    <span className="font-black text-[#c4f82a] text-sm">
+                      {myPoints > 0 ? `#${myRank} - ${myPoints} ball` : "O'rinsiz - 0 ball"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -357,7 +355,9 @@ export const ScreenAnalytics: React.FC = () => {
                   {/* Leaderboard ro'yxati */}
                   <div className="space-y-2.5">
                     {leaderboard.map((item, index) => {
+                      const isZero = item.points === 0;
                       const rank = index + 1;
+                      const rankDisplay = isZero ? '—' : rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
                       return (
                         <div
                           key={item.id}
@@ -369,8 +369,8 @@ export const ScreenAnalytics: React.FC = () => {
                         >
                           <div className="flex items-center space-x-3">
                             {/* O'rin medali */}
-                            <div className="w-6 text-center font-black text-sm">
-                              {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
+                            <div className="w-6 text-center font-black text-sm text-slate-400">
+                              {rankDisplay}
                             </div>
 
                             {/* Avatar (Rasm yoki Harf) */}
@@ -395,8 +395,10 @@ export const ScreenAnalytics: React.FC = () => {
                                   {item.name}
                                 </p>
                                 {item.isMe ? (
-                                  <span className="text-[9px] font-black bg-[#c4f82a] text-[#121124] px-1.5 py-0.2 rounded-md">
-                                    Siz
+                                  <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-md ${
+                                    isZero ? 'bg-amber-400/20 text-amber-300' : 'bg-[#c4f82a] text-[#121124]'
+                                  }`}>
+                                    {isZero ? 'Siz (Ball yo\'q)' : 'Siz'}
                                   </span>
                                 ) : (
                                   <span className="text-[9px] font-bold bg-indigo-50 text-[#7052ff] px-1.5 py-0.2 rounded-md border border-indigo-100">
@@ -405,7 +407,7 @@ export const ScreenAnalytics: React.FC = () => {
                                 )}
                               </div>
                               <div className="flex items-center space-x-1 mt-0.5">
-                                <Flame size={10} className="text-amber-400" />
+                                <Flame size={10} className={item.streak > 0 ? 'text-amber-400' : 'text-slate-500'} />
                                 <span className={`text-[10px] font-semibold ${item.isMe ? 'text-white/70' : 'text-slate-400'}`}>
                                   {item.streak} kun streak
                                 </span>
@@ -415,7 +417,9 @@ export const ScreenAnalytics: React.FC = () => {
 
                           {/* Ball */}
                           <div className="text-right">
-                            <p className={`text-sm font-black ${item.isMe ? 'text-[#c4f82a]' : 'text-[#7052ff]'}`}>
+                            <p className={`text-sm font-black ${
+                              item.isMe ? (isZero ? 'text-slate-300' : 'text-[#c4f82a]') : 'text-[#7052ff]'
+                            }`}>
                               {item.points}
                             </p>
                             <p className={`text-[9px] font-bold ${item.isMe ? 'text-white/60' : 'text-slate-400'}`}>
@@ -429,11 +433,11 @@ export const ScreenAnalytics: React.FC = () => {
 
                   {/* Qanday ball to'planadi tushuntirish */}
                   <div className="mt-4 pt-4 border-t border-slate-100 text-[11px] text-slate-500 space-y-1">
-                    <p className="font-bold text-slate-700">🎯 Qanday qilib ball to'planadi?</p>
-                    <p>• 🔴 Yuqori vazifa: <b>+3 ball</b></p>
-                    <p>• 🟡 O'rta vazifa: <b>+2 ball</b></p>
-                    <p>• 🟢 Past vazifa: <b>+1 ball</b></p>
-                    <p>• 🔥 Har bir ketma-ket faol kun: <b>+2 bonus</b></p>
+                    <p className="font-bold text-slate-700">🎯 Aniq ball berish qoidalari:</p>
+                    <p>• 🔴 Yuqori vazifa bajarilsa: <b className="text-red-500">+3 ball</b></p>
+                    <p>• 🟡 O'rta vazifa bajarilsa: <b className="text-amber-500">+2 ball</b></p>
+                    <p>• 🟢 Past vazifa bajarilsa: <b className="text-emerald-600">+1 ball</b></p>
+                    <p>• 🔥 Kunlik uzluksiz streak: <b className="text-amber-500">kuniga +2 bonus</b></p>
                   </div>
                 </div>
               </div>
@@ -532,8 +536,8 @@ export const ScreenAnalytics: React.FC = () => {
                     <Globe size={12} className="text-[#c4f82a]" />
                     <span>Umumiy Tizim Reytingi</span>
                   </div>
-                  <span className="text-[11px] font-bold text-[#c4f82a]">
-                    Top 5%
+                  <span className={`text-[11px] font-bold ${myPoints > 0 ? 'text-[#c4f82a]' : 'text-slate-400'}`}>
+                    {globalInfo.percentileLabel}
                   </span>
                 </div>
 
@@ -542,13 +546,17 @@ export const ScreenAnalytics: React.FC = () => {
                   <div>
                     <p className="text-xs text-purple-200 font-semibold mb-1">Umumiy tizimdagi o'rningiz</p>
                     <div className="flex items-baseline space-x-2">
-                      <span className="text-5xl font-black tracking-tight text-white">#18</span>
-                      <span className="text-xs text-purple-300 font-bold">/ 840+ ishtirokchi</span>
+                      <span className={`${myPoints > 0 ? 'text-5xl font-black text-white' : 'text-3xl font-black text-amber-300'}`}>
+                        {globalInfo.rankLabel}
+                      </span>
+                      <span className="text-xs text-purple-300 font-bold">/ {globalInfo.totalUsers} ishtirokchi</span>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-purple-200 font-semibold mb-1">To'plangan ochkolar</p>
-                    <p className="text-3xl font-black text-[#c4f82a]">{myPoints} <span className="text-xs font-bold text-white/80">ball</span></p>
+                    <p className={`text-3xl font-black ${myPoints > 0 ? 'text-[#c4f82a]' : 'text-slate-400'}`}>
+                      {myPoints} <span className="text-xs font-bold text-white/80">ball</span>
+                    </p>
                   </div>
                 </div>
 
@@ -564,12 +572,12 @@ export const ScreenAnalytics: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-xs font-black text-white">{myName}</p>
-                      <p className="text-[10px] text-purple-200">{allTime.streak} kun uzluksiz faollik</p>
+                      <p className="text-[10px] text-purple-200">{scoreData.streakDays} kun uzluksiz faollik</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-1 text-emerald-400 text-xs font-black bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
                     <Sparkles size={12} />
-                    <span>Faol ishtirokchi</span>
+                    <span>{myPoints > 0 ? (globalInfo.rank === 1 ? '👑 Hafta Lideri' : 'Faol ishtirokchi') : 'Yangi ishtirokchi'}</span>
                   </div>
                 </div>
               </div>
@@ -589,36 +597,82 @@ export const ScreenAnalytics: React.FC = () => {
                 <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-150 flex items-start space-x-2.5">
                   <Lock size={16} className="text-slate-400 shrink-0 mt-0.5" />
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    Telegram maxfiylik siyosatiga muvofiq, begona foydalanuvchilarning ismlari, rasmlari yoki shaxsiy rejalari <b>hech qachon umumiy ro'yxatda ko'rsatilmaydi</b>. Bu sahifada faqat sizning shaxsiy ballaringiz va barcha foydalanuvchilar orasidagi o'rningiz ko'rsatiladi.
+                    Telegram maxfiylik siyosatiga muvofiq, begona foydalanuvchilarning ismlari, rasmlari yoki shaxsiy rejalari <b>hech qachon umumiy ro'yxatda ko'rsatilmaydi</b>. Bu sahifada faqat sizning shaxsiy ballaringiz va barcha <b>{globalInfo.totalUsers} nafar</b> foydalanuvchilar orasidagi o'rningiz ko'rsatiladi.
                   </p>
                 </div>
               </div>
 
-              {/* Motivatsion Yangi Maqsad Kartasi */}
+              {/* Motivatsion Maqsad Kartasi (0 ball yoki ball to'plangan holatlar uchun) */}
               <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    <Target size={16} className="text-[#7052ff]" />
-                    <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Keyingi Maqsad: Top 3%</h4>
+                {myPoints === 0 ? (
+                  <div>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Target size={16} className="text-[#7052ff]" />
+                      <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Qanday qilib reytingga kirasiz?</h4>
+                    </div>
+                    <p className="text-xs text-slate-600 mb-3 leading-relaxed">
+                      Sizda hozircha bajarilgan vazifalar yo'q. Birinchi o'rningizni olish uchun hoziroq biror vazifani bajaring:
+                    </p>
+                    <div className="bg-purple-50/60 p-3 rounded-2xl border border-purple-100 space-y-1.5 text-xs text-slate-700 font-medium mb-4">
+                      <div className="flex justify-between items-center">
+                        <span>🔴 Muhim (yuqori) vazifa</span>
+                        <b className="text-red-500 font-black">+3 ball</b>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>🟡 O'rta vazifa</span>
+                        <b className="text-amber-500 font-black">+2 ball</b>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>🟢 Past vazifa</span>
+                        <b className="text-emerald-600 font-black">+1 ball</b>
+                      </div>
+                      <div className="flex justify-between items-center pt-1 border-t border-purple-100 text-[11px]">
+                        <span>🔥 Kunlik streak bonusi</span>
+                        <b className="text-[#7052ff] font-black">har kunga +2 ball</b>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      ⚡ Vazifa bajarishingiz bilan darhol <b>{globalInfo.totalUsers} ta</b> ishtirokchi orasidagi o'rningiz ochiladi va yuqorilab boradi!
+                    </p>
                   </div>
-                  <span className="text-[10px] font-black text-[#7052ff] bg-purple-50 px-2 py-0.5 rounded-md">+15 ball kerak</span>
-                </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <Target size={16} className="text-[#7052ff]" />
+                        <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                          {globalInfo.rank === 1 ? 'Siz Hafta Liderisiz! 👑' : 'Keyingi Pog\'onaga O\'tish'}
+                        </h4>
+                      </div>
+                      {globalInfo.rank !== 1 && (
+                        <span className="text-[10px] font-black text-[#7052ff] bg-purple-50 px-2 py-0.5 rounded-md">
+                          +3 ball bilan yuqorilang
+                        </span>
+                      )}
+                    </div>
 
-                {/* Progress bar */}
-                <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-2">
-                  <div className="bg-[#7052ff] h-full rounded-full w-[78%]" />
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  Har kuni kamida 3 ta rejalashtirilgan vazifani bajarsangiz, keyingi dushanbagacha Top 10 talikka ko'tarilasiz!
-                </p>
+                    {/* Dinamik progress bar */}
+                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-2">
+                      <div
+                        className="bg-[#7052ff] h-full rounded-full transition-all duration-700"
+                        style={{ width: `${Math.min(100, Math.round((myPoints / 36) * 100))}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      {globalInfo.rank === 1
+                        ? "Tabriklaymiz! Siz barcha foydalanuvchilar orasida 1-o'rindasiz! O'rningizni saqlab qoling."
+                        : `Yana bir nechta vazifani bajarsangiz, keyingi ${Math.max(1, Math.round((globalInfo.rank || 480) * 0.7))}-o'ringa ko'tarilasiz!`}
+                    </p>
 
-                <button
-                  onClick={shareScoreToTelegram}
-                  className="w-full mt-4 py-3 px-4 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-black flex items-center justify-center space-x-2 transition-all active:scale-95"
-                >
-                  <Share2 size={14} className="text-[#c4f82a]" />
-                  <span>Umumiy o'rningizni do'stlarga ko'rsating</span>
-                </button>
+                    <button
+                      onClick={shareScoreToTelegram}
+                      className="w-full mt-4 py-3 px-4 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-black flex items-center justify-center space-x-2 transition-all active:scale-95"
+                    >
+                      <Share2 size={14} className="text-[#c4f82a]" />
+                      <span>Umumiy o'rningizni do'stlarga ko'rsating</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
