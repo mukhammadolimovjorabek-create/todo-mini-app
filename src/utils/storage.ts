@@ -149,3 +149,26 @@ export const seedDemoData = () => {
   saveTasks(tasks);
   updateStats();
 };
+
+// ────────────────────────────── USER PROFILE ──────────────────────────────
+export interface UserProfileData {
+  displayName: string;
+  avatarUrl: string;
+}
+
+const PROFILE_KEY = 'todo_user_profile_v1';
+
+export const getCustomProfile = (): UserProfileData => {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { displayName: '', avatarUrl: '' };
+};
+
+export const saveCustomProfile = (data: Partial<UserProfileData>) => {
+  const current = getCustomProfile();
+  const updated = { ...current, ...data };
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(updated));
+  return updated;
+};

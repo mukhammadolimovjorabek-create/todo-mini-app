@@ -11,7 +11,7 @@ import {
   Check, 
   Flame 
 } from 'lucide-react';
-import { getLast7Days, loadTasks, getCategoryColor, getCategoryLabel, shortDay } from '../utils/storage';
+import { getLast7Days, loadTasks, getCategoryColor, getCategoryLabel, shortDay, getCustomProfile } from '../utils/storage';
 import type { DayStats, TaskCategory } from '../types';
 import { triggerHaptic } from '../utils/telegram';
 
@@ -79,14 +79,18 @@ export const ScreenAnalytics: React.FC = () => {
   const growth = firstHalf === 0 ? (secondHalf > 0 ? 100 : 0) : Math.round(((secondHalf - firstHalf) / firstHalf) * 100);
   const isGrowing = growth >= 0;
 
-  // Do'stlar ro'yxati (Foydalanuvchi balli bilan birlashgan)
+  // Profil ma'lumotlari
+  const userProfile = getCustomProfile();
+  const myName = userProfile.displayName || 'Siz (Men)';
+  const myAvatar = userProfile.avatarUrl || '';
+
+  // Do'stlar ro'yxati (Foydalanuvchi o'z profili va ballari bilan)
   const myPoints = Math.max(allTime.points, 24);
   const leaderboard: FriendRank[] = [
     { id: '1', name: 'Jasur', avatar: 'J', points: 68, streak: 6 },
-    { id: '2', name: 'Siz (Men)', avatar: '★', points: myPoints, streak: Math.max(allTime.streak, 2), isMe: true },
+    { id: '2', name: myName, avatar: myAvatar || '★', points: myPoints, streak: Math.max(allTime.streak, 2), isMe: true },
     { id: '3', name: 'Malika', avatar: 'M', points: 34, streak: 3 },
     { id: '4', name: 'Bekzod', avatar: 'B', points: 22, streak: 1 },
-    { id: '5', name: 'Aziz', avatar: 'A', points: 15, streak: 0 },
   ].sort((a, b) => b.points - a.points);
 
   const myRank = leaderboard.findIndex((u) => u.isMe) + 1;
@@ -350,15 +354,19 @@ export const ScreenAnalytics: React.FC = () => {
                           {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
                         </div>
 
-                        {/* Avatar */}
+                        {/* Avatar (Rasm yoki Harf) */}
                         <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs ${
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs overflow-hidden shrink-0 ${
                             item.isMe
                               ? 'bg-[#c4f82a] text-[#121124]'
                               : 'bg-indigo-100 text-[#7052ff]'
                           }`}
                         >
-                          {item.avatar}
+                          {item.avatar && (item.avatar.startsWith('data:') || item.avatar.startsWith('http')) ? (
+                            <img src={item.avatar} alt="avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            item.avatar || item.name[0]
+                          )}
                         </div>
 
                         {/* Ism va streak */}
