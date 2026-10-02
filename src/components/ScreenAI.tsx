@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Bot, Sparkles, Key, X, CheckCircle2, Trash2, RefreshCw } from 'lucide-react';
+import { Send, Bot, Sparkles, CheckCircle2, RefreshCw } from 'lucide-react';
 import type { ChatMessage } from '../utils/aiService';
 import { analyzeWithAI } from '../utils/analyzer';
 import { triggerHaptic } from '../utils/telegram';
@@ -17,9 +17,6 @@ export const ScreenAI: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [groqKey, setGroqKey] = useState<string>(() => localStorage.getItem('groq_api_key') || '');
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [tempKey, setTempKey] = useState('');
   const [todaySummary, setTodaySummary] = useState({ total: 0, done: 0 });
 
   useEffect(() => {
@@ -44,7 +41,7 @@ export const ScreenAI: React.FC = () => {
     setLoading(true);
 
     try {
-      const reply = await analyzeWithAI(msgText, messages, groqKey);
+      const reply = await analyzeWithAI(msgText, messages);
       setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
       triggerHaptic('light');
     } catch {
@@ -74,17 +71,10 @@ export const ScreenAI: React.FC = () => {
           <div className="flex items-center space-x-2">
             <button
               onClick={clearChat}
-              className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 active:scale-95 shadow-xs"
+              title="Chatni tozalash"
+              className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 active:scale-95 shadow-xs hover:text-indigo-600 transition-all"
             >
               <RefreshCw size={15} />
-            </button>
-            <button
-              onClick={() => { setTempKey(groqKey); setShowKeyModal(true); }}
-              className={`w-9 h-9 rounded-full border flex items-center justify-center active:scale-95 shadow-xs ${
-                groqKey ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-500'
-              }`}
-            >
-              <Key size={15} />
             </button>
           </div>
         </div>
@@ -205,54 +195,6 @@ export const ScreenAI: React.FC = () => {
           </button>
         </div>
       </div>
-
-      {/* ── Groq Key Modal ── */}
-      {showKeyModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-slate-900 text-base">🔑 Groq API Kaliti</h3>
-              <button onClick={() => setShowKeyModal(false)}><X size={20} className="text-slate-400" /></button>
-            </div>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              <a href="https://console.groq.com" target="_blank" className="text-indigo-500 font-semibold underline">console.groq.com</a> dan bepul kalit oling va bu yerga kiriting. Kalit bo'lmasa ham ilova ishlaydi (offline tahlil).
-            </p>
-            <input
-              type="password"
-              placeholder="gsk_..."
-              value={tempKey}
-              autoFocus
-              onChange={(e) => setTempKey(e.target.value)}
-              className="w-full px-4 py-2.5 text-xs border border-slate-200 rounded-xl font-mono outline-none focus:border-indigo-400"
-            />
-            <div className="flex space-x-2">
-              <button
-                onClick={() => {
-                  localStorage.setItem('groq_api_key', tempKey);
-                  setGroqKey(tempKey);
-                  setShowKeyModal(false);
-                  triggerHaptic('medium');
-                }}
-                className="flex-1 py-3 rounded-2xl text-white text-sm font-bold active:scale-95 transition-all"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #ec4899)' }}
-              >
-                Saqlash
-              </button>
-              <button
-                onClick={() => {
-                  localStorage.removeItem('groq_api_key');
-                  setGroqKey('');
-                  setTempKey('');
-                  setShowKeyModal(false);
-                }}
-                className="px-4 py-3 bg-slate-100 rounded-2xl text-slate-600 text-sm font-semibold"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
