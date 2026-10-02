@@ -6,7 +6,6 @@ import {
   Target, 
   Share2, 
   Trophy, 
-  Crown, 
   Copy, 
   Check, 
   Flame,
@@ -16,8 +15,7 @@ import {
   ShieldCheck,
   Sparkles,
   Swords,
-  UserPlus,
-  RotateCcw
+  UserPlus
 } from 'lucide-react';
 import { getLast7Days, loadTasks, getCategoryColor, getCategoryLabel, shortDay, getCustomProfile } from '../utils/storage';
 import { calculateUserPoints, getGlobalRank } from '../utils/points';
@@ -334,10 +332,48 @@ export const ScreenAnalytics: React.FC = () => {
           {/* ══════════════ 1-VARIANT: DO'STLARIM ORASIDA ══════════════ */}
           {scopeTab === 'friends' && (
             <>
-              {/* ──────────────── HOLAT 1: HALI DO'STLAR YO'Q (0 TA DO'ST) ──────────────── */}
+              {/* 🛠️ Localhost Sinov Rejimi (Faqat localhostda ikkala holatni ko'rish uchun) */}
+              <div className="px-5">
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-2.5 flex items-center justify-between">
+                  <span className="text-[11px] font-black text-amber-900 flex items-center space-x-1">
+                    <span>🛠️ Localhost ko'rinishi:</span>
+                  </span>
+                  <div className="flex space-x-1.5">
+                    <button
+                      onClick={() => {
+                        triggerHaptic('light');
+                        handleResetFriends();
+                      }}
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-black transition-all ${
+                        friendsList.length === 0
+                          ? 'bg-[#121124] text-[#c4f82a] shadow-sm'
+                          : 'bg-white text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      0 ta do'st (Boshlang'ich)
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (friendsList.length === 0) {
+                          handleAddDemoFriend();
+                        }
+                      }}
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-black transition-all ${
+                        friendsList.length > 0
+                          ? 'bg-[#121124] text-[#c4f82a] shadow-sm'
+                          : 'bg-white text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      1 ta do'st chaqirilganda
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* ──────────────── 1-BOSQICH: HALI 1 TA HAM DO'ST CHAQIRILMAGAN HOLAT (0 TA DO'ST) ──────────────── */}
               {friendsList.length === 0 && (
                 <div className="space-y-4">
-                  {/* Banner */}
+                  {/* Banner: Faqat 1-do'st bilan musobaqalashish haqida */}
                   <div className="px-5">
                     <div
                       className="rounded-[2rem] p-5 text-white relative overflow-hidden shadow-xl"
@@ -349,22 +385,22 @@ export const ScreenAnalytics: React.FC = () => {
                             <Trophy size={11} />
                             <span>Do'stlar Musobaqasi</span>
                           </div>
-                          <h2 className="text-xl font-black leading-tight">Yolg'iz rejalashdan zerikdingizmi?</h2>
-                          <p className="text-xs text-[#b8ace8] mt-1">Do'stingiz bilan musobaqalashing!</p>
+                          <h2 className="text-xl font-black leading-tight">1-do'stingiz bilan musobaqalashing!</h2>
+                          <p className="text-xs text-[#b8ace8] mt-1">Birinchi do'stingiz bilan 1-ga-1 bellashing</p>
                         </div>
                         <div className="w-14 h-14 rounded-2xl bg-[#c4f82a]/20 border border-[#c4f82a]/30 flex items-center justify-center text-3xl">
-                          👥
+                          ⚔️
                         </div>
                       </div>
 
                       <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
-                        <span className="text-purple-200">Musobaqa holati:</span>
+                        <span className="text-purple-200">Holat:</span>
                         <span className="font-black text-[#c4f82a] text-sm">Hali do'st taklif qilinmagan</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* 1-do'stni taklif qilishga qiziqtiruvchi maxsus karta */}
+                  {/* Faqat 1 ta do'stni taklif qilishga qiziqtiruvchi karta */}
                   <div className="px-5">
                     <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 space-y-4">
                       <div className="flex items-center space-x-3">
@@ -373,11 +409,15 @@ export const ScreenAnalytics: React.FC = () => {
                         </div>
                         <div>
                           <h3 className="font-black text-slate-900 text-sm">1-do'stingizni taklif qiling! ⚔️</h3>
-                          <p className="text-[11px] text-slate-500">Kim ko'p vazifa bajarsa — o'sha Hafta G'olibi!</p>
+                          <p className="text-[11px] text-slate-500">Kim ko'p vazifa bajarsa — o'sha g'olib!</p>
                         </div>
                       </div>
 
-                      {/* Nega do'st bilan musobaqalashish 10x yaxshi? */}
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        Yolg'iz rejalashtirish o'rniga, eng yaqin <b>1 ta do'stingizni</b> chaqiring va o'zaro bellashing!
+                      </p>
+
+                      {/* 1 ta do'st chaqirishning 3 ta ustunligi */}
                       <div className="space-y-2.5">
                         <div className="flex items-start space-x-3 bg-purple-50/70 p-3 rounded-2xl border border-purple-100">
                           <span className="text-base leading-none">🚀</span>
@@ -392,7 +432,7 @@ export const ScreenAnalytics: React.FC = () => {
                         <div className="flex items-start space-x-3 bg-amber-50/70 p-3 rounded-2xl border border-amber-100">
                           <span className="text-base leading-none">⚡</span>
                           <div>
-                            <p className="text-xs font-black text-slate-900">1-ga-1 jonli bellashuv</p>
+                            <p className="text-xs font-black text-slate-900">1-ga-1 do'stona duel</p>
                             <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
                               Do'stingizning har bir bajargan vazifasini ko'rib turasiz va o'zaro o'zib ketishga intilasiz!
                             </p>
@@ -404,22 +444,22 @@ export const ScreenAnalytics: React.FC = () => {
                           <div>
                             <p className="text-xs font-black text-slate-900">+10 ball bonus</p>
                             <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                              Do'stingiz taklif havolangiz orqali ilovani ochganda, ikkalangizga ham bonus beriladi!
+                              Do'stingiz taklif havolangiz orqali ilovani ochishi bilan ikkalangizga ham bonus beriladi!
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      {/* Bosh Harakat Tugmasi */}
+                      {/* 1-do'stni taklif qilish tugmasi */}
                       <button
                         onClick={shareScoreToTelegram}
                         className="w-full py-3.5 px-4 rounded-2xl bg-[#7052ff] hover:bg-[#6242f6] text-white text-sm font-black shadow-lg shadow-indigo-500/30 flex items-center justify-center space-x-2 active:scale-95 transition-all"
                       >
                         <UserPlus size={17} />
-                        <span>Telegram orqali 1-do'stni chorlash 🚀</span>
+                        <span>Telegram orqali 1-do'stni taklif qilish 🚀</span>
                       </button>
 
-                      {/* Havola nusxalash tugmasi */}
+                      {/* Havola nusxalash */}
                       <button
                         onClick={copyReferralLink}
                         className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center space-x-2 active:scale-95 transition-all"
@@ -427,27 +467,15 @@ export const ScreenAnalytics: React.FC = () => {
                         {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} className="text-slate-500" />}
                         <span>{copied ? 'Shaxsiy havolangiz nusxalandi!' : 'Shaxsiy taklif havolasidan nusxa olish'}</span>
                       </button>
-
-                      {/* 🛠️ Localhost sinov qismi */}
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                        <span className="text-[10px] text-slate-400 font-bold">🛠️ Localhost Sinov:</span>
-                        <button
-                          onClick={handleAddDemoFriend}
-                          className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-[#7052ff] text-[11px] font-black border border-indigo-200 active:scale-95 transition-all flex items-center space-x-1"
-                        >
-                          <UserPlus size={12} />
-                          <span>1 ta do'st qo'shish (Demo)</span>
-                        </button>
-                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* ──────────────── HOLAT 2: 1 TA DO'ST TAKLIF QILINGAN HOLAT ──────────────── */}
-              {friendsList.length === 1 && (
+              {/* ──────────────── 2-BOSQICH: 1 TA DO'ST CHAQIRIB BO'LINGANDAN KEYINGI HOLAT ──────────────── */}
+              {friendsList.length > 0 && (
                 <div className="space-y-4">
-                  {/* 1-ga-1 duel banneri */}
+                  {/* Duel banneri */}
                   <div className="px-5">
                     <div
                       className="rounded-[2rem] p-5 text-white relative overflow-hidden shadow-xl"
@@ -457,7 +485,7 @@ export const ScreenAnalytics: React.FC = () => {
                         <div>
                           <div className="inline-flex items-center space-x-1 bg-[#c4f82a] text-[#121124] px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider mb-1.5">
                             <Swords size={11} />
-                            <span>1-ga-1 Do'stona Duel</span>
+                            <span>1-ga-1 Duel Boshlandi!</span>
                           </div>
                           <h2 className="text-xl font-black">{friendsList[0].name} bilan musobaqa!</h2>
                           <p className="text-xs text-[#b8ace8] mt-1">Kim ko'p vazifa bajarsa, o'sha 1-o'rinda!</p>
@@ -476,206 +504,13 @@ export const ScreenAnalytics: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* 2 kishilik duel reyting jadvali */}
+                  {/* Duel reyting jadvali */}
                   <div className="px-5">
                     <div className="bg-white rounded-[2rem] p-5 shadow-xs border border-slate-100">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-1.5">
                           <Swords size={16} className="text-[#7052ff]" />
                           <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider">Hozirgi Duel Natijasi</h3>
-                        </div>
-                        <span className="text-[10px] text-slate-400 font-bold">2 ishtirokchi</span>
-                      </div>
-
-                      <div className="space-y-2.5">
-                        {leaderboard.map((item, index) => {
-                          const isZero = item.points === 0;
-                          const rank = index + 1;
-                          const rankDisplay = isZero ? '—' : rank === 1 ? '🥇' : '🥈';
-                          return (
-                            <div
-                              key={item.id}
-                              className={`flex items-center justify-between p-3 rounded-2xl transition-all ${
-                                item.isMe
-                                  ? 'bg-[#121124] text-white shadow-md ring-2 ring-[#c4f82a]'
-                                  : 'bg-slate-50 text-slate-800 border border-slate-100'
-                              }`}
-                            >
-                              <div className="flex items-center space-x-3">
-                                <div className="w-6 text-center font-black text-sm text-slate-400">
-                                  {rankDisplay}
-                                </div>
-                                <div
-                                  className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs overflow-hidden shrink-0 ${
-                                    item.isMe ? 'bg-[#c4f82a] text-[#121124]' : 'bg-indigo-100 text-[#7052ff]'
-                                  }`}
-                                >
-                                  {item.avatar && (item.avatar.startsWith('data:') || item.avatar.startsWith('http')) ? (
-                                    <img src={item.avatar} alt="avatar" className="w-full h-full object-cover" />
-                                  ) : (
-                                    item.avatar || item.name[0]
-                                  )}
-                                </div>
-                                <div>
-                                  <div className="flex items-center space-x-1.5">
-                                    <p className={`text-xs font-black ${item.isMe ? 'text-white' : 'text-slate-900'}`}>
-                                      {item.name}
-                                    </p>
-                                    <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-md ${
-                                      item.isMe
-                                        ? (isZero ? 'bg-amber-400/20 text-amber-300' : 'bg-[#c4f82a] text-[#121124]')
-                                        : 'bg-indigo-50 text-[#7052ff] border border-indigo-100'
-                                    }`}>
-                                      {item.isMe ? (isZero ? 'Siz (Ball yo\'q)' : 'Siz') : 'Do\'stingiz'}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center space-x-1 mt-0.5">
-                                    <Flame size={10} className={item.streak > 0 ? 'text-amber-400' : 'text-slate-500'} />
-                                    <span className={`text-[10px] font-semibold ${item.isMe ? 'text-white/70' : 'text-slate-400'}`}>
-                                      {item.streak} kun streak
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="text-right">
-                                <p className={`text-sm font-black ${item.isMe ? (isZero ? 'text-slate-300' : 'text-[#c4f82a]') : 'text-[#7052ff]'}`}>
-                                  {item.points}
-                                </p>
-                                <p className={`text-[9px] font-bold ${item.isMe ? 'text-white/60' : 'text-slate-400'}`}>
-                                  ball
-                                </p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ── ENG MUHIM: DO'STLARNI KO'PAYTIRISHGA UNDAYDIGAN G'OYA VA CHAQIRIQ ── */}
-                  <div className="px-5">
-                    <div className="bg-gradient-to-br from-[#1e1552] to-[#121124] rounded-[2rem] p-5 text-white shadow-xl relative overflow-hidden space-y-4">
-                      <div className="absolute top-0 right-0 w-36 h-36 bg-[#c4f82a]/10 rounded-full blur-2xl pointer-events-none" />
-
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 rounded-xl bg-[#c4f82a] text-[#121124] flex items-center justify-center font-black">
-                          👑
-                        </div>
-                        <div>
-                          <h4 className="font-black text-sm text-white">Ajoyib start! Endi "Do'stlar Ligasi"ni oching! 🏆</h4>
-                          <p className="text-[10px] text-purple-200 font-semibold">1 ta do'st chaqirdingiz • Yana 2 ta qoldi</p>
-                        </div>
-                      </div>
-
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        1-ga-1 duel ajoyib boshlanish! Lekin haqiqiy hayajonli va shiddatli musobaqa kamida <b>3 kishi</b> bo'lganda boshlanadi:
-                      </p>
-
-                      <div className="space-y-2 text-xs">
-                        <div className="bg-white/10 p-3 rounded-2xl border border-white/10 flex items-start space-x-2.5">
-                          <span className="text-sm">🏆</span>
-                          <div>
-                            <p className="font-black text-white text-xs">1. Shaxsiy "Do'stlar Mini-Ligasi" ochiladi</p>
-                            <p className="text-[11px] text-purple-200 mt-0.5">
-                              3+ do'st bo'lganda maxsus liga jadvali paydo bo'lib, har haftalik Chempionlik Kubogi o'ynaladi!
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="bg-white/10 p-3 rounded-2xl border border-white/10 flex items-start space-x-2.5">
-                          <span className="text-sm">🥇</span>
-                          <div>
-                            <p className="font-black text-white text-xs">2. To'liq 3 talik shohsupa (Medallar)</p>
-                            <p className="text-[11px] text-purple-200 mt-0.5">
-                              1-o'rin 🥇, 2-o'rin 🥈 va 3-o'rin 🥉 bo'lib, o'zaro haqiqiy sovrinli poyga bo'ladi.
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="bg-white/10 p-3 rounded-2xl border border-white/10 flex items-start space-x-2.5">
-                          <span className="text-sm">🔥</span>
-                          <div>
-                            <p className="font-black text-white text-xs">3. Jamoaviy Streak Bonusi (+15 ball)</p>
-                            <p className="text-[11px] text-purple-200 mt-0.5">
-                              Agar guruhdagi barcha do'stlar bugun o'z vazifalarini bajarsa, barchaga birdaniga bonus ochkolar beriladi!
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Yana do'st chaqirish CTA */}
-                      <button
-                        onClick={shareScoreToTelegram}
-                        className="w-full py-3.5 px-4 rounded-2xl bg-[#c4f82a] hover:bg-[#b0e817] text-[#121124] text-xs font-black shadow-lg flex items-center justify-center space-x-2 active:scale-95 transition-all"
-                      >
-                        <UserPlus size={16} />
-                        <span>Yana do'stlarni chorlash (+2 do'st qoldi) 🚀</span>
-                      </button>
-
-                      {/* Localhost boshqaruv paneli */}
-                      <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[10px]">
-                        <span className="text-purple-300">🛠️ Localhost Sinov:</span>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={handleAddDemoFriend}
-                            className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white font-bold transition-all"
-                          >
-                            ➕ Yana 1 ta do'st qo'shish
-                          </button>
-                          <button
-                            onClick={handleResetFriends}
-                            className="px-2.5 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 font-bold transition-all flex items-center space-x-1"
-                          >
-                            <RotateCcw size={10} />
-                            <span>Tozalash (0 ta qilish)</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ──────────────── HOLAT 3: 2 VA UNDAN KO'P DO'STLAR (TO'LIQ DO'STLAR LIGASI) ──────────────── */}
-              {friendsList.length >= 2 && (
-                <div className="space-y-4">
-                  {/* Liga Banneri */}
-                  <div className="px-5">
-                    <div
-                      className="rounded-[2rem] p-5 text-white relative overflow-hidden shadow-xl"
-                      style={{ background: 'linear-gradient(135deg, #1e1552 0%, #351e8c 100%)' }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="inline-flex items-center space-x-1 bg-[#c4f82a] text-[#121124] px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider mb-1.5">
-                            <Trophy size={11} />
-                            <span>Do'stlar Mini-Ligasi</span>
-                          </div>
-                          <h2 className="text-xl font-black">Hafta Lideri bo'ling!</h2>
-                          <p className="text-xs text-[#b8ace8] mt-1">Siz va {friendsList.length} ta do'stingiz reytingi</p>
-                        </div>
-                        <div className="w-14 h-14 rounded-2xl bg-[#c4f82a]/20 border border-[#c4f82a]/30 flex items-center justify-center text-3xl">
-                          🥇
-                        </div>
-                      </div>
-
-                      <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
-                        <span className="text-purple-200">Sizning o'rningiz:</span>
-                        <span className="font-black text-[#c4f82a] text-sm">
-                          {myPoints > 0 ? `#${myRank} - ${myPoints} ball` : "O'rinsiz - 0 ball"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* To'liq leaderboard */}
-                  <div className="px-5">
-                    <div className="bg-white rounded-[2rem] p-5 shadow-xs border border-slate-100">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-1.5">
-                          <Crown size={16} className="text-amber-500" />
-                          <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider">Do'stlar Natijalari</h3>
                         </div>
                         <span className="text-[10px] text-slate-400 font-bold">{leaderboard.length} ishtirokchi</span>
                       </div>
@@ -743,27 +578,68 @@ export const ScreenAnalytics: React.FC = () => {
                           );
                         })}
                       </div>
+                    </div>
+                  </div>
 
-                      {/* Tugmalar */}
+                  {/* ── ENDI BOSHQA DO'STLARNI HAM CHAQIRIB RAQOBATNI KENGAYTIRISHGA UNDASH ── */}
+                  <div className="px-5">
+                    <div className="bg-gradient-to-br from-[#1e1552] to-[#121124] rounded-[2rem] p-5 text-white shadow-xl relative overflow-hidden space-y-4">
+                      <div className="absolute top-0 right-0 w-36 h-36 bg-[#c4f82a]/10 rounded-full blur-2xl pointer-events-none" />
+
+                      <div className="flex items-center space-x-2">
+                        <div className="w-9 h-9 rounded-xl bg-[#c4f82a] text-[#121124] flex items-center justify-center font-black text-sm">
+                          🤝
+                        </div>
+                        <div>
+                          <h4 className="font-black text-sm text-white">Jamoa va sog'lom raqobatni kengaytiring! 🤝</h4>
+                          <p className="text-[10px] text-purple-200 font-semibold">1 ta do'stingiz bilan musobaqa boshlandi</p>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        Ajoyib! 1 ta do'stingiz bilan musobaqa boshlandi. Endi boshqa do'stlaringizni ham chaqirib, <b>jamoaviy va sog'lom raqobatni kengaytiring!</b> Qancha ko'p do'st qo'shilsa, musobaqa shuncha qizg'in va foydali bo'ladi:
+                      </p>
+
+                      <div className="space-y-2 text-xs">
+                        <div className="bg-white/10 p-3 rounded-2xl border border-white/10 flex items-start space-x-2.5">
+                          <span className="text-sm">👑</span>
+                          <div>
+                            <p className="font-black text-white text-xs">Guruh yetakchisi bo'ling</p>
+                            <p className="text-[11px] text-purple-200 mt-0.5">
+                              Do'stlaringiz va sinfdoshlaringiz guruhida 1-o'rinni egallab, Hafta Yetakchisi unvonini qo'lga kiriting.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="bg-white/10 p-3 rounded-2xl border border-white/10 flex items-start space-x-2.5">
+                          <span className="text-sm">🔥</span>
+                          <div>
+                            <p className="font-black text-white text-xs">Jamoaviy sog'lom raqobat</p>
+                            <p className="text-[11px] text-purple-200 mt-0.5">
+                              Katta jamoada har kuni kim eng ko'p vazifa bajarganini kuzatib, bir-biringizni dangasalikdan qutqarasiz.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="bg-white/10 p-3 rounded-2xl border border-white/10 flex items-start space-x-2.5">
+                          <span className="text-sm">🎁</span>
+                          <div>
+                            <p className="font-black text-white text-xs">Ko'proq bonus ochkolar</p>
+                            <p className="text-[11px] text-purple-200 mt-0.5">
+                              Har bir yangi taklif qilingan do'st uchun qo'shimcha ballar to'plang va reytingda yuqorilang!
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Boshqa do'stlarni ham chaqirish CTA */}
                       <button
                         onClick={shareScoreToTelegram}
-                        className="w-full mt-4 py-3 px-4 rounded-xl bg-[#7052ff] hover:bg-[#6242f6] text-white text-xs font-black flex items-center justify-center space-x-2 transition-all active:scale-95"
+                        className="w-full py-3.5 px-4 rounded-2xl bg-[#c4f82a] hover:bg-[#b0e817] text-[#121124] text-xs font-black shadow-lg flex items-center justify-center space-x-2 active:scale-95 transition-all"
                       >
-                        <UserPlus size={14} />
-                        <span>Yana yangi do'stlarni chorlash 🚀</span>
+                        <UserPlus size={16} />
+                        <span>Boshqa do'stlarni ham chorlash 🚀</span>
                       </button>
-
-                      {/* Localhost reset */}
-                      <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-[10px]">
-                        <span className="text-slate-400 font-bold">🛠️ Localhost:</span>
-                        <button
-                          onClick={handleResetFriends}
-                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center space-x-1"
-                        >
-                          <RotateCcw size={10} />
-                          <span>Do'stlar ro'yxatini tozalash (0 ta qilish)</span>
-                        </button>
-                      </div>
                     </div>
                   </div>
                 </div>
