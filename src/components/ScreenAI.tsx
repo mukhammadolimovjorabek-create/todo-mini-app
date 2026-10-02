@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Bot, Sparkles, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Send, Bot, Sparkles, RefreshCw } from 'lucide-react';
 import type { ChatMessage } from '../utils/aiService';
 import { analyzeWithAI } from '../utils/analyzer';
 import { triggerHaptic } from '../utils/telegram';
@@ -105,15 +105,6 @@ export const ScreenAI: React.FC = () => {
                 <p className="text-xs text-white/70">Samaradorlik</p>
               </div>
             </div>
-          </div>
-          <div className="mt-3 flex items-center justify-between text-[11px] text-white/90 font-bold border-t border-white/15 pt-2.5">
-            <div className="flex items-center space-x-1.5 text-emerald-300">
-              <CheckCircle2 size={13} />
-              <span>Google Gemini AI (Asosiy)</span>
-            </div>
-            <span className="text-white/60 font-semibold text-[10px]">
-              Zaxira: Groq Llama-3.3
-            </span>
           </div>
         </div>
 
