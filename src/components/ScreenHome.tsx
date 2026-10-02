@@ -36,8 +36,7 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange 
 
   const reload = useCallback(() => {
     setTasks(loadTasks().filter((t) => t.createdAt === today()));
-    onTasksChange?.();
-  }, [onTasksChange]);
+  }, []);
 
   useEffect(() => {
     reload();
