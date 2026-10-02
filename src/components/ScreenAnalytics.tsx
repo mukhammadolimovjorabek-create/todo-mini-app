@@ -155,7 +155,7 @@ export const ScreenAnalytics: React.FC = () => {
             }`}
           >
             <Trophy size={14} />
-            <span>Do'stlar Reytingi 🏆</span>
+            <span>Reyting</span>
           </button>
         </div>
       </div>
