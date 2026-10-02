@@ -126,6 +126,56 @@ Qolgan **${pend.length}** ta vazifa uchun ~**${formatDuration(remaining)}** kera
 ${remaining > 120 ? '⚠️ Juda ko\'p vaqt kerak. Qaysilarini keyinga qoldirish mumkin?' : '✅ Bugun ulgurish mumkin!'}`;
   }
 
+  // ── Ovozli vazifa aniqlash (offline)
+  const taskKeywords = ['qilmoqchiman', 'o\'qimoqchiman', 'bajarmoqchiman', 'borishim kerak', 'vazifa qo\'sh', 'yozib qo\'y', 'qilishim kerak'];
+  const hasTaskIntent = taskKeywords.some((k) => lower.includes(k));
+
+  if (hasTaskIntent) {
+    let duration: number | null = null;
+    if (lower.includes('yarim soat')) duration = 30;
+    else if (lower.includes('1 soat') || lower.includes('bir soat')) duration = 60;
+    else if (lower.includes('1.5 soat') || lower.includes('bir yarim soat')) duration = 90;
+    else if (lower.includes('2 soat') || lower.includes('ikki soat')) duration = 120;
+    else {
+      const match = lower.match(/(\d+)\s*daqiqa/);
+      if (match) duration = parseInt(match[1]);
+    }
+
+    let priority = 'medium';
+    if (lower.includes('muhim') || lower.includes('zarur') || lower.includes('shoshilinch')) {
+      priority = 'high';
+    } else if (lower.includes('muhim emas') || lower.includes('past')) {
+      priority = 'low';
+    }
+
+    let category = 'personal';
+    if (lower.includes('kitob') || lower.includes('dars') || lower.includes('o\'qish') || lower.includes('kurs')) category = 'learning';
+    else if (lower.includes('sport') || lower.includes('yugurish') || lower.includes('mashq') || lower.includes('suv')) category = 'health';
+    else if (lower.includes('ish') || lower.includes('loyiha') || lower.includes('hisobot') || lower.includes('kod')) category = 'work';
+
+    // Vazifa nomini tozalash
+    let cleanText = userMsg
+      .replace(/bugun\s+men/gi, '')
+      .replace(/va\s+bu\s+vazifa\s+muhim/gi, '')
+      .replace(/muhim/gi, '')
+      .replace(/yarim soat/gi, '')
+      .replace(/\d+\s*(soat|daqiqa)/gi, '')
+      .replace(/o'qimoqchiman/gi, 'o\'qish')
+      .replace(/qilmoqchiman/gi, 'qilish')
+      .trim();
+
+    if (!cleanText || cleanText.length < 3) cleanText = userMsg;
+
+    const taskObj = JSON.stringify({
+      text: cleanText.charAt(0).toUpperCase() + cleanText.slice(1),
+      duration,
+      priority,
+      category,
+    });
+
+    return `Ajoyib maqsad! Siz aytgan vazifani rejangizga qo'shdim. Rejalashtirilgan ish baribir bajariladi! 🚀\n[[TASK: ${taskObj}]]`;
+  }
+
   // Default: motivation + brief analysis
   return `${motivBlock}${timeNote}
 
@@ -198,15 +248,19 @@ export const analyzeWithAI = async (
   groqKey?: string
 ): Promise<string> => {
   const context = buildTaskContext();
-  const systemPrompt = `Sen foydalanuvchining shaxsiy produktivlik murabbiyi va to-do tahlilchisisan. O'zbek tilida muloqot qilasan. Sening maqsading: REAL ma'lumotlarga asoslanib, ANIQ va FOYDALI tahlil berish. Umumiy gaplardan qoching, faqat foydalanuvchining HAQIQIY vazifalariga murojaat qil.
+  const systemPrompt = `Sen foydalanuvchining shaxsiy produktivlik murabbiyi va to-do tahlilchisisan. O'zbek tilida muloqot qilasan. Sening maqsading: REAL ma'lumotlarga asoslanib, ANIQ va FOYDALI tahlil berish.
 
 ${context}
 
+MUHIM QOIDA (Vazifa yaratish):
+Agar foydalanuvchi biror vazifa qilmoqchi ekanligini aytsa (masalan: "Bugun men yarim soat kitob o'qimoqchiman va bu vazifa muhim", "vazifa qo'sh", "sport bilan shug'ullanishim kerak", "ertalab yugurishim kerak" va h.k.), sen ushbu vazifani aniqlab, javobingning oxirida AYNAN quyidagi maxsus blokni qo'shishing SHART:
+[[TASK: {"text": "Vazifa nomi", "duration": daqiqalar_soni_yoki_null, "priority": "high"|"medium"|"low", "category": "work"|"personal"|"health"|"learning"|"other"}]]
+
 Qoidalar:
-1. Har doim ANIQ raqamlar (%) va real vazifa nomlarini mention qil
-2. Motivatsiya — sentimental emas, AMALIY bo'lsin
-3. Tavsiya — bajarish mumkin bo'lgan konkret qadamlar
-4. Javob: 4-6 gap, qisqa, tushunarli, motivatsiyali`;
+- "yarim soat" = 30 daqiqa, "1 soat" = 60 daqiqa, "15 daqiqa" = 15. Agar vaqt aytilmasa: duration: null.
+- "muhim", "shoshilinch", "zarur", "katta ahamiyatga ega" bo'lsa: priority: "high". Agar muhimlik aytilmasa: priority: "medium". Agar "muhim emas" deyilsa: priority: "low".
+- Toifani aniqla: kitob/dars/o'qish -> "learning", sport/mashq/yugurish/suv -> "health", ish/mijoz/kod/hisobot -> "work", boshqalar -> "personal".
+- Javobingda foydalanuvchiga vazifa qabul qilingani va qisqa motivatsiya ber.`;
 
   // 1-qadam: Birinchi navbatda Google Gemini API orqali javob olishga urinish
   try {
@@ -259,4 +313,39 @@ Qoidalar:
   await new Promise((r) => setTimeout(r, 600));
   const todayTasks = loadTasks().filter((t) => t.createdAt === today());
   return offlineAnalyze(userMessage, todayTasks);
+};
+
+// ────────── AI javobidan vazifani ajratish ──────────
+export interface ExtractedTask {
+  text: string;
+  duration?: number | null;
+  priority?: 'high' | 'medium' | 'low';
+  category?: 'work' | 'personal' | 'health' | 'learning' | 'other';
+}
+
+export const extractTaskIntent = (
+  replyText: string
+): { cleanReply: string; task: ExtractedTask | null } => {
+  const taskRegex = /\[\[TASK:\s*(\{.*?\})\s*\]\]/s;
+  const match = replyText.match(taskRegex);
+
+  if (match) {
+    try {
+      const taskData = JSON.parse(match[1]);
+      const cleanReply = replyText.replace(taskRegex, '').trim();
+      return {
+        cleanReply,
+        task: {
+          text: taskData.text || 'Yangi vazifa',
+          duration: taskData.duration || null,
+          priority: taskData.priority || 'medium',
+          category: taskData.category || 'personal',
+        },
+      };
+    } catch {
+      // JSON parse xatolik bersa
+    }
+  }
+
+  return { cleanReply: replyText, task: null };
 };

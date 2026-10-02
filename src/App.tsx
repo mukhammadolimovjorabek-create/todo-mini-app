@@ -51,7 +51,7 @@ export function App() {
       <div className="w-full max-w-md min-h-screen md:min-h-[820px] md:max-h-[900px] bg-[#f6f7fb] md:rounded-[2.8rem] shadow-2xl overflow-y-auto overflow-x-hidden relative flex flex-col border-0 md:border-8 md:border-slate-800">
         <div className="flex-1">
           {screen === 'home'      && <ScreenHome userName={user.first_name} onTasksChange={updateStatsFromStorage} />}
-          {screen === 'ai'        && <ScreenAI />}
+          {screen === 'ai'        && <ScreenAI onTaskCreated={updateStatsFromStorage} />}
           {screen === 'analytics' && <ScreenAnalytics />}
           {screen === 'profile'   && <ScreenProfile user={user} />}
         </div>
