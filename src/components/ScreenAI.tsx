@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, RefreshCw, Mic, MicOff } from 'lucide-react';
-import { SpeechRecognitionService } from '../utils/aiService';
+import React, { useState, useEffect } from 'react';
+import { Send, Bot, RefreshCw } from 'lucide-react';
 import type { ChatMessage } from '../utils/aiService';
 import { analyzeWithAI, extractTaskIntent } from '../utils/analyzer';
 import { triggerHaptic } from '../utils/telegram';
 import { loadTasks, today, addTask, updateStats } from '../utils/storage';
 
 const QUICK_PROMPTS = [
-  '🎙 "Yarim soat kitob o\'qimoqchiman, muhim"',
+  'Yarim soat kitob o\'qimoqchiman, muhim',
   'Bugun qanday ketdi? Tahlil qil',
   'Nega bu qadar kam bajardim?',
   'Meni motivatsiya qil',
@@ -22,10 +21,7 @@ export const ScreenAI: React.FC<Props> = ({ onTaskCreated }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isListening, setIsListening] = useState(false);
   const [todaySummary, setTodaySummary] = useState({ total: 0, done: 0 });
-
-  const speechRef = useRef<SpeechRecognitionService | null>(null);
 
   const refreshSummary = () => {
     const tasks = loadTasks().filter((t) => t.createdAt === today());
@@ -35,14 +31,11 @@ export const ScreenAI: React.FC<Props> = ({ onTaskCreated }) => {
   useEffect(() => {
     refreshSummary();
 
-    // Web Speech API servisini ishga tushirish
-    speechRef.current = new SpeechRecognitionService();
-
     // Xush kelibsiz xabari
     setMessages([
       {
         role: 'assistant',
-        content: `Salom! Men sizning **Smart AI Murabbiyingizman** 🤖\n\n🎙 **Ovozli buyruq bering:** Pastdagi mikrofonni bosib: *"Bugun men yarim soat kitob o'qimoqchiman va bu vazifa muhim"* desangiz, men uni o'zim daqiqasini belgilab, ro'yxatingizga avtomatik qo'shib beraman!\n\nYoki kuningizni tahlil qilish uchun biror savol bering.`,
+        content: `Salom! Men sizning **Smart AI Murabbiyingizman** 🤖\n\n💡 **Tezkor vazifa qo'shish:** Menga shunchaki: *"Bugun men yarim soat kitob o'qimoqchiman va bu vazifa muhim"* deb yozsangiz, men uni o'zim daqiqasini belgilab, ro'yxatingizga avtomatik qo'shib beraman!\n\nYoki kuningizni tahlil qilish uchun biror savol bering.`,
       },
     ]);
   }, []);
@@ -91,52 +84,12 @@ export const ScreenAI: React.FC<Props> = ({ onTaskCreated }) => {
     }
   };
 
-  // ── Ovozli kiritish (Voice-to-Text) ──
-  const toggleListening = () => {
-    if (!speechRef.current?.isSupported) {
-      alert('Sizning qurilmangizda ovoz tanish (Speech Recognition) qo\'llab-quvvatlanmaydi.');
-      return;
-    }
-
-    if (isListening) {
-      speechRef.current.stopListening();
-      setIsListening(false);
-      triggerHaptic('light');
-      // Agar biror gap yozilgan bo'lsa, uni avtomatik yuboramiz
-      if (input.trim()) {
-        sendMessage(input);
-      }
-    } else {
-      triggerHaptic('medium');
-      setIsListening(true);
-
-      speechRef.current.startListening(
-        (transcript, isFinal) => {
-          setInput(transcript);
-          if (isFinal && transcript.trim().length > 3) {
-            speechRef.current?.stopListening();
-            setIsListening(false);
-            sendMessage(transcript);
-          }
-        },
-        (error) => {
-          console.warn('Ovoz tanish xatosi:', error);
-          setIsListening(false);
-          alert(typeof error === 'string' ? error : 'Mikrofon bilan ishlashda xatolik yuz berdi.');
-        },
-        () => {
-          setIsListening(false);
-        }
-      );
-    }
-  };
-
   const clearChat = () => {
     triggerHaptic('light');
     setMessages([
       {
         role: 'assistant',
-        content: 'Chat tozalandi. Menga yangi vazifangizni ovozli ayting yoki savol bering! 🚀',
+        content: 'Chat tozalandi. Menga yangi vazifangizni yozing yoki savol bering! 🚀',
       },
     ]);
   };
@@ -194,7 +147,7 @@ export const ScreenAI: React.FC<Props> = ({ onTaskCreated }) => {
           {QUICK_PROMPTS.map((q) => (
             <button
               key={q}
-              onClick={() => sendMessage(q.replace('🎙 ', ''))}
+              onClick={() => sendMessage(q)}
               className="px-3.5 py-2 bg-white text-slate-700 text-xs font-semibold rounded-2xl border border-slate-200 shrink-0 active:scale-95 transition-all shadow-xs hover:border-indigo-300"
             >
               {q}
@@ -243,49 +196,23 @@ export const ScreenAI: React.FC<Props> = ({ onTaskCreated }) => {
         )}
       </div>
 
-      {/* ── Voice Status Indicator (Ovoz yozilayotganda) ── */}
-      {isListening && (
-        <div className="px-5 pb-2">
-          <div className="bg-[#1e1552] text-[#c4f82a] px-4 py-2.5 rounded-2xl flex items-center justify-between shadow-lg animate-pulse">
-            <div className="flex items-center space-x-2 text-xs font-bold">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
-              <span>Sizni tinglamoqdaman... Gapiring!</span>
-            </div>
-            <span className="text-[10px] text-white/70">Tugatish uchun bosing</span>
-          </div>
-        </div>
-      )}
-
-      {/* ── Input bar (Matn + Mikrofon + Yuborish) ── */}
+      {/* ── Input bar (Toza matn kiritish + Yuborish) ── */}
       <div className="px-5 py-3">
-        <div className="flex items-center bg-white border border-slate-200 rounded-2xl px-3 py-2 shadow-xs focus-within:border-indigo-400 transition-all">
-          {/* Mikrofon tugmasi */}
-          <button
-            onClick={toggleListening}
-            title={isListening ? "To'xtatish" : "Ovozli kiritish"}
-            className={`w-9 h-9 rounded-full flex items-center justify-center mr-1 shrink-0 transition-all active:scale-90 ${
-              isListening
-                ? 'bg-red-500 text-white animate-bounce shadow-md'
-                : 'bg-indigo-50 text-[#7052ff] hover:bg-indigo-100'
-            }`}
-          >
-            {isListening ? <MicOff size={17} /> : <Mic size={17} />}
-          </button>
-
+        <div className="flex items-center bg-white border border-slate-200 rounded-2xl px-4 py-2.5 shadow-xs focus-within:border-indigo-400 transition-all">
           <input
             type="text"
-            placeholder={isListening ? "Tinglanmoqda..." : "Yozing yoki ovoz bilan ayting..."}
+            placeholder="Vazifani yozing yoki savol bering..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-            className="flex-1 text-sm text-slate-800 placeholder-slate-400 bg-transparent outline-none px-2"
+            className="flex-1 text-sm text-slate-800 placeholder-slate-400 bg-transparent outline-none pr-2"
           />
 
           {/* Yuborish tugmasi */}
           <button
             onClick={() => sendMessage()}
             disabled={!input.trim() || loading}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-white ml-1 shrink-0 active:scale-90 transition-all disabled:opacity-30 bg-[#7052ff] shadow-md shadow-indigo-500/30"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0 active:scale-90 transition-all disabled:opacity-30 bg-[#7052ff] shadow-md shadow-indigo-500/30"
           >
             <Send size={15} />
           </button>
