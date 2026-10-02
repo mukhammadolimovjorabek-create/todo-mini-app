@@ -1,5 +1,5 @@
 """
-Telegram Mini App Boti & Admin Statistikasi
+Telegram Mini App Boti & To'liq Admin Statistikasi
 Admin ID: 5466728043
 """
 
@@ -9,14 +9,15 @@ import asyncio
 import logging
 from datetime import datetime
 from aiogram import Bot, Dispatcher, types, F
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import CommandStart, Command, ChatMemberUpdatedFilter, KICKED, MEMBER
 from aiogram.types import (
     WebAppInfo, 
     InlineKeyboardMarkup, 
     InlineKeyboardButton,
     ReplyKeyboardMarkup,
     KeyboardButton,
-    FSInputFile
+    FSInputFile,
+    ChatMemberUpdated
 )
 
 ADMIN_ID = 5466728043
@@ -35,7 +36,6 @@ def get_bot_token():
     return os.getenv("BOT_TOKEN", "")
 
 BOT_TOKEN = get_bot_token()
-# Vercel'dagi domeningiz
 WEB_APP_URL = os.getenv("WEB_APP_URL", "https://todo-mini-app-mu.vercel.app")
 
 # Foydalanuvchilar bazasini yuklash / saqlash
@@ -52,18 +52,31 @@ def save_user(user_id: int, user_info: dict):
     users = load_users()
     user_str_id = str(user_id)
     is_new = user_str_id not in users
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    current_data = users.get(user_str_id, {})
     
     users[user_str_id] = {
-        "first_name": user_info.get("first_name", ""),
-        "username": user_info.get("username", ""),
-        "joined_at": users.get(user_str_id, {}).get("joined_at", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
-        "last_active": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "first_name": user_info.get("first_name", current_data.get("first_name", "")),
+        "username": user_info.get("username", current_data.get("username", "")),
+        "status": "active",  # active yoki left
+        "joined_at": current_data.get("joined_at", now_str),
+        "last_active": now_str
     }
     
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump(users, f, ensure_ascii=False, indent=2)
         
     return is_new, len(users)
+
+def set_user_status(user_id: int, status: str):
+    users = load_users()
+    user_str_id = str(user_id)
+    if user_str_id in users:
+        users[user_str_id]["status"] = status
+        users[user_str_id]["last_status_change"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open(USERS_FILE, "w", encoding="utf-8") as f:
+            json.dump(users, f, ensure_ascii=False, indent=2)
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -76,6 +89,30 @@ admin_kb = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
+# 1. Foydalanuvchi botni bloklaganida yoki blokdan chiqarganida ushlaydigan handler
+@dp.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=KICKED))
+async def user_blocked_bot(event: ChatMemberUpdated):
+    user_id = event.from_user.id
+    set_user_status(user_id, "left")
+    
+    # Adminga xabar berish
+    try:
+        username_txt = f"(@{event.from_user.username})" if event.from_user.username else ""
+        text = (
+            "🚪 <b>Foydalanuvchi botni to'xtatdi (blokladi):</b>\n"
+            f"👤 Ismi: {event.from_user.first_name} {username_txt}\n"
+            f"🆔 ID: <code>{user_id}</code>"
+        )
+        await bot.send_message(chat_id=ADMIN_ID, text=text, parse_mode="HTML")
+    except Exception as e:
+        logging.error(f"Adminga blok xabarini yuborishda xatolik: {e}")
+
+@dp.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=MEMBER))
+async def user_unblocked_bot(event: ChatMemberUpdated):
+    user_id = event.from_user.id
+    set_user_status(user_id, "active")
+
+# 2. /start bosilganda
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message):
     user_id = message.from_user.id
@@ -85,7 +122,7 @@ async def cmd_start(message: types.Message):
     }
     
     # Bazaga yozish va yangi foydalanuvchini aniqlash
-    is_new, total_users = save_user(user_id, user_info)
+    is_new, total_visitors = save_user(user_id, user_info)
     
     # Katta qulay "Ilovani ochish" tugmasi
     inline_kb = InlineKeyboardMarkup(
@@ -110,7 +147,7 @@ async def cmd_start(message: types.Message):
         "👇 <i>Boshlash uchun quyidagi tugmani bosing:</i>"
     )
     
-    # Agar rasm mavjud bo'lsa, rasm bilan yuboramiz
+    # Rasm bilan yoki rasmsiz xabar yuborish
     if os.path.exists(BANNER_PATH):
         try:
             photo = FSInputFile(BANNER_PATH)
@@ -121,30 +158,32 @@ async def cmd_start(message: types.Message):
                 reply_markup=inline_kb
             )
         except Exception:
-            # Rasm yuborishda xatolik bo'lsa, oddiy matn qilib yuboriladi
             await message.answer(caption_text, parse_mode="HTML", reply_markup=inline_kb)
     else:
         await message.answer(caption_text, parse_mode="HTML", reply_markup=inline_kb)
         
-    # Agar admin bo'lsa, pastdagi hisobot menyusini ham chiqarish
+    # Agar admin bo'lsa, hisobot tugmasi chiqariladi
     if user_id == ADMIN_ID:
         await message.answer("Siz bot adminsiz. Pastdagi tugma orqali hisobotni ko'rishingiz mumkin:", reply_markup=admin_kb)
     
-    # Agar yangi foydalanuvchi bo'lsa va bu admin bo'lmasa, adminga xabar boradi
+    # Agar yangi foydalanuvchi bo'lsa va bu admin bo'lmasa, adminga bildirishnoma boradi
     if is_new and user_id != ADMIN_ID:
         try:
+            users = load_users()
+            active_count = sum(1 for u in users.values() if u.get("status", "active") == "active")
             username_txt = f"(@{message.from_user.username})" if message.from_user.username else ""
             alert_text = (
                 "🔔 <b>Yangi foydalanuvchi qo'shildi!</b>\n\n"
                 f"👤 Ismi: {message.from_user.first_name} {username_txt}\n"
                 f"🆔 ID: <code>{user_id}</code>\n\n"
-                f"📈 <b>Jami foydalanuvchilar soni: {total_users} ta</b>"
+                f"👥 <b>Hozirda foydalanuvchilar:</b> {active_count} ta\n"
+                f"📈 <b>Jami tashrif buyurganlar:</b> {total_visitors} ta"
             )
             await bot.send_message(chat_id=ADMIN_ID, text=alert_text, parse_mode="HTML")
         except Exception as e:
             logging.error(f"Adminga xabar yuborishda xatolik: {e}")
 
-# Admin uchun "📊 Hisobot" tugmasi bosilganda
+# 3. Admin uchun "📊 Hisobot" tugmasi bosilganda
 @dp.message(F.text == "📊 Hisobot")
 @dp.message(Command("stats"))
 async def show_stats(message: types.Message):
@@ -152,28 +191,39 @@ async def show_stats(message: types.Message):
         return
         
     users = load_users()
-    total_users = len(users)
+    total_visitors = len(users)
     today_str = datetime.now().strftime("%Y-%m-%d")
-    today_users = sum(1 for u in users.values() if u.get("joined_at", "").startswith(today_str))
+    
+    # Hisob-kitoblar:
+    # 1. Bugun qo'shilganlar
+    today_new = sum(1 for u in users.values() if u.get("joined_at", "").startswith(today_str))
+    
+    # 2. Hozirda faol foydalanayotganlar
+    active_users = sum(1 for u in users.values() if u.get("status", "active") == "active")
+    
+    # 3. Chiqib ketganlar (bloklaganlar)
+    left_users = sum(1 for u in users.values() if u.get("status") == "left")
     
     report_text = (
-        "📊 <b>BOTNING UMUMIY HISOBOTI</b>\n"
+        "📊 <b>BOTNING TO'LIQ HISOBOTI</b>\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
-        f"👥 <b>Jami foydalanuvchilar:</b> {total_users} ta\n"
-        f"🆕 <b>Bugun qo'shilganlar:</b> {today_users} ta\n"
-        f"🕒 <b>Sana:</b> {datetime.now().strftime('%d.%m.%Y %H:%M')}\n"
+        f"🆕 <b>Bugun qo'shilganlar:</b> {today_new} ta\n"
+        f"👥 <b>Hozirda foydalanayotganlar:</b> {active_users} ta\n"
+        f"🚪 <b>Chiqib ketganlar (bloklaganlar):</b> {left_users} ta\n"
+        f"📈 <b>Shu paytgacha jami tashrif buyurganlar:</b> {total_visitors} ta\n"
         "━━━━━━━━━━━━━━━━━━━━━━\n"
-        "<i>Har bir yangi odam kirganida sizga avtomatik bildirishnoma keladi.</i>"
+        f"🕒 <i>Yangilangan vaqt: {datetime.now().strftime('%d.%m.%Y %H:%M')}</i>"
     )
     await message.answer(report_text, parse_mode="HTML")
 
 async def main():
     print("=" * 50)
-    print("Bot muvaffaqiyatli ishga tushdi!")
+    print("Bot muvaffaqiyatli yangilandi va ishga tushdi!")
     print(f"Admin ID: {ADMIN_ID}")
-    print("Telegramda /start bosib tekshirishingiz mumkin.")
+    print("Admin menyusi: Hisobot")
     print("=" * 50)
-    await dp.start_polling(bot)
+    # my_chat_member hodisalarini qabul qilish uchun allowed_updates
+    await dp.start_polling(bot, allowed_updates=["message", "chat_member", "my_chat_member"])
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
