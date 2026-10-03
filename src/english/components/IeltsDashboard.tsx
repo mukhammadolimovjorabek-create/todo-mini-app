@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Mic, Users, BookOpen, ChevronRight, Award, FileText } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { ArrowLeft, ArrowRight, BookOpen, Edit3, Flame } from 'lucide-react';
 import { AISpeakingView } from './AISpeakingView';
 import { PartnerSpeakingView } from './PartnerSpeakingView';
 import { WritingEvaluationView } from './WritingEvaluationView';
 import { IeltsReadingView } from './IeltsReadingView';
 import { triggerHaptic } from '../../utils/telegram';
+import { getTestResults } from '../utils/storage';
 
 interface Props {
   onBack: () => void;
@@ -17,6 +18,17 @@ type ActiveView = 'menu' | 'reading' | 'writing' | 'speaking' | 'ai_speaking' | 
 
 export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, initialView = 'menu' }) => {
   const [activeView, setActiveView] = useState<ActiveView>(initialView);
+
+  // Compute last scores from test history or fallback to video mock scores
+  const { readingScore, writingScore } = useMemo(() => {
+    const results = getTestResults();
+    const lastReading = results.find((r) => r.testType === 'reading');
+    const lastWriting = results.find((r) => r.testType === 'writing_task1' || r.testType === 'writing_task2');
+    return {
+      readingScore: lastReading?.overallBand ? lastReading.overallBand.toFixed(1) : '6.0',
+      writingScore: lastWriting?.overallBand ? lastWriting.overallBand.toFixed(1) : '6.5',
+    };
+  }, []);
 
   if (activeView === 'reading') {
     return <IeltsReadingView onBack={() => setActiveView('menu')} userName={userName} />;
@@ -35,58 +47,107 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
   }
 
   return (
-    <div className="english-root min-h-screen bg-slate-50 flex flex-col text-slate-900 pb-12">
+    <div className="english-root min-h-screen bg-[#0e0d1d] flex flex-col text-white pb-10">
       {/* ── Top Header ── */}
-      <div className="px-5 pt-6 pb-4 bg-white/80 backdrop-blur-md border-b border-indigo-100 flex items-center justify-between sticky top-0 z-20">
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={onBack}
-            className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center hover:bg-slate-200 transition-all active:scale-95"
-            title="Orqaga"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <div className="flex items-center space-x-1.5">
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#7052ff] bg-indigo-50 px-2 py-0.5 rounded-full">
-                IELTS
-              </span>
-            </div>
-            <h2 className="text-lg font-black text-slate-900 tracking-tight leading-tight">
-              IELTS Amaliyot Markazi 🇬🇧
-            </h2>
-          </div>
+      <div className="px-5 pt-5 pb-3 flex items-center justify-between sticky top-0 z-20 bg-[#0e0d1d]/90 backdrop-blur-md">
+        <button
+          onClick={onBack}
+          className="w-9 h-9 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
+          title="Orqaga"
+        >
+          <ArrowLeft size={18} />
+        </button>
+
+        <h2 className="text-sm font-black uppercase tracking-wider text-white">
+          IELTS
+        </h2>
+
+        {/* Streak Pill */}
+        <div className="flex items-center space-x-1.5 bg-[#1e1c3a] border border-white/10 px-3 py-1 rounded-full text-xs font-black text-amber-300 shadow-sm">
+          <Flame size={14} className="text-amber-400 fill-amber-400" />
+          <span>3 kun</span>
         </div>
       </div>
 
-      <div className="p-5 flex-1 max-w-lg mx-auto w-full space-y-5">
-        {/* Banner Card */}
-        <div
-          className="rounded-[2.2rem] p-6 text-white relative overflow-hidden shadow-xl"
-          style={{ background: 'linear-gradient(135deg, #110e28 0%, #1e1552 50%, #351e8c 100%)' }}
-        >
-          <div className="absolute top-0 right-0 w-36 h-36 bg-[#c4f82a]/15 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative z-10 space-y-2">
-            <span className="inline-flex items-center space-x-1 bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-[#c4f82a]">
-              <Award size={12} />
-              <span>Band 9.0 Tayyorgarlik</span>
+      <div className="p-5 flex-1 max-w-md mx-auto w-full space-y-4">
+        {/* Title Section */}
+        <div className="space-y-1">
+          <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300/80">
+            BO'LIMNI TANLANG
+          </span>
+          <h1 className="text-2xl font-black text-white leading-tight">
+            Bugun nimani kuchaytiramiz?
+          </h1>
+        </div>
+
+        {/* ── 1. SPEAKING CARD (Full Width with Animated Waveform) ── */}
+        <div className="bg-[#181630] border border-white/10 rounded-[2.2rem] p-5 shadow-xl relative overflow-hidden space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-black uppercase text-[#c4f82a] bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+              AI EXAMINER • YANGI
             </span>
-            <h3 className="text-xl font-black">
-              IELTS Reading, Writing & Speaking 🎯
+
+            {/* 5-Bar Animated Lime-Green Waveform */}
+            <div className="flex items-center space-x-1 h-6" title="Jonli ovoz to'lqini">
+              <span className="w-1 bg-[#c4f82a] rounded-full eng-eq-1 inline-block" />
+              <span className="w-1 bg-[#c4f82a] rounded-full eng-eq-2 inline-block" />
+              <span className="w-1 bg-[#c4f82a] rounded-full eng-eq-3 inline-block" />
+              <span className="w-1 bg-[#c4f82a] rounded-full eng-eq-4 inline-block" />
+              <span className="w-1 bg-[#c4f82a] rounded-full eng-eq-5 inline-block" />
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-2xl font-black text-white tracking-tight">
+              Speaking
             </h3>
-            <p className="text-xs text-purple-200/85 leading-relaxed">
-              Xush kelibsiz, <strong>{userName}</strong>! IELTS imtihonining barcha asosiy bo'limlari bo'yicha mashq qiling.
+            <p className="text-xs text-slate-300/90 mt-1 leading-relaxed">
+              AI bilan jonli suhbat yoki sherik topib mashq qiling.
             </p>
+          </div>
+
+          {/* Bottom Chips & Start Button */}
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  setActiveView('ai_speaking');
+                }}
+                className="text-[11px] font-bold text-white/90 bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-xl border border-white/10 transition-all active:scale-95"
+              >
+                Part 1-3
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  setActiveView('partner_speaking');
+                }}
+                className="text-[11px] font-bold text-white/90 bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-xl border border-white/10 transition-all active:scale-95"
+              >
+                Sherik bilan
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic('medium');
+                setActiveView('ai_speaking');
+              }}
+              className="bg-[#c4f82a] hover:brightness-105 active:scale-95 text-[#121124] font-black text-xs px-4.5 py-2.5 rounded-full flex items-center space-x-1.5 shadow-md transition-all"
+            >
+              <span>Boshlash</span>
+              <ArrowRight size={14} />
+            </button>
           </div>
         </div>
 
-        {/* 3 Main Sections: Reading, Writing, Speaking */}
-        <div className="space-y-3.5">
-          <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
-            Bo'limni tanlang:
-          </h4>
-
-          {/* 1. READING */}
+        {/* ── 2-COLUMN GRID: READING & WRITING WITH ANIMATED MOVING ICONS ── */}
+        <div className="grid grid-cols-2 gap-3.5 pt-1">
+          {/* READING CARD */}
           <div
             role="button"
             tabIndex={0}
@@ -94,47 +155,36 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
               triggerHaptic('medium');
               setActiveView('reading');
             }}
-            className="p-5 rounded-[2rem] bg-white border border-slate-100 shadow-sm hover:border-[#7052ff]/40 hover:shadow-md transition-all cursor-pointer group active:scale-[0.99] space-y-3"
+            className="bg-[#181630] border border-white/10 hover:border-blue-500/40 rounded-[2rem] p-4.5 flex flex-col justify-between cursor-pointer active:scale-95 transition-all shadow-md group"
           >
             <div className="flex items-start justify-between">
-              <div className="flex items-center space-x-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                  <FileText size={22} />
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <h4 className="text-base font-black text-slate-900 group-hover:text-[#7052ff] transition-colors">
-                      Reading
-                    </h4>
-                    <span className="text-[9px] font-black bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                      Akademik
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Matnlar, True/False/Not Given, Multiple Choice va vaqt nazorati
-                  </p>
-                </div>
+              {/* Moving Book Icon */}
+              <div className="w-11 h-11 rounded-2xl bg-blue-500/15 border border-blue-500/25 text-blue-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <BookOpen size={22} className="eng-animate-book" />
               </div>
 
-              <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#7052ff] group-hover:text-white transition-all">
-                <ChevronRight size={16} />
+              <div className="w-7 h-7 rounded-full bg-white/10 text-slate-300 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+                <ArrowRight size={14} />
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-lg border border-blue-100">
-                True / False / Not Given
-              </span>
-              <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-lg border border-blue-100">
-                Multiple Choice
-              </span>
-              <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-lg border border-blue-100">
-                20 daqiqa taymer
+            <div className="mt-4">
+              <h4 className="text-base font-black text-white">
+                Reading
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                T/F/NG • 20 daqiqa
+              </p>
+            </div>
+
+            <div className="mt-3.5">
+              <span className="inline-block text-[10px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+                Oxirgi: {readingScore}
               </span>
             </div>
           </div>
 
-          {/* 2. WRITING */}
+          {/* WRITING CARD */}
           <div
             role="button"
             tabIndex={0}
@@ -142,105 +192,40 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
               triggerHaptic('medium');
               setActiveView('writing');
             }}
-            className="p-5 rounded-[2rem] bg-white border border-slate-100 shadow-sm hover:border-[#7052ff]/40 hover:shadow-md transition-all cursor-pointer group active:scale-[0.99] space-y-3"
+            className="bg-[#181630] border border-white/10 hover:border-purple-500/40 rounded-[2rem] p-4.5 flex flex-col justify-between cursor-pointer active:scale-95 transition-all shadow-md group"
           >
             <div className="flex items-start justify-between">
-              <div className="flex items-center space-x-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-[#7052ff] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                  <BookOpen size={22} />
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <h4 className="text-base font-black text-slate-900 group-hover:text-[#7052ff] transition-colors">
-                      Writing
-                    </h4>
-                    <span className="text-[9px] font-black bg-indigo-100 text-[#7052ff] px-2 py-0.5 rounded-full">
-                      Task 1 & 2
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Diagramma tahlili va insho yozish, 4 ta rasmiy mezon bo'yicha tahlil
-                  </p>
-                </div>
+              {/* Moving Pen / Quill Icon */}
+              <div className="w-11 h-11 rounded-2xl bg-purple-500/15 border border-purple-500/25 text-purple-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Edit3 size={22} className="eng-animate-pen" />
               </div>
 
-              <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#7052ff] group-hover:text-white transition-all">
-                <ChevronRight size={16} />
+              <div className="w-7 h-7 rounded-full bg-white/10 text-slate-300 flex items-center justify-center group-hover:bg-[#7052ff] group-hover:text-white transition-all">
+                <ArrowRight size={14} />
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              <span className="text-[10px] font-bold bg-indigo-50 text-[#7052ff] px-2.5 py-0.5 rounded-lg border border-indigo-100">
-                Task 1: Diagramma
-              </span>
-              <span className="text-[10px] font-bold bg-indigo-50 text-[#7052ff] px-2.5 py-0.5 rounded-lg border border-indigo-100">
-                Task 2: Insho
-              </span>
-              <span className="text-[10px] font-bold bg-indigo-50 text-[#7052ff] px-2.5 py-0.5 rounded-lg border border-indigo-100">
-                TR / CC / LR / GRA
+            <div className="mt-4">
+              <h4 className="text-base font-black text-white">
+                Writing
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Task 1 & 2 • 4 mezon
+              </p>
+            </div>
+
+            <div className="mt-3.5">
+              <span className="inline-block text-[10px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+                Oxirgi: {writingScore}
               </span>
             </div>
           </div>
-
-          {/* 3. SPEAKING */}
-          <div className="p-5 rounded-[2rem] bg-white border border-slate-100 shadow-sm space-y-3">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center space-x-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                  <Mic size={22} />
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <h4 className="text-base font-black text-slate-900">
-                      Speaking
-                    </h4>
-                    <span className="text-[9px] font-black bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
-                      Jonli nutq
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    AI Examiner Dr. Vance (9.0) yoki jonli sherik bilan mashq qiling
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  triggerHaptic('medium');
-                  setActiveView('ai_speaking');
-                }}
-                className="p-3 rounded-2xl bg-amber-50/70 hover:bg-amber-100/70 border border-amber-200 text-left transition-all active:scale-95 group"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-black uppercase text-amber-800">AI Examiner</span>
-                  <Mic size={14} className="text-amber-600" />
-                </div>
-                <p className="text-xs font-black text-slate-900">Dr. Vance (9.0)</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Part 1, 2, 3 va Full Mock</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  triggerHaptic('medium');
-                  setActiveView('partner_speaking');
-                }}
-                className="p-3 rounded-2xl bg-emerald-50/70 hover:bg-emerald-100/70 border border-emerald-200 text-left transition-all active:scale-95 group"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-black uppercase text-emerald-800">Sherik bilan</span>
-                  <Users size={14} className="text-emerald-600" />
-                </div>
-                <p className="text-xs font-black text-slate-900">Jonli Muloqot</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Radar search orqali topish</p>
-              </button>
-            </div>
-          </div>
-
         </div>
+
+        {/* Footer disclaimer */}
+        <p className="text-[10px] text-slate-400/80 text-center pt-2">
+          AI baholari taxminiy, rasmiy IELTS natijasi emas.
+        </p>
       </div>
     </div>
   );

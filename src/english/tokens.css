@@ -64,3 +64,59 @@
 .eng-eq-4 { animation: eng-eq-bar 0.75s ease-in-out infinite 0.2s; }
 .eng-eq-5 { animation: eng-eq-bar 0.75s ease-in-out infinite 0.45s; }
 
+/* ── Interactive Moving Icons (From Video Reference) ── */
+@keyframes eng-float-book {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+  }
+  25% {
+    transform: translateY(-3px) rotate(-4deg) scale(1.04);
+  }
+  50% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+  }
+  75% {
+    transform: translateY(-2px) rotate(3deg) scale(1.02);
+  }
+}
+
+@keyframes eng-float-pen {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+  }
+  30% {
+    transform: translateY(-3px) rotate(8deg) scale(1.06);
+  }
+  60% {
+    transform: translateY(-1px) rotate(-4deg) scale(1.02);
+  }
+}
+
+@keyframes eng-badge-pulse {
+  0%, 100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+.eng-animate-book {
+  animation: eng-float-book 3s ease-in-out infinite;
+  display: inline-block;
+  transform-origin: center;
+}
+
+.eng-animate-pen {
+  animation: eng-float-pen 2.6s ease-in-out infinite;
+  display: inline-block;
+  transform-origin: bottom right;
+}
+
+.eng-animate-pulse-badge {
+  animation: eng-badge-pulse 2s ease-in-out infinite;
+}
+
+
