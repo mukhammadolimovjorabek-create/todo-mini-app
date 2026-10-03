@@ -9,12 +9,13 @@ interface Props {
   onBack: () => void;
   userName: string;
   userGender?: 'male' | 'female';
+  initialView?: ActiveView;
 }
 
 type ActiveView = 'menu' | 'ai_speaking' | 'partner_speaking' | 'writing';
 
-export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender }) => {
-  const [activeView, setActiveView] = useState<ActiveView>('menu');
+export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, initialView = 'menu' }) => {
+  const [activeView, setActiveView] = useState<ActiveView>(initialView);
 
   if (activeView === 'ai_speaking') {
     return <AISpeakingView onBack={() => setActiveView('menu')} userName={userName} />;

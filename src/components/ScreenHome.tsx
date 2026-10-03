@@ -231,27 +231,41 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
           </div>
         </div>
 
-        {/* 🇬🇧 Ingliz tili (IELTS / Multilevel) Moduliga o'tish */}
+        {/* 🇬🇧 2-rasm: Ingliz tili (IELTS / Multilevel) Premium Boshlash Card */}
         {onOpenEnglish && (
           <div
             onClick={onOpenEnglish}
-            className="mt-3 bg-gradient-to-r from-[#110e28] to-[#1e1552] text-white rounded-2xl p-3.5 shadow-md flex items-center justify-between cursor-pointer border border-white/10 active:scale-[0.98] transition-all"
+            className="mt-3.5 rounded-2xl p-4 text-white shadow-lg cursor-pointer border border-indigo-400/25 active:scale-[0.98] transition-all relative overflow-hidden group"
+            style={{ background: 'linear-gradient(135deg, #120e2c 0%, #1e1552 50%, #321884 100%)' }}
           >
-            <div className="flex items-center space-x-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-[#7052ff]/20 text-white flex items-center justify-center text-xl shrink-0">
-                🇬🇧
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center space-x-1.5">
-                  <p className="text-xs font-black text-white truncate">IELTS & Multilevel Practice</p>
-                  <span className="text-[9px] font-black bg-[#c4f82a] text-[#121124] px-1.5 rounded">Yangi</span>
+            {/* Ambient neon glow */}
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#c4f82a]/15 rounded-full blur-2xl pointer-events-none group-hover:scale-125 transition-transform" />
+
+            <div className="flex items-center justify-between relative z-10">
+              <div className="flex items-center space-x-3 min-w-0">
+                <div className="w-11 h-11 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center text-2xl shrink-0 shadow-inner backdrop-blur-xs group-hover:scale-105 transition-transform">
+                  🇬🇧
                 </div>
-                <p className="text-[10px] text-purple-200/80 truncate mt-0.5">
-                  Writing insho, AI Speaking va sherik bilan muloqot
-                </p>
+                <div className="min-w-0">
+                  <div className="flex items-center space-x-2">
+                    <p className="text-xs font-black text-white tracking-tight truncate">IELTS & Multilevel Practice</p>
+                    <span className="text-[9px] font-black bg-[#c4f82a] text-[#121124] px-1.5 py-0.5 rounded-full shadow-xs">
+                      Yangi 🔥
+                    </span>
+                  </div>
+                  <p className="text-[10.5px] text-purple-200/90 truncate mt-0.5 font-medium">
+                    AI Examiner (9.0), Writing Task 1-2 & Sheriklik
+                  </p>
+                </div>
+              </div>
+
+              <div className="pl-3 shrink-0">
+                <span className="inline-flex items-center space-x-1 bg-[#c4f82a] text-[#121124] hover:bg-[#b5ea20] px-3 py-1.5 rounded-full text-xs font-black shadow-md transition-all group-hover:translate-x-0.5">
+                  <span>Boshlash</span>
+                  <span className="font-sans font-bold">→</span>
+                </span>
               </div>
             </div>
-            <span className="text-xs font-black text-[#c4f82a] pl-2 shrink-0">Boshlash →</span>
           </div>
         )}
       </div>

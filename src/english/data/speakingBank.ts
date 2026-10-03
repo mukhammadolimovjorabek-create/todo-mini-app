@@ -32,17 +32,23 @@ export interface SpeakingBank {
 
 export const speakingBank: SpeakingBank = bankData as SpeakingBank;
 
-export const getRandomPart1Topic = (): Part1Topic => {
-  const list = speakingBank.part1;
-  return list[Math.floor(Math.random() * list.length)] || list[0];
+export const getRandomPart1Topic = (seenIdentifiers: string[] = []): Part1Topic => {
+  const seenSet = new Set(seenIdentifiers.map((s) => s.toLowerCase()));
+  const unseen = speakingBank.part1.filter((t) => !seenSet.has(t.topic.toLowerCase()) && !seenSet.has(t.id.toLowerCase()));
+  const pool = unseen.length > 0 ? unseen : speakingBank.part1;
+  return pool[Math.floor(Math.random() * pool.length)] || speakingBank.part1[0];
 };
 
-export const getRandomPart2Topic = (): Part2CueCard => {
-  const list = speakingBank.part2;
-  return list[Math.floor(Math.random() * list.length)] || list[0];
+export const getRandomPart2Topic = (seenIdentifiers: string[] = []): Part2CueCard => {
+  const seenSet = new Set(seenIdentifiers.map((s) => s.toLowerCase()));
+  const unseen = speakingBank.part2.filter((t) => !seenSet.has(t.topic.toLowerCase()) && !seenSet.has(t.id.toLowerCase()));
+  const pool = unseen.length > 0 ? unseen : speakingBank.part2;
+  return pool[Math.floor(Math.random() * pool.length)] || speakingBank.part2[0];
 };
 
-export const getRandomPart3Topic = (): Part3Topic => {
-  const list = speakingBank.part3;
-  return list[Math.floor(Math.random() * list.length)] || list[0];
+export const getRandomPart3Topic = (seenIdentifiers: string[] = []): Part3Topic => {
+  const seenSet = new Set(seenIdentifiers.map((s) => s.toLowerCase()));
+  const unseen = speakingBank.part3.filter((t) => !seenSet.has(t.topic.toLowerCase()) && !seenSet.has(t.id.toLowerCase()));
+  const pool = unseen.length > 0 ? unseen : speakingBank.part3;
+  return pool[Math.floor(Math.random() * pool.length)] || speakingBank.part3[0];
 };

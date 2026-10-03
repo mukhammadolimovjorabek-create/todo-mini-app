@@ -1,30 +1,15 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Sparkles, CheckCircle2, RotateCcw, Award, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle2, RotateCcw, Award, AlertCircle, BarChart3, FileText } from 'lucide-react';
 import { triggerHaptic } from '../../utils/telegram';
+import { saveTestResult } from '../utils/storage';
+import type { TestResultItem } from '../types';
 
 interface Props {
   onBack: () => void;
   userName: string;
 }
 
-const SAMPLE_ESSAY_PROMPTS = [
-  {
-    topic: 'Education & Technology',
-    prompt: 'Some people believe that computers and the internet will soon replace teachers in classrooms. To what extent do you agree or disagree with this opinion?',
-  },
-  {
-    topic: 'Environment & Climate',
-    prompt: 'Many environmental problems are becoming increasingly severe around the world. What are the main causes of these problems, and what measures can governments take to resolve them?',
-  },
-  {
-    topic: 'Work-Life Balance',
-    prompt: 'In many countries, people are working longer hours than ever before. Discuss both views and give your own opinion.',
-  },
-  {
-    topic: 'Urbanization & Housing',
-    prompt: 'In some cities, there is a serious shortage of housing. Some people think that the government should provide housing for everyone. To what extent do you agree or disagree?',
-  },
-];
+type WritingTaskTab = 'task1' | 'task2';
 
 interface WritingBandBreakdown {
   overallBand: number;
@@ -38,24 +23,42 @@ interface WritingBandBreakdown {
   recommendedVocabulary: { word: string; meaning: string; example: string }[];
 }
 
+// Sample Task 2 Prompts
+const SAMPLE_TASK2_PROMPTS = [
+  {
+    topic: 'Education & Technology',
+    prompt: 'Some people believe that computers and the internet will soon replace teachers in classrooms. To what extent do you agree or disagree with this opinion?',
+  },
+  {
+    topic: 'Environment & Climate',
+    prompt: 'Many environmental problems are becoming increasingly severe around the world. What are the main causes of these problems, and what measures can governments take to resolve them?',
+  },
+  {
+    topic: 'Work-Life Balance',
+    prompt: 'In many countries, people are working longer hours than ever before. Discuss both views and give your own opinion.',
+  },
+];
+
 export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _userName }) => {
-  const [promptIdx, setPromptIdx] = useState(0);
+  const [activeTab, setActiveTab] = useState<WritingTaskTab>('task1');
+  const [task2Idx, setTask2Idx] = useState(0);
   const [essayText, setEssayText] = useState('');
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [result, setResult] = useState<WritingBandBreakdown | null>(null);
 
-  const currentPrompt = SAMPLE_ESSAY_PROMPTS[promptIdx];
-  const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
+  // Time tracking
+  const [startTime] = useState<string>(() => {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  });
 
-  const handleNextPrompt = () => {
-    triggerHaptic('light');
-    setPromptIdx((prev) => (prev + 1) % SAMPLE_ESSAY_PROMPTS.length);
-    setResult(null);
-  };
+  const currentTask2 = SAMPLE_TASK2_PROMPTS[task2Idx];
+  const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
+  const minWordsRequired = activeTab === 'task1' ? 150 : 250;
 
   const handleEvaluate = () => {
-    if (wordCount < 50) {
-      alert("Iltimos, insho matnini kamida 50 ta so'zdan iborat qilib yozing (IELTS uchun 250+ tavsiya etiladi).");
+    if (wordCount < 40) {
+      alert(`Iltimos, matnni kamida 40 ta so'zdan iborat qilib yozing (IELTS talabi: ${minWordsRequired}+ so'z).`);
       return;
     }
 
@@ -63,48 +66,87 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
     setIsEvaluating(true);
 
     setTimeout(() => {
-      // Calculate realistic band score based on word count, length, paragraphing
       const paragraphs = essayText.split(/\n+/).filter((p) => p.trim().length > 0).length;
-      let baseScore = 6.0;
-      if (wordCount >= 250) baseScore += 0.5;
-      if (wordCount >= 280) baseScore += 0.5;
-      if (paragraphs >= 4) baseScore += 0.5;
+      let base = 6.0;
+      if (wordCount >= minWordsRequired) base += 0.5;
+      if (wordCount >= minWordsRequired + 40) base += 0.5;
+      if (paragraphs >= (activeTab === 'task1' ? 3 : 4)) base += 0.5;
 
-      const band = Math.min(8.5, Math.max(5.5, baseScore));
+      const band = Math.min(8.5, Math.max(5.5, base));
 
       const evaluation: WritingBandBreakdown = {
         overallBand: band,
         taskResponse: band,
-        coherenceCohesion: Math.min(9.0, band + (paragraphs >= 4 ? 0.5 : 0)),
+        coherenceCohesion: Math.min(9.0, band + (paragraphs >= 3 ? 0.5 : 0)),
         lexicalResource: band,
         grammaticalRange: Math.max(5.0, band - 0.5),
         wordCount,
-        strengths: [
+        strengths: activeTab === 'task1' ? [
+          "Diagrammadagi asosiy tendensiyalar va eng yuqori/past ko'rsatkichlar (Key features) to'g'ri tanlangan.",
+          "Overview (umumiy xulosa) xatboshisi kiritilgan, bu Task Achievement bo'yicha 7.0+ talabidir.",
+          "Raqamlar va foizlar taqqoslama shaklda ifodalangan.",
+        ] : [
           "Mavzuga doir asosiy argumentlar keltirilgan va fikr ketma-ketligi saqlangan.",
-          `${paragraphs} ta alohida xatboshilarga ajratilgan, insho strukturasi (Introduction, Body, Conclusion) ko'rinib turibdi.`,
-          "Akademik uslubga yaqin kirish jumlalari qo'llangan.",
+          `${paragraphs} ta xatboshilarga ajratilgan, insho strukturasi aniq.`,
+          "Akademik uslubdagi kirish va xulosa shakllantirilgan.",
         ],
         improvements: [
-          wordCount < 250 ? `So'zlar soni (${wordCount}) 250 tadan kam. Rasmiy imtihonda bu Task Response balini pasaytiradi.` : "Har bir argument uchun kamida 1 ta aniq hayotiy yoki statistik misol qo'shing.",
-          "Murakkab sintaktik tuzilmalar (Inversion, Conditional sentences, Participle clauses) salmog'ini oshirish tavsiya etiladi.",
-          "Takrorlanuvchi so'zlar o'rniga sinonimlardan unumliroq foydalaning (masalan, 'important' o'rniga 'paramount', 'crucial').",
+          wordCount < minWordsRequired
+            ? `So'zlar soni (${wordCount}) talab qilingan ${minWordsRequired} tadan kam. Bu Task Achievement balini tushiradi.`
+            : "Ko'rsatkichlar orasidagi ziddiyatlarni ifodalash uchun 'Whereas', 'In stark contrast' kabi bog'lovchilarni ko'paytiring.",
+          "Grammatik xilma-xillikni oshirish uchun passiv nisbat va murakkab gaplar qo'shing.",
+          "Sinonimlardan faolroq foydalaning (masalan, 'increase' o'rniga 'surge', 'rise substantially').",
         ],
-        recommendedVocabulary: [
-          { word: 'Substantial', meaning: 'Sezilarli, muhim darajada', example: 'There has been a substantial increase in public awareness.' },
-          { word: 'Detrimental', meaning: 'Zararli, salbiy ta\'sirli', example: 'Pollution has a detrimental effect on biodiversity.' },
-          { word: 'Exacerbate', meaning: 'Og\'irlashtirmoq, kuchaytirmoq', example: 'Overcrowding continues to exacerbate the housing crisis.' },
+        recommendedVocabulary: activeTab === 'task1' ? [
+          { word: 'Witness a surge', meaning: 'Keskin o\'sishni qayd etmoq', example: 'Solar energy witnessed a dramatic surge over the decade.' },
+          { word: 'Outperform', meaning: 'Ortda qoldirmoq', example: 'Wind power outperformed all other renewable sources by 2025.' },
+          { word: 'Plateau', meaning: 'Bir xil darajada barqarorlashmoq', example: 'Hydroelectric output plateaued after initial expansion.' },
+        ] : [
+          { word: 'Substantial', meaning: 'Sezilarli, muhim', example: 'There has been a substantial shift in consumer habits.' },
+          { word: 'Detrimental', meaning: 'Zararli, salbiy ta\'sirli', example: 'Excessive workload can have detrimental effects on health.' },
+          { word: 'Exacerbate', meaning: 'Kuchaytirmoq, og\'irlashtirmoq', example: 'Traffic congestion exacerbates urban pollution.' },
         ],
       };
 
       setResult(evaluation);
       setIsEvaluating(false);
+
+      // Save to Test Results History
+      const now = new Date();
+      const endTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const dateStr = now.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.');
+
+      const historyItem: TestResultItem = {
+        id: `writing_${Date.now()}`,
+        date: dateStr,
+        startTime,
+        endTime,
+        testType: activeTab === 'task1' ? 'writing_task1' : 'writing_task2',
+        title: activeTab === 'task1' ? 'IELTS Writing Task 1 (Diagramma)' : 'IELTS Writing Task 2 (Insho)',
+        topic: activeTab === 'task1' ? 'Renewable Energy Generation 2015-2025' : currentTask2.topic,
+        overallBand: evaluation.overallBand,
+        criteriaScores: {
+          c1Name: activeTab === 'task1' ? 'Task Achievement' : 'Task Response',
+          c1Score: evaluation.taskResponse,
+          c2Name: 'Coherence & Cohesion',
+          c2Score: evaluation.coherenceCohesion,
+          c3Name: 'Lexical Resource',
+          c3Score: evaluation.lexicalResource,
+          c4Name: 'Grammar Accuracy',
+          c4Score: evaluation.grammaticalRange,
+        },
+        strengths: evaluation.strengths,
+        improvements: evaluation.improvements,
+      };
+
+      saveTestResult(historyItem);
       triggerHaptic('heavy');
-    }, 1800);
+    }, 1600);
   };
 
   return (
     <div className="english-root min-h-screen bg-slate-50 flex flex-col text-slate-900 pb-12">
-      {/* ── Header ── */}
+      {/* ── Top Header ── */}
       <div className="px-5 pt-6 pb-4 bg-white/80 backdrop-blur-md border-b border-indigo-100 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center space-x-3">
           <button
@@ -117,65 +159,190 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
           <div>
             <div className="flex items-center space-x-1.5">
               <span className="text-[10px] font-black uppercase tracking-wider text-[#7052ff] bg-indigo-50 px-2 py-0.5 rounded-full">
-                Task 2 Essay
+                IELTS Academic Writing
               </span>
             </div>
             <h2 className="text-lg font-black text-slate-900 tracking-tight leading-tight">
-              Writing Insho Tahlili ✍️
+              Writing Tahlil Markazi ✍️
             </h2>
           </div>
         </div>
-
-        <button
-          onClick={handleNextPrompt}
-          className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center space-x-1"
-        >
-          <RotateCcw size={13} />
-          <span>Yangi mavzu</span>
-        </button>
       </div>
 
-      <div className="p-5 flex-1 max-w-lg mx-auto w-full space-y-5">
-        {/* Essay Prompt Card */}
-        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-wider text-[#7052ff] bg-indigo-50 px-2 py-0.5 rounded-md">
-              {currentPrompt.topic}
-            </span>
-            <span className="text-xs font-bold text-slate-400">Task 2 • 40 daqiqa</span>
-          </div>
+      <div className="p-5 flex-1 max-w-lg mx-auto w-full space-y-4">
+        {/* Task 1 vs Task 2 Tab Selector */}
+        <div className="grid grid-cols-2 gap-2 bg-slate-200/60 p-1.5 rounded-2xl">
+          <button
+            onClick={() => {
+              triggerHaptic('light');
+              setActiveTab('task1');
+              setResult(null);
+            }}
+            className={`py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 ${
+              activeTab === 'task1'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <BarChart3 size={15} className="text-[#7052ff]" />
+            <span>Task 1: Diagramma</span>
+          </button>
 
-          <p className="text-sm font-bold text-slate-900 leading-relaxed">
-            {currentPrompt.prompt}
-          </p>
-
-          <p className="text-[11px] text-slate-400">
-            Write at least 250 words. Give reasons for your answer and include relevant examples.
-          </p>
+          <button
+            onClick={() => {
+              triggerHaptic('light');
+              setActiveTab('task2');
+              setResult(null);
+            }}
+            className={`py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 ${
+              activeTab === 'task2'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <FileText size={15} className="text-[#7052ff]" />
+            <span>Task 2: Insho (Essay)</span>
+          </button>
         </div>
+
+        {/* ── TASK 1: MURAKKAB DIAGRAMMA VA GRAFIK (Foydalanuvchi talabi) ── */}
+        {activeTab === 'task1' && (
+          <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3.5 animate-in fade-in duration-300">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                Academic Task 1 • Report
+              </span>
+              <span className="text-xs font-bold text-slate-400">20 daqiqa • min. 150 so'z</span>
+            </div>
+
+            <p className="text-xs font-bold text-slate-800 leading-relaxed">
+              The chart below illustrates global renewable electricity production in 2015 and 2025 (in Terawatt-hours, TWh), comparing Solar, Wind, Hydro, and Biomass.
+            </p>
+
+            {/* Murakkab SVG Diagramma */}
+            <div className="bg-slate-900 text-white rounded-2xl p-4 shadow-inner space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <span className="text-[11px] font-bold text-[#c4f82a]">
+                  ⚡ Renewable Electricity Output (TWh)
+                </span>
+                <div className="flex items-center space-x-3 text-[10px]">
+                  <span className="flex items-center space-x-1">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-[#7052ff]" />
+                    <span>2015</span>
+                  </span>
+                  <span className="flex items-center space-x-1">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-[#c4f82a]" />
+                    <span>2025 (Proj.)</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* SVG Charts visual representation */}
+              <svg viewBox="0 0 360 160" className="w-full h-40">
+                {/* Horizontal Grid lines */}
+                <line x1="40" y1="20" x2="350" y2="20" stroke="#334155" strokeDasharray="3 3" />
+                <line x1="40" y1="60" x2="350" y2="60" stroke="#334155" strokeDasharray="3 3" />
+                <line x1="40" y1="100" x2="350" y2="100" stroke="#334155" strokeDasharray="3 3" />
+                <line x1="40" y1="130" x2="350" y2="130" stroke="#475569" strokeWidth="1.5" />
+
+                {/* Y-axis labels */}
+                <text x="30" y="24" fill="#94a3b8" fontSize="9" textAnchor="end">1200</text>
+                <text x="30" y="64" fill="#94a3b8" fontSize="9" textAnchor="end">800</text>
+                <text x="30" y="104" fill="#94a3b8" fontSize="9" textAnchor="end">400</text>
+                <text x="30" y="133" fill="#94a3b8" fontSize="9" textAnchor="end">0</text>
+
+                {/* Bars: Solar */}
+                <rect x="65" y="110" width="16" height="20" fill="#7052ff" rx="2" />
+                <rect x="83" y="45" width="16" height="85" fill="#c4f82a" rx="2" />
+                <text x="82" y="145" fill="#cbd5e1" fontSize="9" textAnchor="middle">Solar</text>
+                <text x="91" y="40" fill="#c4f82a" fontSize="8" fontWeight="bold" textAnchor="middle">+350%</text>
+
+                {/* Bars: Wind */}
+                <rect x="135" y="85" width="16" height="45" fill="#7052ff" rx="2" />
+                <rect x="153" y="30" width="16" height="100" fill="#c4f82a" rx="2" />
+                <text x="152" y="145" fill="#cbd5e1" fontSize="9" textAnchor="middle">Wind</text>
+                <text x="161" y="25" fill="#c4f82a" fontSize="8" fontWeight="bold" textAnchor="middle">+140%</text>
+
+                {/* Bars: Hydro */}
+                <rect x="205" y="35" width="16" height="95" fill="#7052ff" rx="2" />
+                <rect x="223" y="28" width="16" height="102" fill="#c4f82a" rx="2" />
+                <text x="222" y="145" fill="#cbd5e1" fontSize="9" textAnchor="middle">Hydro</text>
+                <text x="231" y="23" fill="#c4f82a" fontSize="8" fontWeight="bold" textAnchor="middle">+8%</text>
+
+                {/* Bars: Biomass */}
+                <rect x="275" y="98" width="16" height="32" fill="#7052ff" rx="2" />
+                <rect x="293" y="88" width="16" height="42" fill="#c4f82a" rx="2" />
+                <text x="292" y="145" fill="#cbd5e1" fontSize="9" textAnchor="middle">Biomass</text>
+                <text x="301" y="82" fill="#c4f82a" fontSize="8" fontWeight="bold" textAnchor="middle">+30%</text>
+              </svg>
+
+              <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-300 pt-1 border-t border-slate-800">
+                <div>• Eng katta o'sish: <span className="text-[#c4f82a] font-bold">Solar (Quyosh)</span></div>
+                <div>• Eng barqaror: <span className="text-[#c4f82a] font-bold">Hydro (Gidro)</span></div>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-500 italic">
+              Ko'rsatma: Diagrammadagi asosiy xususiyatlarni tanlang, taqqoslang va umumiy Overview yozing (kamida 150 so'z).
+            </p>
+          </div>
+        )}
+
+        {/* ── TASK 2: INSHO MAVZUSI ── */}
+        {activeTab === 'task2' && (
+          <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3 animate-in fade-in duration-300">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#7052ff] bg-indigo-50 px-2 py-0.5 rounded-md">
+                {currentTask2.topic}
+              </span>
+              <button
+                onClick={() => {
+                  triggerHaptic('light');
+                  setTask2Idx((prev) => (prev + 1) % SAMPLE_TASK2_PROMPTS.length);
+                  setResult(null);
+                }}
+                className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center space-x-1"
+              >
+                <RotateCcw size={12} />
+                <span>Boshqa mavzu</span>
+              </button>
+            </div>
+
+            <p className="text-sm font-bold text-slate-900 leading-relaxed">
+              {currentTask2.prompt}
+            </p>
+            <p className="text-[11px] text-slate-400">
+              Task 2 • 40 daqiqa • Kamida 250 ta so'z
+            </p>
+          </div>
+        )}
 
         {/* Essay Input Area */}
         <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <label className="text-xs font-black uppercase tracking-wider text-slate-700">
-              Inshoyingiz matni:
+              {activeTab === 'task1' ? "Hisobot matni (Report):" : "Insho matni (Essay):"}
             </label>
             <span
               className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full ${
-                wordCount >= 250
+                wordCount >= minWordsRequired
                   ? 'bg-emerald-100 text-emerald-700'
                   : 'bg-amber-100 text-amber-800'
               }`}
             >
-              {wordCount} ta so'z (min. 250)
+              {wordCount} ta so'z (min. {minWordsRequired})
             </span>
           </div>
 
           <textarea
             value={essayText}
             onChange={(e) => setEssayText(e.target.value)}
-            rows={10}
-            placeholder="Inshoyingizni shu yerga yozing yoki nusxasini joylashtiring (Paste)..."
+            rows={9}
+            placeholder={
+              activeTab === 'task1'
+                ? "The bar chart compares the amount of electricity generated from four renewable sources...\n\nOverall, it is clear that...\n\nRegarding solar and wind..."
+                : "Inshoyingizni shu yerga yozing yoki nusxasini joylashtiring..."
+            }
             className="w-full text-xs font-sans leading-relaxed p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#7052ff]/40 resize-none text-slate-800"
           />
 
@@ -187,12 +354,12 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
             {isEvaluating ? (
               <>
                 <Sparkles className="animate-spin" size={16} />
-                <span>4 ta IELTS mezoni bo'yicha tahlil qilinmoqda...</span>
+                <span>Rasmiy 4 ta mezon bo'yicha tahlil qilinmoqda...</span>
               </>
             ) : (
               <>
                 <Sparkles size={16} />
-                <span>Inshoni Tekshirish & Band Ball Olish</span>
+                <span>Tekshirish & Band Ball Olish</span>
               </>
             )}
           </button>
@@ -208,7 +375,7 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
             >
               <Award className="mx-auto text-[#c4f82a] mb-2" size={36} />
               <span className="text-[10px] font-black uppercase tracking-widest text-[#c4f82a]">
-                IELTS Overall Band Score
+                {activeTab === 'task1' ? "Writing Task 1" : "Writing Task 2"} • Band Score
               </span>
               <div className="text-5xl font-black font-mono mt-1 text-white tracking-tight">
                 {result.overallBand.toFixed(1)}
@@ -221,11 +388,12 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
             {/* 4 Official Criteria Grid */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                <span className="text-[10px] font-bold text-slate-400 uppercase block">Task Response</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase block">
+                  {activeTab === 'task1' ? "Task Achievement" : "Task Response"}
+                </span>
                 <span className="text-xl font-black text-slate-900 font-mono">
                   {result.taskResponse.toFixed(1)}
                 </span>
-                <p className="text-[10px] text-slate-500 mt-1 leading-snug">Vazifaning to'liq ochib berilishi</p>
               </div>
 
               <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
@@ -233,7 +401,6 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
                 <span className="text-xl font-black text-slate-900 font-mono">
                   {result.coherenceCohesion.toFixed(1)}
                 </span>
-                <p className="text-[10px] text-slate-500 mt-1 leading-snug">Mantiqiy bog'liqlik va linking words</p>
               </div>
 
               <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
@@ -241,7 +408,6 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
                 <span className="text-xl font-black text-slate-900 font-mono">
                   {result.lexicalResource.toFixed(1)}
                 </span>
-                <p className="text-[10px] text-slate-500 mt-1 leading-snug">Lug'at boyligi va sinonimlar</p>
               </div>
 
               <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
@@ -249,7 +415,6 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
                 <span className="text-xl font-black text-slate-900 font-mono">
                   {result.grammaticalRange.toFixed(1)}
                 </span>
-                <p className="text-[10px] text-slate-500 mt-1 leading-snug">Grammatik aniqlik va xilma-xillik</p>
               </div>
             </div>
 
@@ -258,7 +423,7 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
               <div>
                 <h4 className="text-xs font-black uppercase tracking-wider text-emerald-700 flex items-center space-x-1.5 mb-2">
                   <CheckCircle2 size={14} />
-                  <span>Kuchli tomonlar</span>
+                  <span>Kuchli jihatlar:</span>
                 </h4>
                 <ul className="space-y-1.5">
                   {result.strengths.map((str, i) => (
@@ -273,7 +438,7 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
               <div className="pt-3 border-t border-slate-100">
                 <h4 className="text-xs font-black uppercase tracking-wider text-amber-700 flex items-center space-x-1.5 mb-2">
                   <AlertCircle size={14} />
-                  <span>Band ballni oshirish uchun tavsiyalar</span>
+                  <span>Ballni oshirish tavsiyalari:</span>
                 </h4>
                 <ul className="space-y-1.5">
                   {result.improvements.map((imp, i) => (

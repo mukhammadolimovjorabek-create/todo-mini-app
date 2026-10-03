@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Search, Users, RotateCcw, Clock, ShieldAlert, PhoneCall, Star, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Search, Users, RotateCcw, Clock, ShieldAlert, PhoneCall, Star, ChevronRight, Share2, Check } from 'lucide-react';
 import { getRandomPart1Topic, getRandomPart2Topic, getRandomPart3Topic, type Part1Topic, type Part2CueCard, type Part3Topic } from '../data/speakingBank';
-import { triggerHaptic } from '../../utils/telegram';
+import { triggerHaptic, getTelegramWebApp } from '../../utils/telegram';
 
 interface Props {
   onBack: () => void;
@@ -66,6 +66,25 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [partnerRating, setPartnerRating] = useState(5);
   const [ratingComment, setRatingComment] = useState('');
+
+  // Real room ID for Telegram direct pairing
+  const [roomId] = useState(() => 'room_' + Math.floor(100000 + Math.random() * 900000));
+  const [copiedInvite, setCopiedInvite] = useState(false);
+
+  const handleShareInvite = () => {
+    triggerHaptic('medium');
+    const inviteUrl = `${window.location.origin}?room=${roomId}&module=english`;
+    const shareText = `Salom! Men bilan IELTS Speaking mashq qilasizmi? Xona ID: ${roomId}`;
+    
+    const tg = getTelegramWebApp();
+    if (tg && typeof (tg as any).openTelegramLink === 'function') {
+      (tg as any).openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${encodeURIComponent(shareText)}`);
+    } else {
+      navigator.clipboard?.writeText?.(inviteUrl);
+      setCopiedInvite(true);
+      setTimeout(() => setCopiedInvite(false), 2500);
+    }
+  };
 
   // Search interval
   useEffect(() => {
@@ -299,6 +318,21 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
               <Search size={20} />
               <span>Sherik qidirishni boshlash (Search)</span>
             </button>
+
+            {/* Direct Friend Invite Link for real deployment */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-100 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-black text-slate-800 block">Do'stni to'g'ridan-to'g'ri chaqirish</span>
+                <span className="text-[10px] text-slate-400">Xona kodi: <code className="font-mono text-emerald-600 font-bold">{roomId}</code></span>
+              </div>
+              <button
+                onClick={handleShareInvite}
+                className="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-[#7052ff] text-xs font-bold flex items-center space-x-1.5 transition-all border border-indigo-100 active:scale-95"
+              >
+                {copiedInvite ? <Check size={14} className="text-emerald-600" /> : <Share2 size={14} />}
+                <span>{copiedInvite ? "Nusxalandi ✓" : "Ulashish / Taklif"}</span>
+              </button>
+            </div>
           </div>
         )}
 
