@@ -11,11 +11,11 @@ import type { TelegramUser } from '../types';
 import { 
   loadTasks, 
   getLast7Days, 
-  today, 
   getCustomProfile, 
   saveCustomProfile 
 } from '../utils/storage';
 import { triggerHaptic } from '../utils/telegram';
+import { ALL_BADGES, getUnlockedBadgeIds, getUserCoins } from '../utils/gamification';
 
 interface Props {
   user: TelegramUser;
@@ -40,9 +40,6 @@ export const ScreenProfile: React.FC<Props> = ({ user, onProfileUpdate }) => {
     if (d.done > 0) streak++;
     else break;
   }
-
-  const todayTasks = allTasks.filter((t) => t.createdAt === today());
-  const todayDone = todayTasks.filter((t) => t.done).length;
 
   // Hozirgi ism va rasm
   const displayName = profile.displayName || user.first_name || 'Foydalanuvchi';
@@ -78,16 +75,17 @@ export const ScreenProfile: React.FC<Props> = ({ user, onProfileUpdate }) => {
     }
   };
 
-  // Badges (Yutuqlar)
-  const badges: { icon: string; label: string; earned: boolean; desc: string }[] = [
-    { icon: '🚀', label: 'Tezkor start', earned: total >= 1, desc: 'Birinchi vazifani yaratish' },
-    { icon: '🔥', label: '3 kun streak', earned: streak >= 3, desc: '3 kun uzluksiz reja' },
-    { icon: '🏆', label: '10 vazifa', earned: done >= 10, desc: '10 ta vazifani tugatish' },
-    { icon: '💎', label: '50 vazifa', earned: done >= 50, desc: 'Haqiqiy mahsuldorlik' },
-    { icon: '⚡', label: 'Bir kunda 5ta', earned: todayDone >= 5, desc: 'Kunlik rekord' },
-    { icon: '🎯', label: '100% kun', earned: todayTasks.length > 0 && todayDone === todayTasks.length, desc: 'Barcha rejalarni yopish' },
-    { icon: '👥', label: 'Do\'stlar lideri', earned: true, desc: 'Haftalik reytingda ishtirok' },
-  ];
+  // Tangalar va Nishonlar (Real vaqtda tizimga ulangan)
+  const coins = getUserCoins();
+  const unlockedIds = new Set(getUnlockedBadgeIds());
+  const badges = ALL_BADGES.map((b) => ({
+    id: b.id,
+    icon: b.icon,
+    label: b.label,
+    desc: b.desc,
+    rewardCoins: b.rewardCoins,
+    earned: unlockedIds.has(b.id) || b.condition(allTasks, streak),
+  }));
 
   return (
     <div className="flex flex-col min-h-full bg-[#f6f7fb] pb-28 select-none">
@@ -179,29 +177,39 @@ export const ScreenProfile: React.FC<Props> = ({ user, onProfileUpdate }) => {
         </p>
       </div>
 
-      {/* ── Stats 3 grid ── */}
+      {/* ── Stats 4 grid ── */}
       <div className="px-5 -mt-4 relative z-20">
-        <div className="bg-white rounded-[2rem] p-4 shadow-xl border border-slate-100 grid grid-cols-3 gap-2 text-center">
+        <div className="bg-white rounded-[2rem] p-4 shadow-xl border border-slate-100 grid grid-cols-4 gap-1 text-center">
           <div>
             <div className="flex items-center justify-center space-x-1 text-amber-500 mb-1">
               <Flame size={18} />
             </div>
-            <p className="text-xl font-black text-slate-900">{streak}</p>
-            <p className="text-[10px] text-slate-400 font-bold">Kun streak</p>
+            <p className="text-lg font-black text-slate-900">{streak}</p>
+            <p className="text-[9px] text-slate-400 font-bold">Streak</p>
           </div>
-          <div className="border-x border-slate-100">
+
+          <div className="border-l border-slate-100">
+            <div className="flex items-center justify-center space-x-1 text-amber-500 mb-1">
+              <span className="text-base">🪙</span>
+            </div>
+            <p className="text-lg font-black text-amber-600">{coins}</p>
+            <p className="text-[9px] text-slate-400 font-bold">Tangalar</p>
+          </div>
+
+          <div className="border-l border-slate-100">
             <div className="flex items-center justify-center space-x-1 text-[#7052ff] mb-1">
               <Target size={18} />
             </div>
-            <p className="text-xl font-black text-slate-900">{done}</p>
-            <p className="text-[10px] text-slate-400 font-bold">Bajarildi</p>
+            <p className="text-lg font-black text-slate-900">{done}</p>
+            <p className="text-[9px] text-slate-400 font-bold">Bajarildi</p>
           </div>
-          <div>
+
+          <div className="border-l border-slate-100">
             <div className="flex items-center justify-center space-x-1 text-emerald-500 mb-1">
               <Zap size={18} />
             </div>
-            <p className="text-xl font-black text-slate-900">{pct}%</p>
-            <p className="text-[10px] text-slate-400 font-bold">Samaradorlik</p>
+            <p className="text-lg font-black text-slate-900">{pct}%</p>
+            <p className="text-[9px] text-slate-400 font-bold">Samara</p>
           </div>
         </div>
       </div>
@@ -218,18 +226,23 @@ export const ScreenProfile: React.FC<Props> = ({ user, onProfileUpdate }) => {
         <div className="grid grid-cols-2 gap-2.5">
           {badges.map((b) => (
             <div
-              key={b.label}
+              key={b.id}
               className={`p-3.5 rounded-2xl border transition-all ${
                 b.earned
                   ? 'bg-white border-slate-100 shadow-xs'
-                  : 'bg-slate-50/60 border-dashed border-slate-200 opacity-50'
+                  : 'bg-slate-50/60 border-dashed border-slate-200 opacity-55'
               }`}
             >
-              <div className="flex items-center space-x-2.5">
-                <span className="text-2xl">{b.icon}</span>
-                <div>
-                  <p className="text-xs font-black text-slate-800">{b.label}</p>
-                  <p className="text-[10px] text-slate-400 font-medium">{b.desc}</p>
+              <div className="flex items-start space-x-2.5">
+                <span className="text-2xl shrink-0">{b.icon}</span>
+                <div className="min-w-0">
+                  <p className="text-xs font-black text-slate-800 truncate">{b.label}</p>
+                  <p className="text-[10px] text-slate-400 font-medium leading-tight mt-0.5">{b.desc}</p>
+                  {b.rewardCoins > 0 && (
+                    <span className="text-[9px] font-black text-amber-600 bg-amber-50 border border-amber-200/50 px-1.5 py-0.2 rounded mt-1.5 inline-block">
+                      +{b.rewardCoins} 🪙
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

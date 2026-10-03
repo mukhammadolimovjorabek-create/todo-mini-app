@@ -8,6 +8,12 @@ import {
   today, updateStats, getLast7Days,
 } from '../utils/storage';
 import { triggerHaptic } from '../utils/telegram';
+import {
+  getUserCoins, addCoins, getTaskCoins,
+  checkAndUnlockBadges, markBadgeAlertSeen,
+  type BadgeItem
+} from '../utils/gamification';
+import { BadgeUnlockModal } from './BadgeUnlockModal';
 
 const CATEGORIES: TaskCategory[] = ['work', 'personal', 'health', 'learning', 'other'];
 const PRIORITIES: TaskPriority[] = ['high', 'medium', 'low'];
@@ -34,8 +40,14 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange 
   const [newDuration, setNewDuration] = useState<number | null>(null);
   const [swipedId, setSwipedId] = useState<string | null>(null);
 
+  // Tangalar va Nishon ochilish holatlari
+  const [coins, setCoins] = useState(() => getUserCoins());
+  const [unlockedBadge, setUnlockedBadge] = useState<BadgeItem | null>(null);
+  const [floatingCoin, setFloatingCoin] = useState<{ amount: number; key: number } | null>(null);
+
   const reload = useCallback(() => {
     setTasks(loadTasks().filter((t) => t.createdAt === today()));
+    setCoins(getUserCoins());
   }, []);
 
   useEffect(() => {
@@ -45,9 +57,36 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange 
 
   const handleToggle = (id: string) => {
     triggerHaptic('medium');
+    const taskBefore = tasks.find((t) => t.id === id);
     const updated = toggleTask(id).filter((t) => t.createdAt === today());
     setTasks(updated);
     onTasksChange?.();
+
+    if (taskBefore) {
+      const willBeDone = !taskBefore.done;
+      const coinDiff = getTaskCoins(taskBefore.priority);
+
+      if (willBeDone) {
+        // Tanga qo'shish
+        const newTotal = addCoins(coinDiff);
+        setCoins(newTotal);
+        setFloatingCoin({ amount: coinDiff, key: Date.now() });
+        setTimeout(() => setFloatingCoin(null), 1800);
+
+        // Nishonlar holatini tekshirish
+        const result = checkAndUnlockBadges();
+        if (result.newBadges.length > 0) {
+          const nextBadge = result.newBadges[0];
+          markBadgeAlertSeen(nextBadge.id);
+          setUnlockedBadge(nextBadge);
+          setCoins(getUserCoins());
+        }
+      } else {
+        // Vazifa qaytarilsa tangani ayirish
+        const newTotal = addCoins(-coinDiff);
+        setCoins(newTotal);
+      }
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -68,6 +107,15 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange 
     reload();
     updateStats();
     onTasksChange?.();
+
+    // Yangi vazifa yaratilganida nishon tekshirish (masalan: birinchi vazifa nishoni)
+    const result = checkAndUnlockBadges();
+    if (result.newBadges.length > 0) {
+      const nextBadge = result.newBadges[0];
+      markBadgeAlertSeen(nextBadge.id);
+      setUnlockedBadge(nextBadge);
+      setCoins(getUserCoins());
+    }
   };
 
   const done = tasks.filter((t) => t.done).length;
@@ -99,11 +147,33 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange 
     <div className="flex flex-col min-h-full bg-[#f6f7fb] pb-28">
       {/* ── Header ── */}
       <div className="px-5 pt-6 pb-2">
-        <p className="text-xs font-semibold text-slate-400">{greeting},</p>
-        <h1 className="text-2xl font-black text-slate-900 leading-tight tracking-tight">{userName}! 👋</h1>
-        <p className="text-[11px] text-slate-400 mt-0.5 font-medium">
-          {new Date().toLocaleDateString('uz-UZ', { weekday: 'long', day: 'numeric', month: 'long' })}
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-slate-400">{greeting},</p>
+            <h1 className="text-2xl font-black text-slate-900 leading-tight tracking-tight">{userName}! 👋</h1>
+            <p className="text-[11px] text-slate-400 mt-0.5 font-medium">
+              {new Date().toLocaleDateString('uz-UZ', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
+          </div>
+
+          {/* Yuqoridagi Tangalar Hisoblagichi (Coins Counter) */}
+          <div className="relative">
+            <div className="flex items-center space-x-1.5 bg-gradient-to-r from-amber-500/15 to-yellow-500/10 border border-amber-400/30 px-3.5 py-1.5 rounded-full shadow-xs backdrop-blur-xs">
+              <span className="text-lg select-none">🪙</span>
+              <span className="text-sm font-black text-amber-700 tracking-tight">{coins}</span>
+            </div>
+
+            {/* Uchib chiqadigan +🪙 animatsiyasi */}
+            {floatingCoin && (
+              <div
+                key={floatingCoin.key}
+                className="absolute -top-7 right-1 pointer-events-none text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shadow-sm animate-bounce"
+              >
+                +{floatingCoin.amount} 🪙
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* ── 2-rasmdagi zamonaviy to'q binafsha Progress Card ── */}
         <div className="mt-4 rounded-[2rem] p-5 bg-[#1e1552] text-white shadow-xl relative overflow-hidden">
@@ -422,6 +492,12 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange 
           </div>
         </div>
       )}
+
+      {/* Yangi Nishon Ochilganini ko'rsatuvchi tantanali pop-up modal */}
+      <BadgeUnlockModal
+        badge={unlockedBadge}
+        onClose={() => setUnlockedBadge(null)}
+      />
     </div>
   );
 };
