@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Mic, Users, BookOpen, ChevronRight, Award } from 'lucide-react';
+import { ArrowLeft, Mic, Users, BookOpen, ChevronRight, Award, FileText } from 'lucide-react';
 import { AISpeakingView } from './AISpeakingView';
 import { PartnerSpeakingView } from './PartnerSpeakingView';
 import { WritingEvaluationView } from './WritingEvaluationView';
+import { IeltsReadingView } from './IeltsReadingView';
 import { triggerHaptic } from '../../utils/telegram';
 
 interface Props {
@@ -12,10 +13,18 @@ interface Props {
   initialView?: ActiveView;
 }
 
-type ActiveView = 'menu' | 'ai_speaking' | 'partner_speaking' | 'writing';
+type ActiveView = 'menu' | 'reading' | 'writing' | 'speaking' | 'ai_speaking' | 'partner_speaking';
 
 export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, initialView = 'menu' }) => {
   const [activeView, setActiveView] = useState<ActiveView>(initialView);
+
+  if (activeView === 'reading') {
+    return <IeltsReadingView onBack={() => setActiveView('menu')} userName={userName} />;
+  }
+
+  if (activeView === 'writing') {
+    return <WritingEvaluationView onBack={() => setActiveView('menu')} userName={userName} />;
+  }
 
   if (activeView === 'ai_speaking') {
     return <AISpeakingView onBack={() => setActiveView('menu')} userName={userName} />;
@@ -23,10 +32,6 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
 
   if (activeView === 'partner_speaking') {
     return <PartnerSpeakingView onBack={() => setActiveView('menu')} userName={userName} userGender={userGender} />;
-  }
-
-  if (activeView === 'writing') {
-    return <WritingEvaluationView onBack={() => setActiveView('menu')} userName={userName} />;
   }
 
   return (
@@ -44,7 +49,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
           <div>
             <div className="flex items-center space-x-1.5">
               <span className="text-[10px] font-black uppercase tracking-wider text-[#7052ff] bg-indigo-50 px-2 py-0.5 rounded-full">
-                IELTS Academic & General
+                IELTS
               </span>
             </div>
             <h2 className="text-lg font-black text-slate-900 tracking-tight leading-tight">
@@ -67,124 +72,174 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
               <span>Band 9.0 Tayyorgarlik</span>
             </span>
             <h3 className="text-xl font-black">
-              IELTS Speaking & Writing 🎯
+              IELTS Reading, Writing & Speaking 🎯
             </h3>
             <p className="text-xs text-purple-200/85 leading-relaxed">
-              2026-yil sentabr-dekabr rasmiy mavzulari asosida AI Examiner Dr. Alistair Vance yoki jonli sherik bilan mashq qiling.
+              Xush kelibsiz, <strong>{userName}</strong>! IELTS imtihonining barcha asosiy bo'limlari bo'yicha mashq qiling.
             </p>
           </div>
         </div>
 
-        {/* Section Cards */}
+        {/* 3 Main Sections: Reading, Writing, Speaking */}
         <div className="space-y-3.5">
           <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
-            Mashq qilish formatini tanlang:
+            Bo'limni tanlang:
           </h4>
 
-          {/* 1. AI Speaking */}
+          {/* 1. READING */}
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => {
               triggerHaptic('medium');
-              setActiveView('ai_speaking');
+              setActiveView('reading');
             }}
-            className="bg-white rounded-3xl p-5 border border-slate-100 hover:border-[#7052ff]/40 shadow-sm hover:shadow-md cursor-pointer transition-all active:scale-[0.98] group"
+            className="p-5 rounded-[2rem] bg-white border border-slate-100 shadow-sm hover:border-[#7052ff]/40 hover:shadow-md transition-all cursor-pointer group active:scale-[0.99] space-y-3"
           >
             <div className="flex items-start justify-between">
-              <div className="flex items-start space-x-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 text-xl group-hover:scale-105 transition-transform">
-                  <Mic size={22} />
+              <div className="flex items-center space-x-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <FileText size={22} />
                 </div>
                 <div>
                   <div className="flex items-center space-x-2">
-                    <h4 className="text-base font-black text-slate-900">AI Speaking Examiner</h4>
-                    <span className="text-[9px] font-black bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
-                      Dr. Vance (9.0)
+                    <h4 className="text-base font-black text-slate-900 group-hover:text-[#7052ff] transition-colors">
+                      Reading
+                    </h4>
+                    <span className="text-[9px] font-black bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                      Akademik
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    10 marta 9.0 olgan rasmiy Cambridge eksperti. Part 1, 2 yoki 3 bo'limlarini tanlab, to'liq imtihon muhitida gapiring.
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Matnlar, True/False/Not Given, Multiple Choice va vaqt nazorati
                   </p>
                 </div>
               </div>
-              <ChevronRight size={18} className="text-slate-300 group-hover:text-[#7052ff] shrink-0 mt-2 transition-colors" />
-            </div>
 
-            <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center space-x-2 text-[10px] font-bold text-slate-500">
-              <span className="bg-slate-100 px-2 py-0.5 rounded-md">Part 1 Q&A</span>
-              <span className="bg-slate-100 px-2 py-0.5 rounded-md">Part 2 Cue Card + Timer</span>
-              <span className="bg-slate-100 px-2 py-0.5 rounded-md">Part 3 Discussion</span>
-            </div>
-          </div>
-
-          {/* 2. Partner Speaking (Search) */}
-          <div
-            onClick={() => {
-              triggerHaptic('medium');
-              setActiveView('partner_speaking');
-            }}
-            className="bg-white rounded-3xl p-5 border border-slate-100 hover:border-emerald-500/40 shadow-sm hover:shadow-md cursor-pointer transition-all active:scale-[0.98] group"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-start space-x-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 text-xl group-hover:scale-105 transition-transform">
-                  <Users size={22} />
-                </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <h4 className="text-base font-black text-slate-900">Sherik bilan Speaking (Search)</h4>
-                    <span className="text-[9px] font-black bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
-                      Jonli Muloqot
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Jins bo'yicha filter bilan sherik qidiring. Bog'langach, Part 1, 2, 3 bo'limlari ochiladi va savollar bankidan navbat bilan gapirasiz.
-                  </p>
-                </div>
+              <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#7052ff] group-hover:text-white transition-all">
+                <ChevronRight size={16} />
               </div>
-              <ChevronRight size={18} className="text-slate-300 group-hover:text-emerald-600 shrink-0 mt-2 transition-colors" />
             </div>
 
-            <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center space-x-2 text-[10px] font-bold text-slate-500">
-              <span className="bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md">Radar Search</span>
-              <span className="bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md">Savollar banki</span>
-              <span className="bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md">Xavfsiz rozilik</span>
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-lg border border-blue-100">
+                True / False / Not Given
+              </span>
+              <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-lg border border-blue-100">
+                Multiple Choice
+              </span>
+              <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-lg border border-blue-100">
+                20 daqiqa taymer
+              </span>
             </div>
           </div>
 
-          {/* 3. Writing */}
+          {/* 2. WRITING */}
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => {
               triggerHaptic('medium');
               setActiveView('writing');
             }}
-            className="bg-white rounded-3xl p-5 border border-slate-100 hover:border-[#7052ff]/40 shadow-sm hover:shadow-md cursor-pointer transition-all active:scale-[0.98] group"
+            className="p-5 rounded-[2rem] bg-white border border-slate-100 shadow-sm hover:border-[#7052ff]/40 hover:shadow-md transition-all cursor-pointer group active:scale-[0.99] space-y-3"
           >
             <div className="flex items-start justify-between">
-              <div className="flex items-start space-x-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-[#7052ff] flex items-center justify-center shrink-0 text-xl group-hover:scale-105 transition-transform">
+              <div className="flex items-center space-x-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-[#7052ff] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                   <BookOpen size={22} />
                 </div>
                 <div>
                   <div className="flex items-center space-x-2">
-                    <h4 className="text-base font-black text-slate-900">Writing</h4>
+                    <h4 className="text-base font-black text-slate-900 group-hover:text-[#7052ff] transition-colors">
+                      Writing
+                    </h4>
                     <span className="text-[9px] font-black bg-indigo-100 text-[#7052ff] px-2 py-0.5 rounded-full">
-                      4 Band Mezon
+                      Task 1 & 2
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Akademik insho yoki diagramma tahlilini yozing va rasmiy mezonlar bo'yicha darhol xolis ball va tahrir tavsiyalarini oling.
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Diagramma tahlili va insho yozish, 4 ta rasmiy mezon bo'yicha tahlil
                   </p>
                 </div>
               </div>
-              <ChevronRight size={18} className="text-slate-300 group-hover:text-[#7052ff] shrink-0 mt-2 transition-colors" />
+
+              <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#7052ff] group-hover:text-white transition-all">
+                <ChevronRight size={16} />
+              </div>
             </div>
 
-            <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center space-x-2 text-[10px] font-bold text-slate-500">
-              <span className="bg-slate-100 px-2 py-0.5 rounded-md">TR / CC / LR / GRA</span>
-              <span className="bg-slate-100 px-2 py-0.5 rounded-md">So'zlar sanagich</span>
-              <span className="bg-slate-100 px-2 py-0.5 rounded-md">Band 8+ Lug'at</span>
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              <span className="text-[10px] font-bold bg-indigo-50 text-[#7052ff] px-2.5 py-0.5 rounded-lg border border-indigo-100">
+                Task 1: Diagramma
+              </span>
+              <span className="text-[10px] font-bold bg-indigo-50 text-[#7052ff] px-2.5 py-0.5 rounded-lg border border-indigo-100">
+                Task 2: Insho
+              </span>
+              <span className="text-[10px] font-bold bg-indigo-50 text-[#7052ff] px-2.5 py-0.5 rounded-lg border border-indigo-100">
+                TR / CC / LR / GRA
+              </span>
             </div>
           </div>
+
+          {/* 3. SPEAKING */}
+          <div className="p-5 rounded-[2rem] bg-white border border-slate-100 shadow-sm space-y-3">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                  <Mic size={22} />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h4 className="text-base font-black text-slate-900">
+                      Speaking
+                    </h4>
+                    <span className="text-[9px] font-black bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                      Jonli nutq
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    AI Examiner Dr. Vance (9.0) yoki jonli sherik bilan mashq qiling
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('medium');
+                  setActiveView('ai_speaking');
+                }}
+                className="p-3 rounded-2xl bg-amber-50/70 hover:bg-amber-100/70 border border-amber-200 text-left transition-all active:scale-95 group"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-black uppercase text-amber-800">AI Examiner</span>
+                  <Mic size={14} className="text-amber-600" />
+                </div>
+                <p className="text-xs font-black text-slate-900">Dr. Vance (9.0)</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Part 1, 2, 3 va Full Mock</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('medium');
+                  setActiveView('partner_speaking');
+                }}
+                className="p-3 rounded-2xl bg-emerald-50/70 hover:bg-emerald-100/70 border border-emerald-200 text-left transition-all active:scale-95 group"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] font-black uppercase text-emerald-800">Sherik bilan</span>
+                  <Users size={14} className="text-emerald-600" />
+                </div>
+                <p className="text-xs font-black text-slate-900">Jonli Muloqot</p>
+                <p className="text-[10px] text-slate-500 mt-0.5">Radar search orqali topish</p>
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

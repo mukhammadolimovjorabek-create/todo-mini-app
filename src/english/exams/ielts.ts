@@ -2,7 +2,7 @@ import type { ExamConfig } from '../types';
 
 export const ieltsExamConfig: ExamConfig = {
   id: 'ielts',
-  title: 'IELTS Academic & General',
+  title: 'IELTS',
   subtitle: 'Xalqaro standartdagi imtihonga tayyorgarlik',
   uzbekLabel: 'IELTS Imtihoni',
   accentColor: '#7052ff',

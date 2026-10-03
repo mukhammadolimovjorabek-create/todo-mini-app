@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Sparkles, BookOpen, Mic, Users, Trophy, Settings, Clock, Award, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Sparkles, BookOpen, Mic, Trophy, Settings, Clock, Award, ChevronRight } from 'lucide-react';
 import { EXAM_REGISTRY } from './exams';
 import type { ExamType, EnglishUserProfile, TestResultItem } from './types';
 import { getEnglishProfile, getTestResults } from './utils/storage';
@@ -29,7 +29,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
   const [profile, setProfile] = useState<EnglishUserProfile | null>(() => getEnglishProfile());
   const [showSettings, setShowSettings] = useState(false);
   const [selectedExam, setSelectedExam] = useState<ExamType | null>(null);
-  const [ieltsInitialView, setIeltsInitialView] = useState<'menu' | 'ai_speaking' | 'partner_speaking' | 'writing'>('menu');
+  const [ieltsInitialView, setIeltsInitialView] = useState<'menu' | 'reading' | 'writing' | 'speaking' | 'ai_speaking' | 'partner_speaking'>('menu');
   const [results, setResults] = useState<TestResultItem[]>(() => getTestResults());
   const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
 
@@ -200,8 +200,22 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
                     </div>
                   </div>
 
-                  {/* 3-rasm talabi: To'g'ridan-to'g'ri bo'limga o'tuvchi faol tugmalar */}
+                  {/* IELTS 3 ta asosiy bo'lim tugmalari: Reading, Writing, Speaking */}
                   <div className="mt-4 pt-3.5 border-t border-slate-100 grid grid-cols-3 gap-2 text-center">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerHaptic('medium');
+                        setIeltsInitialView('reading');
+                        setSelectedExam('ielts');
+                      }}
+                      className="bg-slate-50 hover:bg-blue-50/80 p-2.5 rounded-xl transition-all active:scale-95 text-center group border border-transparent hover:border-blue-100"
+                    >
+                      <BookOpen size={16} className="mx-auto text-blue-600 mb-1 group-hover:scale-110 transition-transform" />
+                      <p className="text-[10px] font-bold text-slate-700">Reading</p>
+                    </button>
+
                     <button
                       type="button"
                       onClick={(e) => {
@@ -227,21 +241,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
                       className="bg-slate-50 hover:bg-amber-50/80 p-2.5 rounded-xl transition-all active:scale-95 text-center group border border-transparent hover:border-amber-100"
                     >
                       <Mic size={16} className="mx-auto text-amber-500 mb-1 group-hover:scale-110 transition-transform" />
-                      <p className="text-[10px] font-bold text-slate-700">AI Speaking</p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        triggerHaptic('medium');
-                        setIeltsInitialView('partner_speaking');
-                        setSelectedExam('ielts');
-                      }}
-                      className="bg-slate-50 hover:bg-emerald-50/80 p-2.5 rounded-xl transition-all active:scale-95 text-center group border border-transparent hover:border-emerald-100"
-                    >
-                      <Users size={16} className="mx-auto text-emerald-500 mb-1 group-hover:scale-110 transition-transform" />
-                      <p className="text-[10px] font-bold text-slate-700">Sherik bilan</p>
+                      <p className="text-[10px] font-bold text-slate-700">Speaking</p>
                     </button>
                   </div>
                 </div>
@@ -290,9 +290,6 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
                     </span>
                     <span className="text-[10px] font-bold bg-amber-50 text-amber-800 px-2.5 py-1 rounded-lg border border-amber-200">
                       ✍️ Writing (Task 1 & 2)
-                    </span>
-                    <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg border border-emerald-100">
-                      📘 43 ta Savollar Bazasi
                     </span>
                     <span className="text-[10px] font-black bg-purple-50 text-purple-700 px-2.5 py-1 rounded-lg border border-purple-100">
                       Full Mock

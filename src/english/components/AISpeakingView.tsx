@@ -105,45 +105,105 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     }
   };
 
-  // Start Recognition automatically
-  const startListening = () => {
+  const isListeningWantedRef = useRef<boolean>(false);
+  const accumulatedTextRef = useRef<string>('');
+  const [isManualInput, setIsManualInput] = useState<boolean>(false);
+
+  // Start Recognition automatically with auto-reconnect and error tolerance
+  const startListening = async () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
+    if (!SpeechRecognition) {
+      setIsManualInput(true);
+      return;
+    }
+
+    isListeningWantedRef.current = true;
+
+    // Prompt microphone permission explicitly
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        console.warn("Microphone permission prompt warning:", err);
+      }
+    }
 
     try {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try { recognitionRef.current.abort(); } catch {}
       }
+
       const recognition = new SpeechRecognition();
       recognition.lang = 'en-US';
       recognition.continuous = true;
       recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
 
-      recognition.onresult = (event: any) => {
-        let full = '';
-        for (let i = 0; i < event.results.length; i++) {
-          full += event.results[i][0].transcript + ' ';
-        }
-        setLiveTranscript(full.trim());
+      recognition.onstart = () => {
+        setIsRecording(true);
       };
 
-      recognition.onerror = () => {
-        setIsRecording(false);
+      recognition.onresult = (event: any) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const piece = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            accumulatedTextRef.current += piece + ' ';
+          } else {
+            interim += piece;
+          }
+        }
+        const combined = (accumulatedTextRef.current + interim).trim();
+        if (combined) {
+          setLiveTranscript(combined);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn("Speech recognition error:", event.error);
+        if (event.error === 'no-speech') {
+          // Normal brief pause, do NOT turn off microphone!
+          return;
+        }
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          isListeningWantedRef.current = false;
+          setIsRecording(false);
+          setIsManualInput(true);
+          return;
+        }
+        if (event.error === 'network') {
+          setIsManualInput(true);
+        }
       };
 
       recognition.onend = () => {
-        setIsRecording(false);
+        // Automatically restart if user is on active speaking turn
+        if (isListeningWantedRef.current) {
+          try {
+            recognition.start();
+          } catch {
+            setTimeout(() => {
+              if (isListeningWantedRef.current) {
+                try { recognition.start(); } catch {}
+              }
+            }, 250);
+          }
+        } else {
+          setIsRecording(false);
+        }
       };
 
       recognition.start();
       recognitionRef.current = recognition;
       setIsRecording(true);
     } catch (err) {
-      console.error(err);
+      console.error("Speech recognition start failed:", err);
+      setIsManualInput(true);
     }
   };
 
   const stopListening = () => {
+    isListeningWantedRef.current = false;
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
@@ -849,22 +909,63 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
               )}
             </div>
 
-            {/* Live speech transcription display box */}
+            {/* Live speech transcription display box or manual fallback */}
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 min-h-[90px] flex flex-col justify-between">
-              {liveTranscript ? (
-                <p className="text-sm font-medium text-slate-900 leading-relaxed font-sans">
-                  "{liveTranscript}"
-                </p>
+              {isManualInput ? (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
+                    <span>Qo'lda tahrirlash / yozish:</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsManualInput(false)}
+                      className="text-[#7052ff] hover:underline"
+                    >
+                      Ovozli rejimga qaytish 🎙️
+                    </button>
+                  </div>
+                  <textarea
+                    value={liveTranscript}
+                    onChange={(e) => {
+                      setLiveTranscript(e.target.value);
+                      accumulatedTextRef.current = e.target.value;
+                    }}
+                    placeholder="Javobingizni shu yerda yozishingiz yoki tahrirlashingiz mumkin..."
+                    rows={3}
+                    className="w-full p-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 outline-none focus:border-[#7052ff] resize-none"
+                  />
+                </div>
+              ) : liveTranscript ? (
+                <div>
+                  <p className="text-sm font-medium text-slate-900 leading-relaxed font-sans">
+                    "{liveTranscript}"
+                  </p>
+                  <div className="text-right pt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsManualInput(true)}
+                      className="text-[10px] font-bold text-[#7052ff] hover:underline"
+                    >
+                      ✍️ Tahrirlash / Yozish
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <div className="text-center py-4 space-y-1">
                   <p className="text-xs text-slate-400 italic">
                     Mikrofon orqali gapiring. Aytgan so'zlaringiz va talaffuzingiz shu yerda jonli aks etadi...
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => setIsManualInput(true)}
+                    className="text-[10px] font-bold text-slate-500 hover:text-[#7052ff] underline pt-1 block mx-auto"
+                  >
+                    Mikrofon ishlamasa, yozish uchun bosing ✍️
+                  </button>
                 </div>
               )}
 
               {/* Real-time wave indicator when recording */}
-              {isRecording && (
+              {isRecording && !isManualInput && (
                 <div className="flex items-center justify-center space-x-1 pt-2">
                   <span className="w-1 h-3 bg-emerald-500 rounded-full animate-bounce" />
                   <span className="w-1 h-5 bg-emerald-500 rounded-full animate-bounce [animation-delay:0.15s]" />
