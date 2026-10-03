@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { ArrowLeft, ArrowRight, Sparkles, Settings, Award, ChevronRight, Clock, Trophy, Users } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, ArrowRight, Sparkles, Settings, Award, Clock, Trophy } from 'lucide-react';
 import type { ExamType, EnglishUserProfile, TestResultItem } from './types';
 import { getEnglishProfile, getTestResults } from './utils/storage';
 import { RegistrationModal } from './components/RegistrationModal';
@@ -7,12 +7,7 @@ import { SettingsSheet } from './components/SettingsSheet';
 import { IeltsDashboard } from './components/IeltsDashboard';
 import { MultilevelDashboard } from './components/MultilevelDashboard';
 import { triggerHaptic } from '../utils/telegram';
-import {
-  SpeakingWaveform,
-  TilePulseRing,
-  ReadingAnimatedBook,
-  WritingAnimatedPencil,
-} from './components/AnimatedSectionIcons';
+import { SpeakingWaveform } from './components/AnimatedSectionIcons';
 import './tokens.css';
 
 export interface TelegramUserProps {
@@ -37,16 +32,6 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
   const [ieltsInitialView, setIeltsInitialView] = useState<'menu' | 'reading' | 'writing' | 'speaking' | 'ai_speaking' | 'partner_speaking'>('menu');
   const [results, setResults] = useState<TestResultItem[]>(() => getTestResults());
   const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
-
-  // Compute last scores from test history (only if test has actually been taken)
-  const { readingScore, writingScore } = useMemo(() => {
-    const lastReading = results.find((r) => r.testType === 'reading');
-    const lastWriting = results.find((r) => r.testType === 'writing_task1' || r.testType === 'writing_task2');
-    return {
-      readingScore: lastReading?.overallBand ? lastReading.overallBand.toFixed(1) : null,
-      writingScore: lastWriting?.overallBand ? lastWriting.overallBand.toFixed(1) : null,
-    };
-  }, [results]);
 
   // Active display name and gender
   const currentName = profile?.displayName || telegramUser?.first_name || 'Talaba';
@@ -178,176 +163,81 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
           </div>
         </div>
 
-        {/* ── Section Picker ("Bo'limni tanlang" from Video & Prompt) ── */}
+        {/* ── Section Picker (IELTS va Multilevel dastlabki ekrani) ── */}
         <div className="space-y-4 pt-1">
           <div className="space-y-1">
             <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
-              BO'LIMNI TANLANG
+              IMTIHON DASTURINI TANLANG
             </span>
             <h2 className="text-2xl font-black text-slate-900 leading-tight">
-              Bugun nimani kuchaytiramiz?
+              Qaysi yo'nalishda tayyorlanasiz?
             </h2>
           </div>
 
-          {/* 1. SPEAKING CARD (Full Width with 7-Bar SMIL Waveform from Prompt) */}
-          <div className="bg-[#181630] border border-white/10 rounded-[2.2rem] p-5 shadow-xl relative overflow-hidden space-y-4 text-white">
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] font-black uppercase text-[#c4f82a] bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
-                AI EXAMINER • YANGI
-              </span>
+          {/* ── 1. KATTA IELTS KARTASI (Speaking, Reading, Writing shu bo'lim ichida) ── */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              triggerHaptic('medium');
+              setIeltsInitialView('menu');
+              setSelectedExam('ielts');
+            }}
+            className="bg-[#181630] border border-indigo-500/30 hover:border-indigo-400/60 rounded-[2.2rem] p-6 shadow-xl relative overflow-hidden space-y-4 text-white group cursor-pointer transition-all active:scale-[0.99]"
+          >
+            <div className="absolute top-0 right-0 w-44 h-44 bg-[#7052ff]/10 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Header: Badge & Animated Waveform */}
+            <div className="flex items-center justify-between relative z-10">
+              <div className="flex items-center space-x-2">
+                <span className="text-[9px] font-black uppercase tracking-wider text-[#c4f82a] bg-white/5 border border-white/10 px-3 py-1 rounded-full">
+                  🇬🇧 HALQARO DASTUR
+                </span>
+                <span className="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 px-2.5 py-1 rounded-full border border-indigo-400/20">
+                  Band 9.0
+                </span>
+              </div>
 
               {/* 7-bar SVG native waveform (SMIL) */}
-              <SpeakingWaveform width={65} height={44} />
+              <SpeakingWaveform width={55} height={36} />
             </div>
 
-            <div>
-              <h3 className="text-2xl font-black text-white tracking-tight">
-                Speaking
+            {/* Title & Description */}
+            <div className="relative z-10 space-y-1">
+              <h3 className="text-2xl font-black text-white tracking-tight group-hover:text-indigo-300 transition-colors">
+                IELTS Exam Practice
               </h3>
-              <p className="text-xs text-slate-300/90 mt-1 leading-relaxed">
-                AI bilan jonli suhbat yoki sherik topib mashq qiling.
+              <p className="text-xs text-slate-300/90 leading-relaxed">
+                Speaking (AI Examiner & Jonli sherik), Reading (T/F/NG) va Writing Task 1-2 baholash mezonlari.
               </p>
             </div>
 
-            {/* Bottom Chips & Start Button */}
-            <div className="flex items-center justify-between pt-1">
-              <div className="flex items-center space-x-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerHaptic('light');
-                    setIeltsInitialView('ai_speaking');
-                    setSelectedExam('ielts');
-                  }}
-                  className="text-[11px] font-bold text-white/90 bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-xl border border-white/10 transition-all active:scale-95"
-                >
-                  Part 1-3
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerHaptic('light');
-                    setIeltsInitialView('partner_speaking');
-                    setSelectedExam('ielts');
-                  }}
-                  className="text-[11px] font-extrabold text-indigo-100 bg-gradient-to-r from-indigo-500/30 to-purple-500/25 hover:from-indigo-500/40 hover:to-purple-500/35 px-3 py-1.5 rounded-xl border border-indigo-400/40 shadow-xs flex items-center space-x-1.5 transition-all active:scale-95"
-                >
-                  <Users size={12} className="text-indigo-300 shrink-0" />
-                  <span>Sherik bilan</span>
-                </button>
-              </div>
+            {/* Sub-section Pills */}
+            <div className="flex flex-wrap gap-2 pt-1 relative z-10">
+              <span className="text-[10px] font-extrabold text-white bg-white/10 px-3 py-1.5 rounded-xl border border-white/10">
+                🎙️ Speaking (AI & Sherik)
+              </span>
+              <span className="text-[10px] font-extrabold text-white bg-white/10 px-3 py-1.5 rounded-xl border border-white/10">
+                📖 Reading
+              </span>
+              <span className="text-[10px] font-extrabold text-white bg-white/10 px-3 py-1.5 rounded-xl border border-white/10">
+                ✍️ Writing Task 1 & 2
+              </span>
+            </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  triggerHaptic('medium');
-                  setIeltsInitialView('ai_speaking');
-                  setSelectedExam('ielts');
-                }}
-                className="bg-[#c4f82a] hover:brightness-105 active:scale-95 text-[#121124] font-black text-xs px-4.5 py-2.5 rounded-full flex items-center space-x-1.5 shadow-md transition-all"
-              >
-                <span>Boshlash</span>
+            {/* Bottom Action */}
+            <div className="flex items-center justify-between pt-2 border-t border-white/10 relative z-10">
+              <span className="text-[11px] font-semibold text-slate-400">
+                Barcha IELTS bo'limlariga o'tish
+              </span>
+              <div className="bg-[#c4f82a] group-hover:brightness-105 text-[#121124] font-black text-xs px-4 py-2 rounded-full flex items-center space-x-1.5 shadow-md transition-all">
+                <span>IELTS ga kirish</span>
                 <ArrowRight size={14} />
-              </button>
+              </div>
             </div>
           </div>
 
-          {/* 2-COLUMN GRID: READING & WRITING WITH ANIMATED SVG SMIL ICONS */}
-          <div className="grid grid-cols-2 gap-3.5">
-            {/* READING CARD */}
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => {
-                triggerHaptic('medium');
-                setIeltsInitialView('reading');
-                setSelectedExam('ielts');
-              }}
-              className="bg-[#181630] border border-white/10 hover:border-sky-400/50 rounded-[2rem] p-4.5 flex flex-col justify-between cursor-pointer active:scale-95 transition-all shadow-md group text-white"
-            >
-              <div className="flex items-start justify-between">
-                {/* 52x52 Tile with Pulse Ring & Turning Page Book */}
-                <div
-                  className="w-[52px] h-[52px] rounded-[16px] flex items-center justify-center shrink-0 relative"
-                  style={{ background: 'rgba(108,199,255,.16)', position: 'relative' }}
-                >
-                  <TilePulseRing color="#6CC7FF" />
-                  <ReadingAnimatedBook size={32} />
-                </div>
-
-                <div className="w-7 h-7 rounded-full bg-white/10 text-slate-300 flex items-center justify-center group-hover:bg-sky-500 group-hover:text-white transition-all">
-                  <ArrowRight size={14} />
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <h4 className="text-base font-black text-white">
-                  Reading
-                </h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  T/F/NG • 20 daqiqa
-                </p>
-              </div>
-
-              {readingScore && (
-                <div className="mt-3.5">
-                  <span className="inline-block text-[10px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
-                    Oxirgi: {readingScore}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* WRITING CARD */}
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => {
-                triggerHaptic('medium');
-                setIeltsInitialView('writing');
-                setSelectedExam('ielts');
-              }}
-              className="bg-[#181630] border border-white/10 hover:border-violet-400/50 rounded-[2rem] p-4.5 flex flex-col justify-between cursor-pointer active:scale-95 transition-all shadow-md group text-white"
-            >
-              <div className="flex items-start justify-between">
-                {/* 52x52 Tile with Pulse Ring & Drawing Pencil */}
-                <div
-                  className="w-[52px] h-[52px] rounded-[16px] flex items-center justify-center shrink-0 relative"
-                  style={{ background: 'rgba(169,155,255,.18)', position: 'relative' }}
-                >
-                  <TilePulseRing color="#A99BFF" />
-                  <WritingAnimatedPencil size={32} />
-                </div>
-
-                <div className="w-7 h-7 rounded-full bg-white/10 text-slate-300 flex items-center justify-center group-hover:bg-[#7052ff] group-hover:text-white transition-all">
-                  <ArrowRight size={14} />
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <h4 className="text-base font-black text-white">
-                  Writing
-                </h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  Task 1 & 2 • 4 mezon
-                </p>
-              </div>
-
-              {writingScore && (
-                <div className="mt-3.5">
-                  <span className="inline-block text-[10px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
-                    Oxirgi: {writingScore}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <p className="text-[10px] text-slate-400 text-center pt-0.5">
-            AI baholari taxminiy, rasmiy IELTS natijasi emas.
-          </p>
-
-          {/* Multilevel Quick Switch Card (Dark Luxury Design - 1-rasm talabi) */}
+          {/* ── 2. KATTALASHTIRILGAN MULTILEVEL (CEFR) KARTASI ── */}
           <div
             role="button"
             tabIndex={0}
@@ -355,31 +245,58 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
               triggerHaptic('medium');
               setSelectedExam('multilevel');
             }}
-            className="p-4.5 rounded-[2rem] border border-emerald-500/25 bg-[#181630] hover:border-emerald-400/50 hover:shadow-lg hover:shadow-emerald-950/40 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between text-white relative overflow-hidden"
+            className="bg-[#181630] border border-emerald-500/35 hover:border-emerald-400/60 rounded-[2.2rem] p-6 shadow-xl relative overflow-hidden space-y-4 text-white group cursor-pointer transition-all active:scale-[0.99]"
           >
-            <div className="absolute -top-10 -right-10 w-28 h-28 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-44 h-44 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="flex items-center space-x-3.5 relative z-10">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-400/30 text-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-inner">
-                🇺🇿
+            {/* Header: Badge & UZ Flag Shield */}
+            <div className="flex items-center justify-between relative z-10">
+              <div className="flex items-center space-x-2">
+                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/15 border border-emerald-400/30 px-3 py-1 rounded-full">
+                  🇺🇿 MILLIY SERTIFIKAT
+                </span>
+                <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded-full border border-emerald-400/20">
+                  CEFR B1 - C1
+                </span>
               </div>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <h4 className="text-sm font-black text-white group-hover:text-emerald-400 transition-colors">
-                    Milliy Multilevel (CEFR)
-                  </h4>
-                  <span className="text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full">
-                    Faol ✓
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  DTM & CEFR B1-C1 · Speaking, Writing, Mock
-                </p>
+
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-lg shadow-inner">
+                🇺🇿
               </div>
             </div>
 
-            <div className="w-8 h-8 rounded-full bg-white/10 text-slate-300 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-all shrink-0 relative z-10">
-              <ChevronRight size={16} />
+            {/* Title & Description */}
+            <div className="relative z-10 space-y-1">
+              <h3 className="text-2xl font-black text-white tracking-tight group-hover:text-emerald-400 transition-colors">
+                Milliy Multilevel (CEFR)
+              </h3>
+              <p className="text-xs text-slate-300/90 leading-relaxed">
+                DTM formati asosida: Part 1-3 Speaking sinovlari va Task 1 (Do'stga/rasmiy xat) hamda Task 2 (Insho) Writing.
+              </p>
+            </div>
+
+            {/* Sub-section Pills */}
+            <div className="flex flex-wrap gap-2 pt-1 relative z-10">
+              <span className="text-[10px] font-extrabold text-emerald-200 bg-emerald-950/50 px-3 py-1.5 rounded-xl border border-emerald-500/30">
+                🎙️ Multilevel Speaking Sinovlari
+              </span>
+              <span className="text-[10px] font-extrabold text-emerald-200 bg-emerald-950/50 px-3 py-1.5 rounded-xl border border-emerald-500/30">
+                ✉️ Task 1: Xatlar (20 daq)
+              </span>
+              <span className="text-[10px] font-extrabold text-emerald-200 bg-emerald-950/50 px-3 py-1.5 rounded-xl border border-emerald-500/30">
+                📝 Task 2: Insho (40 daq)
+              </span>
+            </div>
+
+            {/* Bottom Action */}
+            <div className="flex items-center justify-between pt-2 border-t border-white/10 relative z-10">
+              <span className="text-[11px] font-semibold text-slate-400">
+                DTM & Milliy baholash sinovlariga o'tish
+              </span>
+              <div className="bg-emerald-500 group-hover:bg-emerald-400 text-[#091f1a] font-black text-xs px-4 py-2 rounded-full flex items-center space-x-1.5 shadow-md transition-all">
+                <span>Multilevel ga kirish</span>
+                <ArrowRight size={14} />
+              </div>
             </div>
           </div>
         </div>
