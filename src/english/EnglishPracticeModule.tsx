@@ -5,6 +5,7 @@ import type { ExamType, EnglishUserProfile } from './types';
 import { getEnglishProfile } from './utils/storage';
 import { RegistrationModal } from './components/RegistrationModal';
 import { SettingsSheet } from './components/SettingsSheet';
+import { IeltsDashboard } from './components/IeltsDashboard';
 import './tokens.css';
 
 export interface TelegramUserProps {
@@ -30,6 +31,25 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
   // Active display name and gender
   const currentName = profile?.displayName || telegramUser?.first_name || 'Talaba';
   const currentGender = profile?.gender;
+
+  if (selectedExam === 'ielts') {
+    return (
+      <div className="english-root">
+        {!profile && (
+          <RegistrationModal
+            initialName={telegramUser?.first_name}
+            telegramId={telegramUser?.id}
+            onRegistered={(p) => setProfile(p)}
+          />
+        )}
+        <IeltsDashboard
+          onBack={() => setSelectedExam(null)}
+          userName={currentName}
+          userGender={currentGender}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="english-root">
@@ -129,9 +149,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
               return (
                 <div
                   onClick={() => setSelectedExam('ielts')}
-                  className={`p-5 rounded-[2rem] border bg-white cursor-pointer transition-all active:scale-[0.98] shadow-sm hover:shadow-md ${
-                    selectedExam === 'ielts' ? 'ring-2 ring-[#7052ff] border-[#7052ff]' : 'border-slate-100'
-                  }`}
+                  className="p-5 rounded-[2rem] border border-slate-100 hover:border-[#7052ff]/40 bg-white cursor-pointer transition-all active:scale-[0.98] shadow-sm hover:shadow-md"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">

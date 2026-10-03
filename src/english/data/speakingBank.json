@@ -1,0 +1,3436 @@
+{
+  "part1": [
+    {
+      "id": "p1_t1",
+      "topicNumber": 1,
+      "topic": "Work And Studies, Schools And Workplaces",
+      "questions": [
+        "Do you work or are you a student?",
+        "What work do you do? / What subjects are you studying?",
+        "Why did you choose that job?",
+        "Why did you choose to study that subject?",
+        "Do you like your job?",
+        "Is there anything you dislike about your job?",
+        "What do you like about your studies?",
+        "What do you dislike about your studies?",
+        "What was your dream job when you were young?",
+        "Have you changed your mind on your dream job?"
+      ]
+    },
+    {
+      "id": "p1_t2",
+      "topicNumber": 2,
+      "topic": "Hometown, Area You Live In",
+      "questions": [
+        "Please describe your hometown a little.",
+        "What is your town well-known for?",
+        "Do you like your hometown?",
+        "Is that a big city or a small place?",
+        "How long have you been living there?",
+        "Do you think you will continue living there for a long time?",
+        "Would you like to live in the countryside in the future?",
+        "Have you ever lived in the countryside?",
+        "Do you ever spend time in the countryside?",
+        "What is the difference between living in the countryside and the city?",
+        "What do people living in the countryside like to do?",
+        "What do you like to do in the countryside?",
+        "How has your town changed over the last 20 years?"
+      ]
+    },
+    {
+      "id": "p1_t3",
+      "topicNumber": 3,
+      "topic": "Home And Accommodation",
+      "questions": [
+        "What colour would you choose to paint the walls of your room?",
+        "What colour would you never use in your home?",
+        "Can you describe the place where you live?",
+        "What kind of housing accommodation do you live in?",
+        "What do you like about your flat?",
+        "Which room does your family spend most of the time in?",
+        "What can you see from the windows where you live?",
+        "Do you prefer living in a house or a flat?",
+        "What would you like to change in your flat?",
+        "What do you dislike about your flat?"
+      ]
+    },
+    {
+      "id": "p1_t4",
+      "topicNumber": 4,
+      "topic": "Teachers",
+      "questions": [
+        "Would you like to be a teacher?",
+        "Do you think you could be a teacher?",
+        "Did (Do) you have a favourite teacher?",
+        "How does this teacher help you?",
+        "How has your favourite teacher helped you?"
+      ]
+    },
+    {
+      "id": "p1_t5",
+      "topicNumber": 5,
+      "topic": "Social Media",
+      "questions": [
+        "Do you think you spend too much time on social media?",
+        "What do people often do on social media?"
+      ]
+    },
+    {
+      "id": "p1_t6",
+      "topicNumber": 6,
+      "topic": "Dreams And Ambitions",
+      "questions": [
+        "What was your dream when you were a child?",
+        "Are you the kind of person who sticks to dreams?",
+        "Do you think you are an ambitious person?",
+        "Are you an ambitious person?",
+        "What is your dream job?"
+      ]
+    },
+    {
+      "id": "p1_t7",
+      "topicNumber": 7,
+      "topic": "Mirrors",
+      "questions": [
+        "Would you use mirrors to decorate your room?",
+        "Do you usually take a mirror with you?",
+        "How often do you use a mirror?",
+        "Do you like looking at yourself in a mirror?",
+        "Have you ever bought a mirror?",
+        "Do you use a mirror before buying clothing?",
+        "What functions does a mirror have?",
+        "Do you think a mirror is a good decoration?"
+      ]
+    },
+    {
+      "id": "p1_t8",
+      "topicNumber": 8,
+      "topic": "Music",
+      "questions": [
+        "Do you prefer sad or happy music?",
+        "Does happy music make you feel more excited?"
+      ]
+    },
+    {
+      "id": "p1_t9",
+      "topicNumber": 9,
+      "topic": "Tidiness",
+      "questions": [
+        "Would you say you are a tidy person?",
+        "Do you like to keep things tidy?",
+        "How do you keep things tidy?",
+        "Do you think it is possible for people to be tidy all the time?",
+        "Did you use to keep your room tidy as a child?"
+      ]
+    },
+    {
+      "id": "p1_t10",
+      "topicNumber": 10,
+      "topic": "Websites",
+      "questions": [
+        "What kinds of websites do you often visit?",
+        "What kinds of websites are popular in your country?",
+        "What is your favourite website?",
+        "Are there any changes to the websites you often visit?"
+      ]
+    },
+    {
+      "id": "p1_t11",
+      "topicNumber": 11,
+      "topic": "Watches",
+      "questions": [
+        "Do you like to wear watches?",
+        "Do you think a watch is important for you?",
+        "Have you ever received a watch as a gift?",
+        "Why do people like expensive watches?"
+      ]
+    },
+    {
+      "id": "p1_t12",
+      "topicNumber": 12,
+      "topic": "Shopping",
+      "questions": [
+        "Do you like shopping?",
+        "How often do you go shopping?",
+        "Do you compare prices when you shop?",
+        "Is it difficult for you to make choices when you shop?"
+      ]
+    },
+    {
+      "id": "p1_t13",
+      "topicNumber": 13,
+      "topic": "Cars",
+      "questions": [
+        "What type of car do you like?",
+        "What colour car would you choose to buy?",
+        "Do you think car colours are important?",
+        "What do you usually do when there's a traffic jam?",
+        "Do you prefer to be a driver or a passenger?"
+      ]
+    },
+    {
+      "id": "p1_t14",
+      "topicNumber": 14,
+      "topic": "Parks",
+      "questions": [
+        "Do you like to go to parks?",
+        "When was the last time you went to the park?",
+        "Do people in your country often go to parks?"
+      ]
+    },
+    {
+      "id": "p1_t15",
+      "topicNumber": 15,
+      "topic": "Science",
+      "questions": [
+        "Do you like science?",
+        "Did you like science classes when you were young?"
+      ]
+    },
+    {
+      "id": "p1_t16",
+      "topicNumber": 16,
+      "topic": "Outer Space And Stars",
+      "questions": [
+        "Do you want to travel in the outer space?",
+        "What would you do if you had an opportunity?",
+        "Do you think it's necessary to see other planets?",
+        "Are you interested in films about outer space and stars?",
+        "Do you like science fiction movies?",
+        "Have you ever taken a course about stars?",
+        "Is it important to study stars?",
+        "Do you want to know more about outer space?"
+      ]
+    },
+    {
+      "id": "p1_t17",
+      "topicNumber": 17,
+      "topic": "Headphones",
+      "questions": [
+        "Do you use headphones?",
+        "In what situations would you use headphones?",
+        "What type of headphones do you use!",
+        "In what situations would you NOT use headphones?"
+      ]
+    },
+    {
+      "id": "p1_t18",
+      "topicNumber": 18,
+      "topic": "Singing",
+      "questions": [
+        "Do you think singing can bring happiness to people?"
+      ]
+    },
+    {
+      "id": "p1_t19",
+      "topicNumber": 19,
+      "topic": "Art",
+      "questions": [
+        "Do you like modern art or traditional art?",
+        "Do you like art?",
+        "Have you ever visited an art gallery?",
+        "Do you think it would be interesting for you to be an artist?"
+      ]
+    },
+    {
+      "id": "p1_t20",
+      "topicNumber": 20,
+      "topic": "Clothes",
+      "questions": [
+        "Do you usually wear T-shirts?",
+        "Do you like wearing T-shirts?",
+        "Do you like T-shirts with pictures and prints?",
+        "What colour clothes do you like to wear?",
+        "What are the differences between men and women's preference in colour?",
+        "What kind of clothes do you like to wear?",
+        "What kind of clothes do you never wear?",
+        "Do you wear the same style of clothes on weekdays and weekends?"
+      ]
+    },
+    {
+      "id": "p1_t21",
+      "topicNumber": 21,
+      "topic": "Jokes",
+      "questions": [
+        "Are you good at telling jokes?",
+        "Do your friends like to tell jokes?",
+        "Do you like to watch comedies?"
+      ]
+    },
+    {
+      "id": "p1_t22",
+      "topicNumber": 22,
+      "topic": "Morning Routines",
+      "questions": [
+        "What is your morning routine?",
+        "Do you spend your mornings doing the same things on both weekends and weekdays?",
+        "Is breakfast important?",
+        "Do you like to get up early?"
+      ]
+    },
+    {
+      "id": "p1_t23",
+      "topicNumber": 23,
+      "topic": "Evening Time",
+      "questions": [
+        "Do you like the morning or the evening?",
+        "What do you usually do in the evening?"
+      ]
+    },
+    {
+      "id": "p1_t24",
+      "topicNumber": 24,
+      "topic": "History",
+      "questions": [
+        "Do you think history is important?",
+        "Do you like to learn about history?",
+        "Do you think the internet is a good place to learn about history?"
+      ]
+    },
+    {
+      "id": "p1_t25",
+      "topicNumber": 25,
+      "topic": "Old Buildings",
+      "questions": [
+        "Do you prefer living in an old building or a modern house?",
+        "Should old buildings be preserved?",
+        "Are there any old buildings you want to see in the future?",
+        "What aspect of culture do old buildings reflect?",
+        "How do old buildings affect the appearance of a place?"
+      ]
+    },
+    {
+      "id": "p1_t26",
+      "topicNumber": 26,
+      "topic": "Films",
+      "questions": [
+        "What kinds of movies do you like best?",
+        "How often do you go to a cinema to watch a movie?",
+        "Did you usually go to the cinema when you were a kid?",
+        "What was the first film that you watched?",
+        "Do you like to watch movies alone or with your friends?",
+        "Do you like to go to the cinema with your friends?",
+        "Do you prefer foreign films or films made in your country?"
+      ]
+    },
+    {
+      "id": "p1_t27",
+      "topicNumber": 27,
+      "topic": "Sports Programs",
+      "questions": [
+        "Do you like watching sports programs on TV?",
+        "Who do you like to watch live sports games with?"
+      ]
+    },
+    {
+      "id": "p1_t28",
+      "topicNumber": 28,
+      "topic": "Crowded Places",
+      "questions": [
+        "Do most people like crowded places?",
+        "Do you like crowded places?",
+        "When was the last time you were in a crowded place?",
+        "Is the city where you live crowded?",
+        "Is there a crowded place near where you live?"
+      ]
+    },
+    {
+      "id": "p1_t29",
+      "topicNumber": 29,
+      "topic": "Memory",
+      "questions": [
+        "How do you remember important things?",
+        "Are you good at memorising things?",
+        "Have you ever forgotten something important?",
+        "What do you need to remember in your daily life?"
+      ]
+    },
+    {
+      "id": "p1_t30",
+      "topicNumber": 30,
+      "topic": "Spare Time",
+      "questions": [
+        "What free time activities are popular with people in your country?",
+        "What do you do when you have free time?",
+        "Who do you usually spend your spare time with?"
+      ]
+    },
+    {
+      "id": "p1_t31",
+      "topicNumber": 31,
+      "topic": "Animals And Pets",
+      "questions": [
+        "What's your favourite animal?",
+        "Have you ever had a pet?",
+        "What's the most popular animal in your country?",
+        "Where do you prefer to keep your pet, indoors or outdoors?"
+      ]
+    },
+    {
+      "id": "p1_t32",
+      "topicNumber": 32,
+      "topic": "Days Off",
+      "questions": [
+        "When was the last time you had a few days off?",
+        "What do you do when you have days off?",
+        "What would you like to do if you had a day off tomorrow?",
+        "Do you usually spend your days off with your parents or with your friends?"
+      ]
+    },
+    {
+      "id": "p1_t33",
+      "topicNumber": 33,
+      "topic": "Food",
+      "questions": [
+        "What kinds of food do you particularly like?",
+        "What kinds of food are most popular in your country?",
+        "Is there any food you don't like?",
+        "What kind of food did you like when you were young?"
+      ]
+    },
+    {
+      "id": "p1_t34",
+      "topicNumber": 34,
+      "topic": "Keys",
+      "questions": [
+        "Have you ever locked yourself out?",
+        "Do you think it's a good idea to leave your keys with a neighbour?",
+        "Have you ever lost your keys?",
+        "Do you always bring a lot of keys with you?"
+      ]
+    },
+    {
+      "id": "p1_t35",
+      "topicNumber": 35,
+      "topic": "Dreams",
+      "questions": [
+        "Do you remember your dreams when you wake up?",
+        "Do you think dreams will affect life?",
+        "Do you think dreams have special meanings?",
+        "Do you like hearing other people's dreams?",
+        "Do you share your dreams with others?",
+        "Do you want to make your dreams come true?"
+      ]
+    },
+    {
+      "id": "p1_t36",
+      "topicNumber": 36,
+      "topic": "Reading",
+      "questions": [
+        "Do you like reading?",
+        "What books do you like to read?",
+        "What book did you read recently?",
+        "What did you learn from it?",
+        "Do you prefer to read on paper or on a screen?",
+        "When do you need to read carefully, and when not?",
+        "Do you prefer scanning or detailed reading?"
+      ]
+    },
+    {
+      "id": "p1_t37",
+      "topicNumber": 37,
+      "topic": "Gifts",
+      "questions": [
+        "What kind of gifts are popular in your country?",
+        "What's the best gift you have ever received?",
+        "What do you give others as gifts?",
+        "What gift have you received recently?",
+        "How do we choose gifts?",
+        "Do you think you are good at choosing gifts?",
+        "Have you ever sent handmade gifts to others?"
+      ]
+    },
+    {
+      "id": "p1_t38",
+      "topicNumber": 38,
+      "topic": "Morning Time",
+      "questions": [
+        "Do you like to get up early?",
+        "What is your morning routine?",
+        "What do you usually do in the morning?",
+        "What did you do in the morning when you were little?",
+        "Do you spend your mornings doing the same things on both weekends and weekdays?"
+      ]
+    },
+    {
+      "id": "p1_t39",
+      "topicNumber": 39,
+      "topic": "Hobby",
+      "questions": [
+        "Do you have any hobbies?",
+        "Do you have the same hobbies as your family members?",
+        "Did you have any hobbies when you were a child?",
+        "Do you have a hobby that you've had since childhood?"
+      ]
+    },
+    {
+      "id": "p1_t40",
+      "topicNumber": 40,
+      "topic": "Sports Teams",
+      "questions": [
+        "Have you ever been part of a sports team?",
+        "Are team sports popular in your culture?",
+        "Do you like watching team games?",
+        "What are the differences between team sports and individual sports?"
+      ]
+    },
+    {
+      "id": "p1_t41",
+      "topicNumber": 41,
+      "topic": "Typing",
+      "questions": [
+        "Do you type on a desktop or laptop keyboard every day?",
+        "When did you learn how to type on a keyboard?",
+        "How do you improve your typing?"
+      ]
+    },
+    {
+      "id": "p1_t42",
+      "topicNumber": 42,
+      "topic": "Walking",
+      "questions": [
+        "Do you walk a lot?",
+        "Did you often go outside to have a walk when you were a child?",
+        "Why do people like to walk in parks?",
+        "Where would you like to take a long walk if you had the chance?",
+        "Where have you gone for a walk lately?"
+      ]
+    },
+    {
+      "id": "p1_t43",
+      "topicNumber": 43,
+      "topic": "Buildings",
+      "questions": [
+        "Do you take photos of buildings?",
+        "Is there a building that you would like to visit?"
+      ]
+    },
+    {
+      "id": "p1_t44",
+      "topicNumber": 44,
+      "topic": "Views",
+      "questions": [
+        "Do you like taking pictures of different views?",
+        "Do you prefer views in urban areas or rural areas?",
+        "Do you prefer views in your own country or in other countries?"
+      ]
+    },
+    {
+      "id": "p1_t45",
+      "topicNumber": 45,
+      "topic": "Scenery",
+      "questions": [
+        "Do you like to take pictures of good scenery?",
+        "Do you look out the window at the scenery when travelling by bus or car?",
+        "Do you prefer the mountains or the sea?",
+        "What are the most beautiful sights you have seen while travelling?"
+      ]
+    },
+    {
+      "id": "p1_t46",
+      "topicNumber": 46,
+      "topic": "Childhood Activities",
+      "questions": [
+        "What did you enjoy doing as a child?",
+        "Did you enjoy your childhood?",
+        "Did you prefer to do activities alone or with a group of people when you were a child?"
+      ]
+    },
+    {
+      "id": "p1_t47",
+      "topicNumber": 47,
+      "topic": "Stages In Life",
+      "questions": [
+        "How do people remember each stage of their lives?",
+        "At what age do you think people are the happiest?",
+        "Do you enjoy being the age you are now?",
+        "What did you often do with your friends in your childhood?",
+        "Do you have any plans for the next five years?",
+        "What do you think is the most important thing at the moment?"
+      ]
+    },
+    {
+      "id": "p1_t48",
+      "topicNumber": 48,
+      "topic": "Daily Routine",
+      "questions": [
+        "How do you organise your study time?",
+        "What is your daily study routine?",
+        "Do you ever change your plans?",
+        "Have you ever changed your routine?",
+        "What's your favourite time of the day?",
+        "Do you go to sleep early or stay up late?",
+        "Do you often stay up late?",
+        "Do you think it's important to have a daily routine for your study?"
+      ]
+    },
+    {
+      "id": "p1_t49",
+      "topicNumber": 49,
+      "topic": "Street Markets",
+      "questions": [
+        "What do street markets sell?",
+        "What do people usually buy at street markets?",
+        "Are there many street markets in your country?",
+        "What is the difference between street markets and supermarkets?",
+        "Do you prefer shopping in a shopping mall or at a street market?",
+        "Do many people go to street markets in your country?",
+        "Do you like going to street markets?"
+      ]
+    },
+    {
+      "id": "p1_t50",
+      "topicNumber": 50,
+      "topic": "Travelling",
+      "questions": [
+        "Do you like traveling?",
+        "Do you like travelling long distances?",
+        "Would you like to travel long distances more often in the future?",
+        "Do you often travel by plane?"
+      ]
+    },
+    {
+      "id": "p1_t51",
+      "topicNumber": 51,
+      "topic": "Collecting Things",
+      "questions": [
+        "Do you collect things?",
+        "What items are considered collectibles in your country?",
+        "Is collecting a popular pastime in your country?",
+        "Do a lot of people in your country collect things?",
+        "Why do people like collecting?",
+        "What are the benefits of collecting?"
+      ]
+    },
+    {
+      "id": "p1_t52",
+      "topicNumber": 52,
+      "topic": "Computers And Tablets",
+      "questions": [
+        "Is it difficult for you to use a computer?",
+        "Who taught you how to use a computer?",
+        "When was the first time you used a computer?",
+        "How often do you use a computer?",
+        "What do you usually use your computer for?",
+        "What kinds of computers are popular in your country?"
+      ]
+    },
+    {
+      "id": "p1_t53",
+      "topicNumber": 53,
+      "topic": "Shoes",
+      "questions": [
+        "How often do you buy shoes?",
+        "How much money do you usually spend on shoes?",
+        "Have you ever bought shoes online?",
+        "Do you like to wear shoes that are comfortable or good-looking?",
+        "Do people like to wear shoes that are comfortable or good-looking?",
+        "What is your favourite type of shoes?",
+        "Why do some people have too many shoes?"
+      ]
+    },
+    {
+      "id": "p1_t54",
+      "topicNumber": 54,
+      "topic": "Recycling And Rubbish",
+      "questions": [
+        "Can you name products or materials that are commonly recycled?",
+        "Do you always try to recycle things like paper and plastic?",
+        "How do you feel when you see rubbish in the streets?",
+        "Why have people's attitudes towards recycling changed over the last several years?",
+        "Do you think recycling is important?"
+      ]
+    },
+    {
+      "id": "p1_t55",
+      "topicNumber": 55,
+      "topic": "Politeness",
+      "questions": [
+        "Who taught you to be polite?",
+        "How do people in your country show politeness?",
+        "What rules of politeness have changed in your country since 10 or 20 years ago?"
+      ]
+    },
+    {
+      "id": "p1_t56",
+      "topicNumber": 56,
+      "topic": "Names",
+      "questions": [
+        "Is it difficult for you to remember people's names?",
+        "How do you remember people's names?",
+        "How do you feel when people can't remember your name?",
+        "Do you often forget people's names?"
+      ]
+    },
+    {
+      "id": "p1_t57",
+      "topicNumber": 57,
+      "topic": "Being Bored",
+      "questions": [
+        "Do you ever (often) get bored?",
+        "When would you feel bored?",
+        "Do you think school is boring?",
+        "What things are boring to you?",
+        "What do you do when you feel bored?",
+        "Do you feel more bored than when you were young?"
+      ]
+    }
+  ],
+  "part2": [
+    {
+      "id": "p2_t1",
+      "topicNumber": 1,
+      "topic": "Place You'D Like To Visit In Your Free Time",
+      "cueCard": "Describe a place you'd like to visit in your free time.",
+      "bulletPoints": [
+        "where it is",
+        "what you will do there",
+        "how long you will stay there",
+        "why you'd like to visit it",
+        "-"
+      ],
+      "part3Questions": [
+        "Why do some people prefer to travel in their own country rather than going abroad?",
+        "Some people don't like to travel abroad. Why?",
+        "Why do people choose to travel or live abroad?"
+      ],
+      "part3Topic": "Travelling, Rest"
+    },
+    {
+      "id": "p2_t2",
+      "topicNumber": 2,
+      "topic": "Special Cake",
+      "cueCard": "Describe a a special cake you received.",
+      "bulletPoints": [
+        "what kind of cake it was",
+        "when you had it",
+        "who you were with",
+        "why it was special",
+        "-"
+      ],
+      "part3Questions": [
+        "What food do you (people in your country) eat on special occasions?",
+        "What is the difference between special food in your country and other countries?",
+        "Why do many people like to spend a lot of money on food on special days?",
+        "What do you think of people using their mobile phones during a meal?",
+        "Do you think it's good to communicate when eating with your family?",
+        "More and more people are unwilling to cook. Why is this happening?"
+      ],
+      "part3Topic": "Food And Cooking"
+    },
+    {
+      "id": "p2_t3",
+      "topicNumber": 3,
+      "topic": "Tall Building",
+      "cueCard": "Describe a tall building in your town that you like or dislike.",
+      "bulletPoints": [
+        "where this building is",
+        "what it looks like",
+        "what it is used for",
+        "explain why you like or dislike it",
+        "-"
+      ],
+      "part3Questions": [
+        "What do you think buildings will be like in the future?",
+        "Which do most people prefer, living in a bungalow or in a tall building?",
+        "Why are taller and taller building being constructed nowadays?"
+      ],
+      "part3Topic": "Tall Buildings"
+    },
+    {
+      "id": "p2_t4",
+      "topicNumber": 4,
+      "topic": "Getting Up Early",
+      "cueCard": "Describe an occasion when you got up extremely early.",
+      "bulletPoints": [
+        "when this happened",
+        "what you needed to do on that day",
+        "who you were with",
+        "how you felt about getting up early on that day",
+        "-"
+      ],
+      "part3Questions": [
+        "Why do people get up early?",
+        "Are there any situations when it's not good to arrive early?",
+        "Is it good to arrive early in any situation?",
+        "Why do some people stay up late at night?",
+        "Is it easy to get up early?"
+      ],
+      "part3Topic": "Getting Up Early"
+    },
+    {
+      "id": "p2_t5",
+      "topicNumber": 5,
+      "topic": "New Law",
+      "cueCard": "Describe a new law you would like to introduce in your country.",
+      "bulletPoints": [
+        "what law it is, what changes it brings",
+        "whether it will be popular",
+        "how you came up with the new law",
+        "how you feel about it",
+        "-"
+      ],
+      "part3Questions": [
+        "Do people in your country usually obey the law?",
+        "What are some rules that exist in schools or workplaces in your country?",
+        "What kind of behaviour is considered good behaviour?",
+        "How can parents teach children to obey rules?",
+        "What are the benefits of obeying rules?",
+        "Do you think children can learn about the law outside of school?"
+      ],
+      "part3Topic": "Rules And Laws"
+    },
+    {
+      "id": "p2_t6",
+      "topicNumber": 6,
+      "topic": "Person Who Loves To Grow Plants",
+      "cueCard": "Describe a person you know who loves to grow plants (vegetables, fruits, flowers).",
+      "bulletPoints": [
+        "who this person is",
+        "what this person grows",
+        "where this person grows them",
+        "why this person loves to grow plants",
+        "-"
+      ],
+      "part3Questions": [
+        "Do people in your country like to grow plants?",
+        "What are the advantages of growing plants at home?",
+        "Do people like to grow vegetables in your country?",
+        "What are the advantages of growing vegetables at home?",
+        "How do people feel when they eat vegetables that they grew on their own?"
+      ],
+      "part3Topic": "Growing Plants"
+    },
+    {
+      "id": "p2_t7",
+      "topicNumber": 7,
+      "topic": "Childhood Friend",
+      "cueCard": "Describe a friend from your childhood.",
+      "bulletPoints": [
+        "who this person is",
+        "how you met each other",
+        "what you did together",
+        "explain why you liked him or her",
+        "-"
+      ],
+      "part3Questions": [
+        "Do you still keep in touch with your friends from childhood?",
+        "What's the difference between having younger friends and older friends?",
+        "Has technology changed people's friendships? How?",
+        "What do you think of communicating via social media?",
+        "Will online social media replace face-to-face communication?",
+        "Is it necessary for kids to have some close friends?"
+      ],
+      "part3Topic": "Friendship, Social Media"
+    },
+    {
+      "id": "p2_t8",
+      "topicNumber": 8,
+      "topic": "Plan You Had To Change",
+      "cueCard": "Describe a plan you had to change.",
+      "bulletPoints": [
+        "what the plan was",
+        "why you had to change it",
+        "what the new plan was",
+        "how you felt about the change",
+        "-"
+      ],
+      "part3Questions": [
+        "Do old people often change plans?",
+        "Do young people like to change plans?",
+        "What are the common reasons when people need to change plans?",
+        "How would you tell your friends if you had to change your plans?",
+        "How does technology help people make plans?",
+        "Why do parents still make plans for their children nowadays?"
+      ],
+      "part3Topic": "Planning"
+    },
+    {
+      "id": "p2_t9",
+      "topicNumber": 9,
+      "topic": "Food For Special Occasions",
+      "cueCard": "Describe a type of food that people eat at special events.",
+      "bulletPoints": [
+        "what the food is",
+        "why people eat it at special events",
+        "how people prepare this food",
+        "why you like this food so much",
+        "-"
+      ],
+      "part3Questions": [
+        "What food do you eat on special occasions?",
+        "Is food now better than in the past?",
+        "Are there any differences between the food people eat today and the food people ate in the past?"
+      ],
+      "part3Topic": "Food"
+    },
+    {
+      "id": "p2_t10",
+      "topicNumber": 10,
+      "topic": "Live Sports Event You Watched",
+      "cueCard": "Describe a time when you watched a live sports event and liked it.",
+      "bulletPoints": [
+        "what the sports event was",
+        "where and when the sports event took place",
+        "why you watched it live",
+        "why you liked it live",
+        "-"
+      ],
+      "part3Questions": [
+        "What is the difference between watching sports events at home and at the stadium?",
+        "What are the advantages of watching sports events online?",
+        "Why does somebody dislike to watch the Olympic Games?"
+      ],
+      "part3Topic": "Sports Events, Competition"
+    },
+    {
+      "id": "p2_t11",
+      "topicNumber": 11,
+      "topic": "Place You'Ve Travelled To That You'D Like To Recommend To Others",
+      "cueCard": "Describe a place you've travelled to that you'd recommend to others.",
+      "bulletPoints": [
+        "what place it was",
+        "why you went there",
+        "what you did there",
+        "how you felt about it",
+        "-"
+      ],
+      "part3Questions": [
+        "What do you need to do before you travel?",
+        "What preparations should people make before going on holiday?",
+        "Where do people usually travel on holidays?",
+        "Do you think it's important to do some preparation before you travel to new places?"
+      ],
+      "part3Topic": "Holidays"
+    },
+    {
+      "id": "p2_t12",
+      "topicNumber": 12,
+      "topic": "Important Decision You Made",
+      "cueCard": "Describe an important decision you made.",
+      "bulletPoints": [
+        "what the decision was",
+        "how you made your decision",
+        "what the results of the decision were",
+        "why it was important",
+        "-"
+      ],
+      "part3Questions": [
+        "Do you think children sometimes have to make important decisions?",
+        "What important decisions do young people need to make after the completion of high school?",
+        "Who can children turn to for help when making a decision?",
+        "How do people make important decisions?",
+        "What are the advantages of advertising?",
+        "Do you think the influence of advertising is good?",
+        "Do you think advertisements can influence our decisions when shopping?"
+      ],
+      "part3Topic": "Making Decisions"
+    },
+    {
+      "id": "p2_t13",
+      "topicNumber": 13,
+      "topic": "Teamwork",
+      "cueCard": "Describe a time when you worked in a group.",
+      "bulletPoints": [
+        "what the team was like",
+        "why you joined it",
+        "what you did",
+        "how you felt about it",
+        "-"
+      ],
+      "part3Questions": [
+        "Do you prefer to work in a team or own your own?",
+        "Why do some people prefer to work on their own?",
+        "What kinds of jobs require people to work in a team?",
+        "What qualities do you think a good team member should have?"
+      ],
+      "part3Topic": "Teamwork, Leadership"
+    },
+    {
+      "id": "p2_t14",
+      "topicNumber": 14,
+      "topic": "Successful Business Person You Know",
+      "cueCard": "Describe a successful business person you know.",
+      "bulletPoints": [
+        "who this person is",
+        "how you know them",
+        "what business this person does",
+        "why this person is successful",
+        "-"
+      ],
+      "part3Questions": [
+        "Why do some people open their own business?",
+        "Is it better to have your own business than work for a boss?",
+        "What do you need to start a business?",
+        "Do you agree that nowadays it is easier to set up a business than in the past?",
+        "Do people in your country like to work in big companies or small companies?",
+        "What challenges and difficulties do people face when they try to have a successful small business?",
+        "What makes some companies more successful than others?"
+      ],
+      "part3Topic": "Success In Business"
+    },
+    {
+      "id": "p2_t15",
+      "topicNumber": 15,
+      "topic": "Home You Like But Don'T Want To Live In",
+      "cueCard": "Describe a home that you like but don't want to live in.",
+      "bulletPoints": [
+        "where it was",
+        "what it looked like",
+        "why you visited it",
+        "why you don't want to live there",
+        "-"
+      ],
+      "part3Questions": [
+        "In your country, when people visit other people in their homes, do they usually bring a gift?",
+        "What kind of houses or apartments do people prefer to buy?",
+        "What is the difference between living in the countryside and the city?",
+        "Do you prefer to live in the city or in the countryside?"
+      ],
+      "part3Topic": "Visiting Others, Accommodation"
+    },
+    {
+      "id": "p2_t16",
+      "topicNumber": 16,
+      "topic": "Important River",
+      "cueCard": "Describe an important river or lake in your country.",
+      "bulletPoints": [
+        "what river it is",
+        "what you know about it",
+        "why it is important",
+        "-"
+      ],
+      "part3Questions": [
+        "Why are rivers and lakes important to local people?",
+        "How can rivers and lakes benefit local people?",
+        "What water sports are popular in your country?",
+        "Why do people like water sports?",
+        "Do you think having a river or lake has an impact on tourism in the city?",
+        "Are rivers and lakes important to a country?",
+        "Are rivers and lakes good for transport?",
+        "Do you think rivers and lakes attract tourists?"
+      ],
+      "part3Topic": "Rivers And Lakes"
+    },
+    {
+      "id": "p2_t17",
+      "topicNumber": 17,
+      "topic": "Thing You Did To Learn A Language",
+      "cueCard": "Describe a thing you did to learn a language.",
+      "bulletPoints": [
+        "what language you learned",
+        "what you did",
+        "how it helped you",
+        "how you felt about it",
+        "-"
+      ],
+      "part3Questions": [
+        "What are the difficulties of learning a new language?",
+        "What difficulties do people face when learning a language?",
+        "Why do people learn foreign languages?",
+        "Do you think learning a foreign language is important?",
+        "What can people do to learn a foreign language?",
+        "What's the best way to learn a language?",
+        "Which is better, to study a language alone or to study it in a group?",
+        "What are the advantages and disadvantages of learning a language?",
+        "Some people think that technology has made it unnecessary to learn languages. What do you think?"
+      ],
+      "part3Topic": "Learning Languages"
+    },
+    {
+      "id": "p2_t18",
+      "topicNumber": 18,
+      "topic": "Environmental Law",
+      "cueCard": "Describe a law on environmental protection.",
+      "bulletPoints": [
+        "what the law is",
+        "how you first learned about it",
+        "who benefits from this law",
+        "how you feel about it",
+        "-"
+      ],
+      "part3Questions": [
+        "What can teachers do to make students obey rules?",
+        "What are some rules that exist in schools or workplaces in your country?",
+        "What should parents do to educate children about laws?",
+        "When people break rules, how are they punished in your country?",
+        "Do you think school rules are important?",
+        "Are children unhappy with the school rules?",
+        "What are the rules people should obey at work?"
+      ],
+      "part3Topic": "Rules And Punishment"
+    },
+    {
+      "id": "p2_t19",
+      "topicNumber": 19,
+      "topic": "Special Day Out That Didn'T Cost A Lot",
+      "cueCard": "Describe a special day out that didn't cost a lot.",
+      "bulletPoints": [
+        "what you did",
+        "when it was",
+        "who you were with",
+        "why it was special",
+        "-"
+      ],
+      "part3Questions": [
+        "What leisure activities do old and young people prefer?",
+        "How do people spend their leisure time in your country?",
+        "How does technology affect the way people spend leisure time?",
+        "Is leisure time important for everyone?",
+        "Do you think only old people have time for leisure?"
+      ],
+      "part3Topic": "Leisure Time"
+    },
+    {
+      "id": "p2_t20",
+      "topicNumber": 20,
+      "topic": "Organizing A Happy Event",
+      "cueCard": "Describe a time when you ogranized a happy event successfully.",
+      "bulletPoints": [
+        "what the event was",
+        "when and where it was",
+        "say whether it was easy or difficult",
+        "how you prepared",
+        "-"
+      ],
+      "part3Questions": [
+        "How can parents help children to be organized?",
+        "What factors should people consider organising events?"
+      ],
+      "part3Topic": "Organising Things, Being Organized"
+    },
+    {
+      "id": "p2_t21",
+      "topicNumber": 21,
+      "topic": "Traffic Jam",
+      "cueCard": "Describe an occasion when you got stuck in a traffic jam.",
+      "bulletPoints": [
+        "where you went",
+        "how often you do this",
+        "when you did this",
+        "why you dislike it",
+        "-"
+      ],
+      "part3Questions": [
+        "Would you rather be in a car or bus in a traffic jam?",
+        "What are good ways to manage traffic?",
+        "Do you think highways will help reduce traffic jams?",
+        "In what ways can we fix traffic problems?",
+        "Will there be fewer people using cars because of improved public transportation?",
+        "Will there be fewer cars if public transport is free?",
+        "What benefits does public transport bring to the world?",
+        "What needs to be improved in public transport?"
+      ],
+      "part3Topic": "Public Transport, Traffic Jams"
+    },
+    {
+      "id": "p2_t22",
+      "topicNumber": 22,
+      "topic": "Long-Term Goal",
+      "cueCard": "Describe a long-term goal you would like to achieve.",
+      "bulletPoints": [
+        "what it is",
+        "how long you have had it",
+        "how you will achieve it",
+        "why you set this goal",
+        "-"
+      ],
+      "part3Questions": [
+        "Why do people set goals?",
+        "Why is it important for teenagers to set goals?",
+        "Why should parents encourage children to have ambitions?",
+        "When do young children start setting goals for themselves?"
+      ],
+      "part3Topic": "Goals"
+    },
+    {
+      "id": "p2_t23",
+      "topicNumber": 23,
+      "topic": "Person Who Faced Difficulties But Succeeded",
+      "cueCard": "Describe a person who met difficulties but succeeded.",
+      "bulletPoints": [
+        "who this friend is",
+        "what the achievement was",
+        "what he or she did",
+        "why you were proud of your friend's achievement",
+        "-"
+      ],
+      "part3Questions": [
+        "How would you define success?",
+        "In general, how do people judge or, assess the success of others?",
+        "What does it take to become successful?",
+        "Why is it that some people achieve success faster?",
+        "What factors lead to success?"
+      ],
+      "part3Topic": "Success"
+    },
+    {
+      "id": "p2_t24",
+      "topicNumber": 24,
+      "topic": "Technological Problem",
+      "cueCard": "Describe a challenging technological problem you faced.",
+      "bulletPoints": [
+        "what the problem was",
+        "when and where you faced it",
+        "how challenging it was",
+        "how you solved it",
+        "-"
+      ],
+      "part3Questions": [
+        "Have you ever had any experience with things related to Al?",
+        "Have you ever used Al-based technology?"
+      ],
+      "part3Topic": "Ai"
+    },
+    {
+      "id": "p2_t25",
+      "topicNumber": 25,
+      "topic": "Person Who Helped You Solve A Problem",
+      "cueCard": "Describe a person who did something to help you solve a problem.",
+      "bulletPoints": [
+        "what the problem was",
+        "when and where you faced it",
+        "how this person solved it",
+        "how you felt about the experience",
+        "-"
+      ],
+      "part3Questions": [
+        "Are people born clever or need to learn to be clever?",
+        "Why are some children more intelligent than others?",
+        "How do children become smart at school?",
+        "Do you think society needs people with different types of intelligence?",
+        "Does modern society need talents of all kinds?",
+        "Do you think smart people are happy?",
+        "Do you think smart people are happier than others?",
+        "Do you think smart people are not good at certain things?",
+        "Do you think the intelligence of a person is important?",
+        "What ways do people use to judge someone's intelligence?",
+        "Do you think there is anything that intelligent people find difficult to do?"
+      ],
+      "part3Topic": "Intelligence"
+    },
+    {
+      "id": "p2_t26",
+      "topicNumber": 26,
+      "topic": "Changing An Opinion",
+      "cueCard": "Describe a time when you changed your opinion.",
+      "bulletPoints": [
+        "what the original opinion was",
+        "why you changed it",
+        "when it was",
+        "how you felt about it",
+        "-"
+      ],
+      "part3Questions": [
+        "When do children begin to have their own ideas and opinions?",
+        "Who do children listen to more, their parents or their teachers?",
+        "Who are smart children likely to be influenced by?",
+        "Do you think children will always have ideas and opinions similar to those of their parents?",
+        "Are children's opinions influenced by their parents?",
+        "What do young people have strong opinions about?",
+        "How can teachers help children develop their ideas and opinions?",
+        "When do people change opinions?"
+      ],
+      "part3Topic": "Opinions And Ideas"
+    },
+    {
+      "id": "p2_t27",
+      "topicNumber": 27,
+      "topic": "Message Or Email",
+      "cueCard": "Describe a time when you sent a message or an email to someone but received no reply for a long time.",
+      "bulletPoints": [
+        "who you sent it to",
+        "what it was about",
+        "whether you finally received the reply",
+        "how you felt about the experience",
+        "-"
+      ],
+      "part3Questions": [
+        "Why do people write letters?",
+        "Nowadays, do people prefer to write letters or emails?",
+        "On what particular occasion do you prefer to write letters?",
+        "Do you think traditional letters are a good way to send messages?"
+      ],
+      "part3Topic": "Messages"
+    },
+    {
+      "id": "p2_t28",
+      "topicNumber": 28,
+      "topic": "Ad With A Famous Person In It",
+      "cueCard": "Describe an ad with a famous person in it.",
+      "bulletPoints": [
+        "who the person is",
+        "what the ad is about",
+        "where you can see it",
+        "how you feel about it",
+        "-"
+      ],
+      "part3Questions": [
+        "What are the advantages of advertising?",
+        "Do you think the influence of advertising is good?",
+        "Many advertisers like to use sports stars' endorsements. What are the reasons?",
+        "Which one is more effective, newspaper advertising or online advertising?",
+        "What do you think of online advertising?",
+        "What do you think of celebrity endorsement?",
+        "What factors should be taken into account while making advertisements?"
+      ],
+      "part3Topic": "Advertising"
+    },
+    {
+      "id": "p2_t29",
+      "topicNumber": 29,
+      "topic": "Boring Place",
+      "cueCard": "Describe a boring place.",
+      "bulletPoints": [
+        "what place it is",
+        "who you went there with",
+        "what you did there",
+        "why you think it's boring",
+        "-"
+      ],
+      "part3Questions": [
+        "What can people do to fight boredom?",
+        "Do you think young people get bored more quickly than old people?",
+        "Do you think having a daily routine is boring?",
+        "In what situations do people usually feel bored?",
+        "Why do some people get bored faster than others?",
+        "Some people say that it's good to feel bored sometimes. What do you think?",
+        "Do you agree that it is impossible to feel bored in our today's world?"
+      ],
+      "part3Topic": "Boredom"
+    },
+    {
+      "id": "p2_t30",
+      "topicNumber": 30,
+      "topic": "Interesting Video",
+      "cueCard": "Describe an interesting video.",
+      "bulletPoints": [
+        "what it is about",
+        "when and where you watched it",
+        "why you watched it",
+        "how you feel about it",
+        "-"
+      ],
+      "part3Questions": [
+        "Do teachers play videos in class in your country?",
+        "Why are young people so obsessed with watching short videos?"
+      ],
+      "part3Topic": "Videos"
+    },
+    {
+      "id": "p2_t31",
+      "topicNumber": 31,
+      "topic": "Story Or Book With Animals In It",
+      "cueCard": "Describe a story or book with animals in it.",
+      "bulletPoints": [
+        "what it is about",
+        "what animals are in it",
+        "why you read it",
+        "what you think of it",
+        "-"
+      ],
+      "part3Questions": [
+        "Why do stories and movies for children always feature animals?",
+        "Why do people like to keep pets?",
+        "What are the advantages of keeping a pet?",
+        "Do you think children love animals more than old people do?",
+        "Do you like to take care of animals?",
+        "How are pets now different from those in the past?",
+        "What problems will keeping pets bring?",
+        "Is it safe for animals to live in cities?",
+        "Should schools teach children about animals?"
+      ],
+      "part3Topic": "Animals"
+    },
+    {
+      "id": "p2_t32",
+      "topicNumber": 32,
+      "topic": "Person Who Wants To Work In The Medical Field",
+      "cueCard": "Describe a person you know who would like to work in the medical field.",
+      "bulletPoints": [
+        "how you know them",
+        "what they would like to do",
+        "when they started to think about that",
+        "why they would like to choose this career",
+        "-"
+      ],
+      "part3Questions": [
+        "Do you think it is necessary to learn first aid skills?",
+        "What are the differences between the work of a doctor and that of a nurse?",
+        "Do you think being a doctor is easy or difficult?",
+        "Why do some children want to become doctors?",
+        "Do you think learning biology is interesting for children?",
+        "Do you think governments should put a large amount of money into medical research?"
+      ],
+      "part3Topic": "Doctors, Biology, Medical Research"
+    },
+    {
+      "id": "p2_t33",
+      "topicNumber": 33,
+      "topic": "Person Who Works In A Successful Company",
+      "cueCard": "Describe a person who works in a successful company.",
+      "bulletPoints": [
+        "who this person is",
+        "what this person does in this company",
+        "what this business does",
+        "why you think it's successful",
+        "-"
+      ],
+      "part3Questions": [
+        "Is having happy workers important for the success of a company?",
+        "What are the good things about working for a big company?",
+        "What are the benefits and disadvantages of working at an international company?"
+      ],
+      "part3Topic": "Companies, Customer Satisfaction"
+    },
+    {
+      "id": "p2_t34",
+      "topicNumber": 34,
+      "topic": "Local News",
+      "cueCard": "Describe local news that people were interested in.",
+      "bulletPoints": [
+        "what the news was",
+        "where you saw or heard it",
+        "who was involved",
+        "why people were interested in it",
+        "-"
+      ],
+      "part3Questions": [
+        "Do you think it's important to have a national identity?",
+        "How can people develop their national identity?",
+        "Why do local people like to read local news?",
+        "Why do people like local news more than international news?",
+        "How often do people in your country buy newspapers?",
+        "Do you think visual media (film, photography) is important in how news is presented?",
+        "What do you think of news on social media?",
+        "How do people in your country get news?"
+      ],
+      "part3Topic": "News, National Identity"
+    },
+    {
+      "id": "p2_t35",
+      "topicNumber": 35,
+      "topic": "Person Who Is Good At Learning New Languages",
+      "cueCard": "Describe a person who is good at learning and speaking new languages.",
+      "bulletPoints": [
+        "how you know this person",
+        "how this person learns new languages",
+        "how many languages this person can speak",
+        "how you feel about this person",
+        "-"
+      ],
+      "part3Questions": [
+        "What can people do to learn a foreign language?",
+        "What's the best way to learn a language?",
+        "Why do people learn foreign languages?",
+        "Do you think learning a foreing language is important?",
+        "Is it more important to learn foreign languages now than before?",
+        "Do you think that children adapt to new things more easily than adults?",
+        "How can people learn new things?"
+      ],
+      "part3Topic": "Foreign Languages"
+    },
+    {
+      "id": "p2_t36",
+      "topicNumber": 36,
+      "topic": "City You Visited That You Liked",
+      "cueCard": "Describe a",
+      "bulletPoints": [
+        "city you've been to and want to visit again.",
+        "what city it was",
+        "when you went there",
+        "what you did there",
+        "why you liked it",
+        "-"
+      ],
+      "part3Questions": [
+        "What is the difference between living in the countryside and the city?",
+        "Do you prefer to live in the city or in the countryside?",
+        "Is it good for elderly people to live in large cities?",
+        "Is it possible that all of the population move to cities?",
+        "Will people live in the countryside in the future?",
+        "Do you think people in the countryside are friendlier than in cities?",
+        "What should the government do to improve citizens' safety?",
+        "What changes usually take place in cities and towns?",
+        "Are there any changes in your city?",
+        "For those who live in cities, is it because they want to or have to?",
+        "Do you prefer to visit well-developed cities or cities with a long history?",
+        "What are the disadvantages of living in a very famous city?",
+        "Before you travel to a city, what factors would you consider?",
+        "Do you think modern cities are suitable for young people or old people?",
+        "What kinds of facilities do big cities have?"
+      ],
+      "part3Topic": "Cities"
+    },
+    {
+      "id": "p2_t37",
+      "topicNumber": 37,
+      "topic": "Family Member That Made You Feel Proud",
+      "cueCard": "Describe a family member that did something that made you feel proud.",
+      "bulletPoints": [
+        "who this person is",
+        "what this person did",
+        "why you felt proud of them",
+        "-"
+      ],
+      "part3Questions": [
+        "On what occasions would adults feel proud of themselves?",
+        "Is it a good idea to reward children for doing homework or housework?",
+        "What would children do to make their parents proud?",
+        "What did you do to make your parents proud when you were young?",
+        "What advantages of yours make you proud?",
+        "When was the last time that you felt proud of yourself?",
+        "Is it good to reward children too often?"
+      ],
+      "part3Topic": "Being Proud"
+    },
+    {
+      "id": "p2_t38",
+      "topicNumber": 38,
+      "topic": "Perfect Job",
+      "cueCard": "Describe your perfect job.",
+      "bulletPoints": [
+        "what it is.",
+        "how you can get this job",
+        "what kinds of work you would do for the job",
+        "explain why you want to have it",
+        "-"
+      ],
+      "part3Questions": [
+        "What kind of jobs do children like?",
+        "How can people find a perfect job?",
+        "What factors should people take into account when choosing a job?",
+        "Which is more important when choosing a job, high salary or interest?",
+        "Is salary the main reason people choose a certain job?"
+      ],
+      "part3Topic": "Jobs"
+    },
+    {
+      "id": "p2_t39",
+      "topicNumber": 39,
+      "topic": "Not Being Allowed To Use A Mobile Phone",
+      "cueCard": "Describe an experience when you were not allowed to use a mobile phone.",
+      "bulletPoints": [
+        "what you did",
+        "when it was",
+        "where it was",
+        "why you were not allowed to use a mobile phone",
+        "-"
+      ],
+      "part3Questions": [
+        "Do young and old people use phones in the same way?",
+        "What positive and negative effects do mobile phones have on friendship?",
+        "Is it a waste of time to take pictures with mobile phones?",
+        "Many people think mobile phones can be annoying at times. Can you give any examples of that?",
+        "Do you think there should be laws on the use of mobile phones?"
+      ],
+      "part3Topic": "Mobile Phones"
+    },
+    {
+      "id": "p2_t40",
+      "topicNumber": 40,
+      "topic": "Famous Person You'D Like To Meet",
+      "cueCard": "Describe a famous person you'd like to meet.",
+      "bulletPoints": [
+        "who this person is",
+        "where you'd like to meet this person",
+        "how you know this person",
+        "why you'd like to meet this person",
+        "-"
+      ],
+      "part3Questions": [
+        "What are the advantages and disadvantages of being a famous child?",
+        "What can children do with their fame?",
+        "What can today's children do to become famous?",
+        "Do people become famous just because of their talent?"
+      ],
+      "part3Topic": "Fame And Children"
+    },
+    {
+      "id": "p2_t41",
+      "topicNumber": 41,
+      "topic": "Place In Your Home Where You Can Relax",
+      "cueCard": "Describe a place in your home where you like to relax.",
+      "bulletPoints": [
+        "where it is",
+        "what it is like",
+        "what you like doing there",
+        "why you feel relaxed there",
+        "-"
+      ],
+      "part3Questions": [
+        "Why is it difficult for some people to relax?",
+        "Do you think there should be classes for training young people and children how to relax?",
+        "Which is more important, mental relaxation or physical relaxation?",
+        "Do people in your country exercise after work?",
+        "What are the benefits of doing exercise?",
+        "What is the place where people spend most of their time in their home?"
+      ],
+      "part3Topic": "Having A Rest, Doing Exercise"
+    },
+    {
+      "id": "p2_t42",
+      "topicNumber": 42,
+      "topic": "Something You Can'T Live Without",
+      "cueCard": "Describe something you can't live without (not a computer or phone).",
+      "bulletPoints": [
+        "what it is",
+        "how you use it",
+        "how often you use it",
+        "how it helps you and why you can't live without it",
+        "-"
+      ],
+      "part3Questions": [
+        "Do you think that keeping old things in a family is a great way to connect with the past?",
+        "Why do grown-ups hate to throw away old things?",
+        "How have people's shopping habits changed in recent decades?",
+        "How has the way people buy things changed?",
+        "How do shops attract customers?",
+        "What makes people buy new things?",
+        "Why do all children like toys?",
+        "Do you think it's good for a child to take his or her favourite toy with them all the time?"
+      ],
+      "part3Topic": "New And Old Things, Toys"
+    },
+    {
+      "id": "p2_t43",
+      "topicNumber": 43,
+      "topic": "Occasion When Many People Were Smiling",
+      "cueCard": "Describe an occasion when you saw a lot of people smiling.",
+      "bulletPoints": [
+        "what occasion it was",
+        "where it was",
+        "why they were smiling",
+        "-"
+      ],
+      "part3Questions": [
+        "Do you think people who like to smile are more friendly?",
+        "Why do most people smile in photographs?",
+        "Do women smile more than men? Why?",
+        "Do people smile more when they are younger or older?"
+      ],
+      "part3Topic": "Smiling"
+    },
+    {
+      "id": "p2_t44",
+      "topicNumber": 44,
+      "topic": "Advice You Gave",
+      "cueCard": "Describe a time when you gave advice to others.",
+      "bulletPoints": [
+        "who you gave advice to",
+        "what the situation was",
+        "what advice you gave",
+        "what the result was",
+        "-"
+      ],
+      "part3Questions": [
+        "What problems can people face if they ask many different people for advice?",
+        "Why do some people like to ask others for advice on almost everything?",
+        "In general, what kind of person is most suitable for giving advice to others?",
+        "Should people prepare before giving advice?",
+        "Is it good to aks advice from strangers online?",
+        "What are the personalities of people whose job is to give advice to others?"
+      ],
+      "part3Topic": "Advice"
+    },
+    {
+      "id": "p2_t45",
+      "topicNumber": 45,
+      "topic": "App Or Program",
+      "cueCard": "Describe an app or program in your computer or phone.",
+      "bulletPoints": [
+        "what app or program it is",
+        "when and where you found it",
+        "how you use it",
+        "how you feel about it",
+        "-"
+      ],
+      "part3Questions": [
+        "What are the drawbacks of having too many apps?",
+        "Why do some people not like using apps?",
+        "What are the most and the least popular apps in your country?",
+        "What kind of apps do you have on your phone?",
+        "What are the differences between old and young people when using apps?"
+      ],
+      "part3Topic": "Apps Or Programs"
+    },
+    {
+      "id": "p2_t46",
+      "topicNumber": 46,
+      "topic": "Short-Term Job In A Foreign Country",
+      "cueCard": "Describe a country in which you would like to work or live for a short period of time.",
+      "bulletPoints": [
+        "what country or city it is",
+        "how you know about it",
+        "what type of work you would like to do there",
+        "why you would like to work in this country",
+        "-"
+      ],
+      "part3Questions": [
+        "Why do people like travelling?",
+        "What jobs can people do abroad for a short period of time?",
+        "Is it good that now people have an opportunity to work abroad?"
+      ],
+      "part3Topic": "Working Abroad, Travelling"
+    },
+    {
+      "id": "p2_t47",
+      "topicNumber": 47,
+      "topic": "Thing Your Family Has Kept For A Long Time",
+      "cueCard": "Describe an important old thing that your family has kept for a long time.",
+      "bulletPoints": [
+        "what it is",
+        "how your family first got this thing",
+        "how long your family has kept it",
+        "why this thing is important to your family",
+        "-"
+      ],
+      "part3Questions": [
+        "What are the differences between the things that people keep today and the things that people kept in the past?",
+        "As well as family photographs, what are some other things that people keep in their family for a long time?",
+        "In your culture, what sorts of things do people pass down from generation to generation?",
+        "What kinds of things are kept in museums?",
+        "What's the influence of technology on museums?"
+      ],
+      "part3Topic": "Old Things, Museums"
+    },
+    {
+      "id": "p2_t48",
+      "topicNumber": 48,
+      "topic": "Trip By Bike, Car Or Motorbike You Want To Have",
+      "cueCard": "Describe a long bike, motorbike, or car trip that you would like to take.",
+      "bulletPoints": [
+        "when you want to go",
+        "where you want to go",
+        "how long it will take you",
+        "why it is interesting",
+        "-"
+      ],
+      "part3Questions": [
+        "How are transportation systems in rural and urban areas different?",
+        "Which mode of transport is more popular in your country, a bicycle or car?",
+        "Do you think air pollution comes mostly from mobile vehicles?",
+        "Do you think people need to change the way of transportation drastically to protect the environment?"
+      ],
+      "part3Topic": "Transportation, Air Pollution"
+    },
+    {
+      "id": "p2_t49",
+      "topicNumber": 49,
+      "topic": "Shopping Mall",
+      "cueCard": "Describe a shop you often visit.",
+      "bulletPoints": [
+        "what shop it is, where it is",
+        "what it sells",
+        "why you like it",
+        "-"
+      ],
+      "part3Questions": [
+        "Do you think that people buy a lot of things that they don't need?",
+        "Do you often buy more than you expected?"
+      ],
+      "part3Topic": "Shopping"
+    },
+    {
+      "id": "p2_t50",
+      "topicNumber": 50,
+      "topic": "Imagination",
+      "cueCard": "Describe a time you needed to use your imagination.",
+      "bulletPoints": [
+        "what you did using imagination",
+        "when it was",
+        "whether it was easy or difficult",
+        "how you felt",
+        "-"
+      ],
+      "part3Questions": [
+        "What kind of jobs require imagination?",
+        "Do scientists need imagination in their work?",
+        "Do you think adults can have lots of imagination?",
+        "What subjects are helpful for children's imagination?"
+      ],
+      "part3Topic": "Imagination"
+    },
+    {
+      "id": "p2_t51",
+      "topicNumber": 51,
+      "topic": "Film You Watched And Enjoyed",
+      "cueCard": "Describe a film you watched and enjoyed.",
+      "bulletPoints": [
+        "what the film was about",
+        "when and where you watched it",
+        "why you liked it and why you want to watch it again",
+        "-"
+      ],
+      "part3Questions": [
+        "What makes a movie a blockbuster?",
+        "Are actors and actresses important to movies?",
+        "Do you think films with famous actors or actresses are more likely to become successful films?",
+        "What kinds of movies are successful in your country?",
+        "Do people in your country still like to go to a cinema?",
+        "Where do people watch movies?",
+        "Do people in your country prefer to watch domestic movies or foreign movies?",
+        "Do you think only well-known directors can create the best movies?"
+      ],
+      "part3Topic": "Films"
+    },
+    {
+      "id": "p2_t52",
+      "topicNumber": 52,
+      "topic": "Story You Read Recently",
+      "cueCard": "Describe a story you read recently.",
+      "bulletPoints": [
+        "what it is about",
+        "when you read it",
+        "whether you liked it",
+        "what you learned from it",
+        "-"
+      ],
+      "part3Questions": [
+        "Why do most children like listening to stories before bedtime?",
+        "Is a good storyline important for a movie?",
+        "Why do children like hearing the same bedtime story?"
+      ],
+      "part3Topic": "Stories"
+    },
+    {
+      "id": "p2_t53",
+      "topicNumber": 53,
+      "topic": "Person Who Solved A Problem In A Smart Way",
+      "cueCard": "Describe a person who solved a problem in a smart way.",
+      "bulletPoints": [
+        "who this person is",
+        "what the problem was",
+        "what solution they gave",
+        "why you think it was a clever solution",
+        "-"
+      ],
+      "part3Questions": [
+        "Are people born clever or need to learn to be clever?",
+        "Why are some children more intelligent than others?",
+        "Do you think society needs people with different types of intelligence?",
+        "Does modern society need talents of all kinds?",
+        "How do children become smart at school?",
+        "Why are some people well-rounded and others only good at one thing?"
+      ],
+      "part3Topic": "Intelligence"
+    },
+    {
+      "id": "p2_t54",
+      "topicNumber": 54,
+      "topic": "Person Who Likes To Protect The Nature",
+      "cueCard": "Describe a person who encouraged you to protect the nature.",
+      "bulletPoints": [
+        "who this person is",
+        "how this person encouraged you",
+        "what this person encouraged you to do",
+        "how you feel about this person",
+        "-"
+      ],
+      "part3Questions": [
+        "How can parents teach their children to protect nature?",
+        "Should schools teach children to get close to nature?",
+        "Do you think there should be laws to protect nature?"
+      ],
+      "part3Topic": "Environmental Protection"
+    },
+    {
+      "id": "p2_t55",
+      "topicNumber": 55,
+      "topic": "Item On Which You Spent More Than Expected",
+      "cueCard": "Describe an occasion when you paid more than expected.",
+      "bulletPoints": [
+        "what you bought",
+        "how much you paid",
+        "why you bought it",
+        "why you paid more",
+        "-"
+      ],
+      "part3Questions": [
+        "What do young people spend money on?",
+        "Is it good and necessary to teach children to save money?",
+        "Do you think it is important to save money?",
+        "Do you think that people buy a lot of things that they don't need?"
+      ],
+      "part3Topic": "Spending And Saving Money"
+    },
+    {
+      "id": "p2_t56",
+      "topicNumber": 56,
+      "topic": "Person Who Often Helps Others",
+      "cueCard": "Describe a person who often helps others.",
+      "bulletPoints": [
+        "who this person is",
+        "how you know this person",
+        "how this person helps you",
+        "why you think this person is helpful",
+        "-"
+      ],
+      "part3Questions": [
+        "What can children help parents with?",
+        "In your view, should children be taught to help others?",
+        "Should children help their parents with household chores?",
+        "What kind of help do people need when looking for a new job?",
+        "Who should people ask for help, colleagues or family members?"
+      ],
+      "part3Topic": "Helping Others"
+    },
+    {
+      "id": "p2_t57",
+      "topicNumber": 57,
+      "topic": "Piece Of Technology You'D Like To Own",
+      "cueCard": "Describe a piece of technology (not a phone) that you would like to own.",
+      "bulletPoints": [
+        "what it is",
+        "how you knew it",
+        "how much it costs",
+        "why you'd like to own it",
+        "-"
+      ],
+      "part3Questions": [
+        "What are the differences between talking with friends online and face-to-face?",
+        "What technology do people currently use?",
+        "Does technological development have a negative impact on communication among people?",
+        "Do you think technology unites or separates people?",
+        "What effects does technology have on people’s relationships?",
+        "What are the differences between the technology of the past and that of today?",
+        "What are the differences between making friends in real life and online?"
+      ],
+      "part3Topic": "Technology, Communication"
+    },
+    {
+      "id": "p2_t58",
+      "topicNumber": 58,
+      "topic": "Music Event You Didn'T Like",
+      "cueCard": "Describe a music event that you didn't enjoy.",
+      "bulletPoints": [
+        "what it was",
+        "who you went with",
+        "why you went there",
+        "why you didn't like it",
+        "-"
+      ],
+      "part3Questions": [
+        "What kind of music events do people like today?"
+      ],
+      "part3Topic": "Music Events"
+    },
+    {
+      "id": "p2_t59",
+      "topicNumber": 59,
+      "topic": "Encouraging Someone To Do What They Didn'T Want To Do",
+      "cueCard": "Describe a time when you encouraged someone to do something that they didn't want to do.",
+      "bulletPoints": [
+        "who this person is",
+        "what you encouraged them to do",
+        "how this person reacted",
+        "why you encouraged this person to do it",
+        "-"
+      ],
+      "part3Questions": [
+        "Is the role of a leader important in a group?",
+        "How can leaders encourage employees?",
+        "When should parents encourage their children?",
+        "Do you think some people are better than others at persuading?",
+        "What kind of encouragement should parents give?"
+      ],
+      "part3Topic": "Encouraging Others"
+    },
+    {
+      "id": "p2_t60",
+      "topicNumber": 60,
+      "topic": "Friend Who Learned Something New",
+      "cueCard": "Describe one of your friends who learned something new (not from a teacher).",
+      "bulletPoints": [
+        "who this person is",
+        "what this person learned",
+        "why they learned it",
+        "whether it would be easier to learn from a teacher",
+        "-"
+      ],
+      "part3Questions": [
+        "Do you think learning many subjects at one time is better or learning one subject is better?",
+        "Do you think learning many subjects is beneficial to your work?",
+        "Do you think all teachers should have entertaining teaching styles?",
+        "Should teachers make lessons fun?",
+        "Is it important for people to learn new skills all life long?",
+        "Do you think enterprises should provide training for their employees?"
+      ],
+      "part3Topic": "Learning New Things"
+    },
+    {
+      "id": "p2_t61",
+      "topicNumber": 61,
+      "topic": "Person Who Makes Plans A Lot",
+      "cueCard": "Describe a person who makes plans a lot and is good at planning.",
+      "bulletPoints": [
+        "who this person is",
+        "how you knew this person",
+        "what plans this person makes",
+        "how you feel about this person",
+        "-"
+      ],
+      "part3Questions": [
+        "In general, do you think planning is important?",
+        "Do you think everyone in your country makes everyday plans?",
+        "Do you think children should plan their future careers?",
+        "Should children ask their teachers or parents for advice when making plans?",
+        "What activities do we need to plan ahead?",
+        "Is making study plans popular among young people?",
+        "Do you think choosing a college major is closely related to a person's future career?"
+      ],
+      "part3Topic": "Making Plans"
+    },
+    {
+      "id": "p2_t62",
+      "topicNumber": 62,
+      "topic": "Child Who Loves Drawing Or Painting",
+      "cueCard": "Describe a child who loves drawing or painting.",
+      "bulletPoints": [
+        "who this child is",
+        "how you knew him or her",
+        "how often he or she draws or paints",
+        "why he or she likes drawing or painting",
+        "-"
+      ],
+      "part3Questions": [
+        "What is the right age for a child to learn drawing?",
+        "Why do most children draw more often than adults do?",
+        "Why do some people visit galleries or museums instead of viewing artworks online?",
+        "Do you think galleries and museums should be free of charge?",
+        "How do artworks inspire people?"
+      ],
+      "part3Topic": "Drawing, Museums"
+    },
+    {
+      "id": "p2_t63",
+      "topicNumber": 63,
+      "topic": "Quiet Place",
+      "cueCard": "Describe a quiet place that you like to go to.",
+      "bulletPoints": [
+        "what place it is",
+        "how often you go there, when you go there",
+        "what you do there",
+        "why you like this place",
+        "-"
+      ],
+      "part3Questions": [
+        "Is it hard to find quiet places in cities?",
+        "Can people bring children to these noise-free places?",
+        "What places should be noise-free?",
+        "Are there many quiet places in your city?",
+        "Why do people sometimes prefer to be alone?",
+        "Why do people go to quiet places?",
+        "Is there any place that is absolutely quiet?",
+        "Why is it difficult to stay in a quiet place?"
+      ],
+      "part3Topic": "Quiet Places"
+    },
+    {
+      "id": "p2_t64",
+      "topicNumber": 64,
+      "topic": "Program You Like To Watch",
+      "cueCard": "Describe a",
+      "bulletPoints": [
+        "program you like to watch.",
+        "what program it is",
+        "when you watch it",
+        "why you like it",
+        "-"
+      ],
+      "part3Questions": [
+        "What shows do old people and young people watch?",
+        "What other programs do you like to watch?",
+        "What TV programs are popular in your country?",
+        "Do people in your country like to watch foreign TV programs?",
+        "Do you think watching talk shows is a waste of time?",
+        "Do you think we can acquire knowledge from watching TV programs?",
+        "What's the benefit of letting kids watch animal videos rather than visiting zoos?",
+        "Do teachers play videos in class in your country?"
+      ],
+      "part3Topic": "Tv Programs, Videos"
+    },
+    {
+      "id": "p2_t65",
+      "topicNumber": 65,
+      "topic": "Interesting Building You'D Like To Visit",
+      "cueCard": "Describe an unusual building you'd like to visit.",
+      "bulletPoints": [
+        "what building it is",
+        "how you know about it",
+        "what the building looks like",
+        "why you want to visit it",
+        "-"
+      ],
+      "part3Questions": [
+        "Is the appearance of a public building as important as its functionality?",
+        "Is it worth spending a lot of money on the appearance of a building?",
+        "Is it more important for a building to look good on the outside or on the inside?",
+        "Why do people like to visit historical places?",
+        "What types of buildings are popular in your country?"
+      ],
+      "part3Topic": "Buildings, Architecture"
+    },
+    {
+      "id": "p2_t66",
+      "topicNumber": 66,
+      "topic": "City You'Ve Been To And Want To Visit Again",
+      "cueCard": "Describe a city you've been to and want to visit again.",
+      "bulletPoints": [
+        "what city it was",
+        "when you went there",
+        "what you did there",
+        "why you liked it",
+        "-"
+      ],
+      "part3Questions": [
+        "What is the difference between living in the countryside and the city?",
+        "Do you prefer to live in the city or in the countryside?",
+        "Do you think modern cities are suitable for young people or old people?",
+        "Is it good for elderly people to live in large cities?",
+        "Is it possible that all of the population move to cities?",
+        "Will people live in the countryside in the future?",
+        "Do you think people in the countryside are friendlier than in cities?",
+        "What should the government do to improve citizens' safety?",
+        "What changes usually take place in cities and towns?",
+        "Are there any changes in your city?"
+      ],
+      "part3Topic": "Cities"
+    },
+    {
+      "id": "p2_t67",
+      "topicNumber": 67,
+      "topic": "Gift You Want To Buy",
+      "cueCard": "Describe a gift you'd like to buy for your friend.",
+      "bulletPoints": [
+        "what gift you want to buy",
+        "who you'd like to give it to",
+        "why you'd like to buy this gift",
+        "why you've chosen that gift",
+        "-"
+      ],
+      "part3Questions": [
+        "Why is it sometimes difficult to buy or choose a gift for someone?",
+        "Is the price of a gift important?",
+        "Will people feel happy when receiving an expensive gift?",
+        "Do you like giving gifts?",
+        "Why do people give gifts?",
+        "When do people normally send gifts to others?",
+        "What gifts are popular in your country?",
+        "What factors do parents consider when choosing a gift for children?"
+      ],
+      "part3Topic": "Gifts"
+    },
+    {
+      "id": "p2_t68",
+      "topicNumber": 68,
+      "topic": "Person You Met And Want To Know More About",
+      "cueCard": "Describe a person you met only once and you want to know more about.",
+      "bulletPoints": [
+        "who this person is",
+        "how you met this person",
+        "when you met this person",
+        "why you want to know more about this person",
+        "-"
+      ],
+      "part3Questions": [
+        "What do you think of making friends online?",
+        "Do we benefit from having friends with different personalities?",
+        "Would you only make friends with people who are similar to you?",
+        "Is it important to have the same interests and hobbies when making friends?",
+        "How and where do people in your country make friends these days?",
+        "In what situations would people be willing to get to know new people?",
+        "Is it easy to find real friends on a social networking website?"
+      ],
+      "part3Topic": "Making Friends, Meeting People"
+    },
+    {
+      "id": "p2_t69",
+      "topicNumber": 69,
+      "topic": "Course That Impressed You",
+      "cueCard": "Describe a course that impressed you.",
+      "bulletPoints": [
+        "what the course was about",
+        "where you took the course",
+        "what you did during the course",
+        "why it impressed you",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Course That Impressed You"
+    },
+    {
+      "id": "p2_t70",
+      "topicNumber": 70,
+      "topic": "Noisy Place",
+      "cueCard": "Describe a time you went to a crowded place.",
+      "bulletPoints": [
+        "what place it was",
+        "when you went there",
+        "who you went with",
+        "what people do there",
+        "why you liked or disliked it",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Noisy Place"
+    },
+    {
+      "id": "p2_t71",
+      "topicNumber": 71,
+      "topic": "Good Service",
+      "cueCard": "Describe an occasion when you received good service from a company or shop.",
+      "bulletPoints": [
+        "what company or business it was and what this company does",
+        "what the service was and who helped you",
+        "where you received this good service",
+        "why you think it was good service",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Good Service"
+    },
+    {
+      "id": "p2_t72",
+      "topicNumber": 72,
+      "topic": "Something You Saved For",
+      "cueCard": "Describe something that you saved money to buy.",
+      "bulletPoints": [
+        "what it was",
+        "how long it took you to save enough money to buy it",
+        "why you wanted to buy this thing",
+        "how you felt when you bought it",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Something You Saved For"
+    },
+    {
+      "id": "p2_t73",
+      "topicNumber": 73,
+      "topic": "Skill You Learned In Childhood",
+      "cueCard": "Describe a person who taught you a skill when you were a child.",
+      "bulletPoints": [
+        "who the person was",
+        "what skills they taught you",
+        "how they taught you",
+        "why you think it is important",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Skill You Learned In Childhood"
+    },
+    {
+      "id": "p2_t74",
+      "topicNumber": 74,
+      "topic": "Crowded Place",
+      "cueCard": "Describe a time you went to a crowded place.",
+      "bulletPoints": [
+        "what place it was",
+        "when you went there",
+        "who you went with",
+        "what people do there",
+        "why you liked or disliked it",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Crowded Place"
+    },
+    {
+      "id": "p2_t75",
+      "topicNumber": 75,
+      "topic": "Waste Of Time",
+      "cueCard": "Describe an activity you usually do that wastes your time.",
+      "bulletPoints": [
+        "what it is",
+        "when you do it",
+        "why you do it",
+        "why you think it wastes your time",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Waste Of Time"
+    },
+    {
+      "id": "p2_t76",
+      "topicNumber": 76,
+      "topic": "Your Least Favourite Movie",
+      "cueCard": "Describe your least favourite movie.",
+      "bulletPoints": [
+        "what it was",
+        "why you decided to watch it",
+        "why it made you disappointed",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Your Least Favourite Movie"
+    },
+    {
+      "id": "p2_t77",
+      "topicNumber": 77,
+      "topic": "Trip You Often Take But Dislike",
+      "cueCard": "Describe a short journey that you often take but dislike.",
+      "bulletPoints": [
+        "where you go",
+        "how often you do this",
+        "when you do this",
+        "why you dislike it",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Trip You Often Take But Dislike"
+    },
+    {
+      "id": "p2_t78",
+      "topicNumber": 78,
+      "topic": "Person Who Taught You A Skill",
+      "cueCard": "Describe a person who taught you a skill.",
+      "bulletPoints": [
+        "who this person is",
+        "what this person taught you",
+        "how they taught you",
+        "why you think it was important",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Person Who Taught You A Skill"
+    },
+    {
+      "id": "p2_t79",
+      "topicNumber": 79,
+      "topic": "Old Person",
+      "cueCard": "Describe an older person you admire.",
+      "bulletPoints": [
+        "who this person is",
+        "how you know this person",
+        "what you like to do together",
+        "how you feel about this person",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Old Person"
+    },
+    {
+      "id": "p2_t80",
+      "topicNumber": 80,
+      "topic": "Person Who Is Good At Making Things By Hand",
+      "cueCard": "Describe a person who is good at making things by hand.",
+      "bulletPoints": [
+        "who this person is",
+        "how you know this person",
+        "what talent this person posseses",
+        "why you admire this person",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Person Who Is Good At Making Things By Hand"
+    },
+    {
+      "id": "p2_t81",
+      "topicNumber": 81,
+      "topic": "Enjoyable Evening With Friends",
+      "cueCard": "Describe an enjoyable evening you had with your friends.",
+      "bulletPoints": [
+        "who organised this dinner, where you had it",
+        "what you talked about during the meal",
+        "what you ate and drank",
+        "why you had this meal with your friends",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Enjoyable Evening With Friends"
+    },
+    {
+      "id": "p2_t82",
+      "topicNumber": 82,
+      "topic": "Sports Person You Admire",
+      "cueCard": "Describe a sports person you admire.",
+      "bulletPoints": [
+        "who this person is",
+        "what this person has achieved",
+        "how you know about this person",
+        "explain why you like this person",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Sports Person You Admire"
+    },
+    {
+      "id": "p2_t83",
+      "topicNumber": 83,
+      "topic": "Person Famous In Your Local Area",
+      "cueCard": "Describe a person famous in your local area.",
+      "bulletPoints": [
+        "who this person is",
+        "what this person does",
+        "why this person is popular",
+        "how you feel about this person",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Person Famous In Your Local Area"
+    },
+    {
+      "id": "p2_t84",
+      "topicNumber": 84,
+      "topic": "Losing Something Important",
+      "cueCard": "Describe an occasion when you lost something.",
+      "bulletPoints": [
+        "what it was and why it was important",
+        "when and where you lost it",
+        "how you felt after losing it",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Losing Something Important"
+    },
+    {
+      "id": "p2_t85",
+      "topicNumber": 85,
+      "topic": "Something You Do That Saves Your Time",
+      "cueCard": "Describe something you do that helps you save your time.",
+      "bulletPoints": [
+        "what it is",
+        "when you do it",
+        "how you feel when you do this",
+        "how it helps you",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Something You Do That Saves Your Time"
+    },
+    {
+      "id": "p2_t86",
+      "topicNumber": 86,
+      "topic": "Something You Weren'T Interested In",
+      "cueCard": "Describe a time when someone talked about something you were not interested in but you kept listening.",
+      "bulletPoints": [
+        "who this person is",
+        "what this person talked about",
+        "why you kept listening",
+        "how you felt about the experience",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Something You Weren'T Interested In"
+    },
+    {
+      "id": "p2_t87",
+      "topicNumber": 87,
+      "topic": "Book That Made You Happy",
+      "cueCard": "Describe a book you read that made you happy.",
+      "bulletPoints": [
+        "what the book is and what it is about",
+        "why you read it",
+        "why you find it exciting",
+        "-"
+      ],
+      "part3Questions": [],
+      "part3Topic": "Book That Made You Happy"
+    },
+    {
+      "id": "p2_t88",
+      "topicNumber": 88,
+      "topic": "Helping Someone",
+      "cueCard": "Describe a situation when you helped someone.",
+      "bulletPoints": [
+        "what the situation was",
+        "who the person was",
+        "how you helped them",
+        "how you felt after helping them",
+        "-"
+      ],
+      "part3Questions": [
+        "Should children help their parents with household chores?",
+        "What can children help parents with?",
+        "In your view, should children be taught to help others?",
+        "Should parents reward their children when they help others?",
+        "Who should teach children to help others, parents or teachers?",
+        "Do you think parents should give advice to their children?"
+      ],
+      "part3Topic": "Helping Others"
+    },
+    {
+      "id": "p2_t89",
+      "topicNumber": 89,
+      "topic": "Soon…",
+      "cueCard": "Describe soon…",
+      "bulletPoints": [],
+      "part3Questions": [],
+      "part3Topic": "Soon…"
+    },
+    {
+      "id": "p2_t90",
+      "topicNumber": 90,
+      "topic": "Soon…",
+      "cueCard": "Describe soon…",
+      "bulletPoints": [],
+      "part3Questions": [],
+      "part3Topic": "Soon…"
+    },
+    {
+      "id": "p2_t91",
+      "topicNumber": 91,
+      "topic": "Soon…",
+      "cueCard": "Describe soon…",
+      "bulletPoints": [],
+      "part3Questions": [],
+      "part3Topic": "Soon…"
+    },
+    {
+      "id": "p2_t92",
+      "topicNumber": 92,
+      "topic": "Soon…",
+      "cueCard": "Describe soon…",
+      "bulletPoints": [],
+      "part3Questions": [],
+      "part3Topic": "Soon…"
+    },
+    {
+      "id": "p2_t93",
+      "topicNumber": 93,
+      "topic": "Soon…",
+      "cueCard": "Describe soon…",
+      "bulletPoints": [],
+      "part3Questions": [],
+      "part3Topic": "Soon…"
+    },
+    {
+      "id": "p2_t94",
+      "topicNumber": 94,
+      "topic": "Soon…",
+      "cueCard": "Describe soon…",
+      "bulletPoints": [],
+      "part3Questions": [],
+      "part3Topic": "Soon…"
+    },
+    {
+      "id": "p2_t95",
+      "topicNumber": 95,
+      "topic": "Soon…",
+      "cueCard": "Describe soon…",
+      "bulletPoints": [],
+      "part3Questions": [],
+      "part3Topic": "Soon…"
+    },
+    {
+      "id": "p2_t96",
+      "topicNumber": 96,
+      "topic": "Soon…",
+      "cueCard": "Describe soon…",
+      "bulletPoints": [],
+      "part3Questions": [],
+      "part3Topic": "Soon…"
+    },
+    {
+      "id": "p2_t97",
+      "topicNumber": 97,
+      "topic": "Soon…",
+      "cueCard": "Describe soon…",
+      "bulletPoints": [],
+      "part3Questions": [],
+      "part3Topic": "Soon…"
+    },
+    {
+      "id": "p2_t98",
+      "topicNumber": 98,
+      "topic": "Soon…",
+      "cueCard": "Describe soon…",
+      "bulletPoints": [],
+      "part3Questions": [],
+      "part3Topic": "Soon…"
+    },
+    {
+      "id": "p2_t99",
+      "topicNumber": 99,
+      "topic": "Soon…",
+      "cueCard": "Describe soon…",
+      "bulletPoints": [],
+      "part3Questions": [],
+      "part3Topic": "Soon…"
+    },
+    {
+      "id": "p2_t100",
+      "topicNumber": 100,
+      "topic": "Soon…",
+      "cueCard": "Describe soon…",
+      "bulletPoints": [],
+      "part3Questions": [],
+      "part3Topic": "Soon…"
+    }
+  ],
+  "part3": [
+    {
+      "id": "p3_t1",
+      "topicNumber": 1,
+      "topic": "Travelling, Rest",
+      "questions": [
+        "Why do some people prefer to travel in their own country rather than going abroad?",
+        "Some people don't like to travel abroad. Why?",
+        "Why do people choose to travel or live abroad?"
+      ]
+    },
+    {
+      "id": "p3_t2",
+      "topicNumber": 2,
+      "topic": "Food And Cooking",
+      "questions": [
+        "What food do you (people in your country) eat on special occasions?",
+        "What is the difference between special food in your country and other countries?",
+        "Why do many people like to spend a lot of money on food on special days?",
+        "What do you think of people using their mobile phones during a meal?",
+        "Do you think it's good to communicate when eating with your family?",
+        "More and more people are unwilling to cook. Why is this happening?"
+      ]
+    },
+    {
+      "id": "p3_t3",
+      "topicNumber": 3,
+      "topic": "Tall Buildings",
+      "questions": [
+        "What do you think buildings will be like in the future?",
+        "Which do most people prefer, living in a bungalow or in a tall building?",
+        "Why are taller and taller building being constructed nowadays?"
+      ]
+    },
+    {
+      "id": "p3_t4",
+      "topicNumber": 4,
+      "topic": "Getting Up Early",
+      "questions": [
+        "Why do people get up early?",
+        "Are there any situations when it's not good to arrive early?",
+        "Is it good to arrive early in any situation?",
+        "Why do some people stay up late at night?",
+        "Is it easy to get up early?"
+      ]
+    },
+    {
+      "id": "p3_t5",
+      "topicNumber": 5,
+      "topic": "Rules And Laws",
+      "questions": [
+        "Do people in your country usually obey the law?",
+        "What are some rules that exist in schools or workplaces in your country?",
+        "What kind of behaviour is considered good behaviour?",
+        "How can parents teach children to obey rules?",
+        "What are the benefits of obeying rules?",
+        "Do you think children can learn about the law outside of school?"
+      ]
+    },
+    {
+      "id": "p3_t6",
+      "topicNumber": 6,
+      "topic": "Growing Plants",
+      "questions": [
+        "Do people in your country like to grow plants?",
+        "What are the advantages of growing plants at home?",
+        "Do people like to grow vegetables in your country?",
+        "What are the advantages of growing vegetables at home?",
+        "How do people feel when they eat vegetables that they grew on their own?"
+      ]
+    },
+    {
+      "id": "p3_t7",
+      "topicNumber": 7,
+      "topic": "Friendship, Social Media",
+      "questions": [
+        "Do you still keep in touch with your friends from childhood?",
+        "What's the difference between having younger friends and older friends?",
+        "Has technology changed people's friendships? How?",
+        "What do you think of communicating via social media?",
+        "Will online social media replace face-to-face communication?",
+        "Is it necessary for kids to have some close friends?"
+      ]
+    },
+    {
+      "id": "p3_t8",
+      "topicNumber": 8,
+      "topic": "Planning",
+      "questions": [
+        "Do old people often change plans?",
+        "Do young people like to change plans?",
+        "What are the common reasons when people need to change plans?",
+        "How would you tell your friends if you had to change your plans?",
+        "How does technology help people make plans?",
+        "Why do parents still make plans for their children nowadays?"
+      ]
+    },
+    {
+      "id": "p3_t9",
+      "topicNumber": 9,
+      "topic": "Food",
+      "questions": [
+        "What food do you eat on special occasions?",
+        "Is food now better than in the past?",
+        "Are there any differences between the food people eat today and the food people ate in the past?"
+      ]
+    },
+    {
+      "id": "p3_t10",
+      "topicNumber": 10,
+      "topic": "Sports Events, Competition",
+      "questions": [
+        "What is the difference between watching sports events at home and at the stadium?",
+        "What are the advantages of watching sports events online?",
+        "Why does somebody dislike to watch the Olympic Games?"
+      ]
+    },
+    {
+      "id": "p3_t11",
+      "topicNumber": 11,
+      "topic": "Holidays",
+      "questions": [
+        "What do you need to do before you travel?",
+        "What preparations should people make before going on holiday?",
+        "Where do people usually travel on holidays?",
+        "Do you think it's important to do some preparation before you travel to new places?"
+      ]
+    },
+    {
+      "id": "p3_t12",
+      "topicNumber": 12,
+      "topic": "Making Decisions",
+      "questions": [
+        "Do you think children sometimes have to make important decisions?",
+        "What important decisions do young people need to make after the completion of high school?",
+        "Who can children turn to for help when making a decision?",
+        "How do people make important decisions?",
+        "What are the advantages of advertising?",
+        "Do you think the influence of advertising is good?",
+        "Do you think advertisements can influence our decisions when shopping?"
+      ]
+    },
+    {
+      "id": "p3_t13",
+      "topicNumber": 13,
+      "topic": "Teamwork, Leadership",
+      "questions": [
+        "Do you prefer to work in a team or own your own?",
+        "Why do some people prefer to work on their own?",
+        "What kinds of jobs require people to work in a team?",
+        "What qualities do you think a good team member should have?"
+      ]
+    },
+    {
+      "id": "p3_t14",
+      "topicNumber": 14,
+      "topic": "Success In Business",
+      "questions": [
+        "Why do some people open their own business?",
+        "Is it better to have your own business than work for a boss?",
+        "What do you need to start a business?",
+        "Do you agree that nowadays it is easier to set up a business than in the past?",
+        "Do people in your country like to work in big companies or small companies?",
+        "What challenges and difficulties do people face when they try to have a successful small business?",
+        "What makes some companies more successful than others?"
+      ]
+    },
+    {
+      "id": "p3_t15",
+      "topicNumber": 15,
+      "topic": "Visiting Others, Accommodation",
+      "questions": [
+        "In your country, when people visit other people in their homes, do they usually bring a gift?",
+        "What kind of houses or apartments do people prefer to buy?",
+        "What is the difference between living in the countryside and the city?",
+        "Do you prefer to live in the city or in the countryside?"
+      ]
+    },
+    {
+      "id": "p3_t16",
+      "topicNumber": 16,
+      "topic": "Rivers And Lakes",
+      "questions": [
+        "Why are rivers and lakes important to local people?",
+        "How can rivers and lakes benefit local people?",
+        "What water sports are popular in your country?",
+        "Why do people like water sports?",
+        "Do you think having a river or lake has an impact on tourism in the city?",
+        "Are rivers and lakes important to a country?",
+        "Are rivers and lakes good for transport?",
+        "Do you think rivers and lakes attract tourists?"
+      ]
+    },
+    {
+      "id": "p3_t17",
+      "topicNumber": 17,
+      "topic": "Learning Languages",
+      "questions": [
+        "What are the difficulties of learning a new language?",
+        "What difficulties do people face when learning a language?",
+        "Why do people learn foreign languages?",
+        "Do you think learning a foreign language is important?",
+        "What can people do to learn a foreign language?",
+        "What's the best way to learn a language?",
+        "Which is better, to study a language alone or to study it in a group?",
+        "What are the advantages and disadvantages of learning a language?",
+        "Some people think that technology has made it unnecessary to learn languages. What do you think?"
+      ]
+    },
+    {
+      "id": "p3_t18",
+      "topicNumber": 18,
+      "topic": "Rules And Punishment",
+      "questions": [
+        "What can teachers do to make students obey rules?",
+        "What are some rules that exist in schools or workplaces in your country?",
+        "What should parents do to educate children about laws?",
+        "When people break rules, how are they punished in your country?",
+        "Do you think school rules are important?",
+        "Are children unhappy with the school rules?",
+        "What are the rules people should obey at work?"
+      ]
+    },
+    {
+      "id": "p3_t19",
+      "topicNumber": 19,
+      "topic": "Leisure Time",
+      "questions": [
+        "What leisure activities do old and young people prefer?",
+        "How do people spend their leisure time in your country?",
+        "How does technology affect the way people spend leisure time?",
+        "Is leisure time important for everyone?",
+        "Do you think only old people have time for leisure?"
+      ]
+    },
+    {
+      "id": "p3_t20",
+      "topicNumber": 20,
+      "topic": "Organising Things, Being Organized",
+      "questions": [
+        "How can parents help children to be organized?",
+        "What factors should people consider organising events?"
+      ]
+    },
+    {
+      "id": "p3_t21",
+      "topicNumber": 21,
+      "topic": "Public Transport, Traffic Jams",
+      "questions": [
+        "Would you rather be in a car or bus in a traffic jam?",
+        "What are good ways to manage traffic?",
+        "Do you think highways will help reduce traffic jams?",
+        "In what ways can we fix traffic problems?",
+        "Will there be fewer people using cars because of improved public transportation?",
+        "Will there be fewer cars if public transport is free?",
+        "What benefits does public transport bring to the world?",
+        "What needs to be improved in public transport?"
+      ]
+    },
+    {
+      "id": "p3_t22",
+      "topicNumber": 22,
+      "topic": "Goals",
+      "questions": [
+        "Why do people set goals?",
+        "Why is it important for teenagers to set goals?",
+        "Why should parents encourage children to have ambitions?",
+        "When do young children start setting goals for themselves?"
+      ]
+    },
+    {
+      "id": "p3_t23",
+      "topicNumber": 23,
+      "topic": "Success",
+      "questions": [
+        "How would you define success?",
+        "In general, how do people judge or, assess the success of others?",
+        "What does it take to become successful?",
+        "Why is it that some people achieve success faster?",
+        "What factors lead to success?"
+      ]
+    },
+    {
+      "id": "p3_t24",
+      "topicNumber": 24,
+      "topic": "Ai",
+      "questions": [
+        "Have you ever had any experience with things related to Al?",
+        "Have you ever used Al-based technology?"
+      ]
+    },
+    {
+      "id": "p3_t25",
+      "topicNumber": 25,
+      "topic": "Intelligence",
+      "questions": [
+        "Are people born clever or need to learn to be clever?",
+        "Why are some children more intelligent than others?",
+        "How do children become smart at school?",
+        "Do you think society needs people with different types of intelligence?",
+        "Does modern society need talents of all kinds?",
+        "Do you think smart people are happy?",
+        "Do you think smart people are happier than others?",
+        "Do you think smart people are not good at certain things?",
+        "Do you think the intelligence of a person is important?",
+        "What ways do people use to judge someone's intelligence?",
+        "Do you think there is anything that intelligent people find difficult to do?"
+      ]
+    },
+    {
+      "id": "p3_t26",
+      "topicNumber": 26,
+      "topic": "Opinions And Ideas",
+      "questions": [
+        "When do children begin to have their own ideas and opinions?",
+        "Who do children listen to more, their parents or their teachers?",
+        "Who are smart children likely to be influenced by?",
+        "Do you think children will always have ideas and opinions similar to those of their parents?",
+        "Are children's opinions influenced by their parents?",
+        "What do young people have strong opinions about?",
+        "How can teachers help children develop their ideas and opinions?",
+        "When do people change opinions?"
+      ]
+    },
+    {
+      "id": "p3_t27",
+      "topicNumber": 27,
+      "topic": "Messages",
+      "questions": [
+        "Why do people write letters?",
+        "Nowadays, do people prefer to write letters or emails?",
+        "On what particular occasion do you prefer to write letters?",
+        "Do you think traditional letters are a good way to send messages?"
+      ]
+    },
+    {
+      "id": "p3_t28",
+      "topicNumber": 28,
+      "topic": "Advertising",
+      "questions": [
+        "What are the advantages of advertising?",
+        "Do you think the influence of advertising is good?",
+        "Many advertisers like to use sports stars' endorsements. What are the reasons?",
+        "Which one is more effective, newspaper advertising or online advertising?",
+        "What do you think of online advertising?",
+        "What do you think of celebrity endorsement?",
+        "What factors should be taken into account while making advertisements?"
+      ]
+    },
+    {
+      "id": "p3_t29",
+      "topicNumber": 29,
+      "topic": "Boredom",
+      "questions": [
+        "What can people do to fight boredom?",
+        "Do you think young people get bored more quickly than old people?",
+        "Do you think having a daily routine is boring?",
+        "In what situations do people usually feel bored?",
+        "Why do some people get bored faster than others?",
+        "Some people say that it's good to feel bored sometimes. What do you think?",
+        "Do you agree that it is impossible to feel bored in our today's world?"
+      ]
+    },
+    {
+      "id": "p3_t30",
+      "topicNumber": 30,
+      "topic": "Videos",
+      "questions": [
+        "Do teachers play videos in class in your country?",
+        "Why are young people so obsessed with watching short videos?"
+      ]
+    },
+    {
+      "id": "p3_t31",
+      "topicNumber": 31,
+      "topic": "Animals",
+      "questions": [
+        "Why do stories and movies for children always feature animals?",
+        "Why do people like to keep pets?",
+        "What are the advantages of keeping a pet?",
+        "Do you think children love animals more than old people do?",
+        "Do you like to take care of animals?",
+        "How are pets now different from those in the past?",
+        "What problems will keeping pets bring?",
+        "Is it safe for animals to live in cities?",
+        "Should schools teach children about animals?"
+      ]
+    },
+    {
+      "id": "p3_t32",
+      "topicNumber": 32,
+      "topic": "Doctors, Biology, Medical Research",
+      "questions": [
+        "Do you think it is necessary to learn first aid skills?",
+        "What are the differences between the work of a doctor and that of a nurse?",
+        "Do you think being a doctor is easy or difficult?",
+        "Why do some children want to become doctors?",
+        "Do you think learning biology is interesting for children?",
+        "Do you think governments should put a large amount of money into medical research?"
+      ]
+    },
+    {
+      "id": "p3_t33",
+      "topicNumber": 33,
+      "topic": "Companies, Customer Satisfaction",
+      "questions": [
+        "Is having happy workers important for the success of a company?",
+        "What are the good things about working for a big company?",
+        "What are the benefits and disadvantages of working at an international company?"
+      ]
+    },
+    {
+      "id": "p3_t34",
+      "topicNumber": 34,
+      "topic": "News, National Identity",
+      "questions": [
+        "Do you think it's important to have a national identity?",
+        "How can people develop their national identity?",
+        "Why do local people like to read local news?",
+        "Why do people like local news more than international news?",
+        "How often do people in your country buy newspapers?",
+        "Do you think visual media (film, photography) is important in how news is presented?",
+        "What do you think of news on social media?",
+        "How do people in your country get news?"
+      ]
+    },
+    {
+      "id": "p3_t35",
+      "topicNumber": 35,
+      "topic": "Foreign Languages",
+      "questions": [
+        "What can people do to learn a foreign language?",
+        "What's the best way to learn a language?",
+        "Why do people learn foreign languages?",
+        "Do you think learning a foreing language is important?",
+        "Is it more important to learn foreign languages now than before?",
+        "Do you think that children adapt to new things more easily than adults?",
+        "How can people learn new things?"
+      ]
+    },
+    {
+      "id": "p3_t36",
+      "topicNumber": 36,
+      "topic": "Cities",
+      "questions": [
+        "What is the difference between living in the countryside and the city?",
+        "Do you prefer to live in the city or in the countryside?",
+        "Is it good for elderly people to live in large cities?",
+        "Is it possible that all of the population move to cities?",
+        "Will people live in the countryside in the future?",
+        "Do you think people in the countryside are friendlier than in cities?",
+        "What should the government do to improve citizens' safety?",
+        "What changes usually take place in cities and towns?",
+        "Are there any changes in your city?",
+        "For those who live in cities, is it because they want to or have to?",
+        "Do you prefer to visit well-developed cities or cities with a long history?",
+        "What are the disadvantages of living in a very famous city?",
+        "Before you travel to a city, what factors would you consider?",
+        "Do you think modern cities are suitable for young people or old people?",
+        "What kinds of facilities do big cities have?"
+      ]
+    },
+    {
+      "id": "p3_t37",
+      "topicNumber": 37,
+      "topic": "Being Proud",
+      "questions": [
+        "On what occasions would adults feel proud of themselves?",
+        "Is it a good idea to reward children for doing homework or housework?",
+        "What would children do to make their parents proud?",
+        "What did you do to make your parents proud when you were young?",
+        "What advantages of yours make you proud?",
+        "When was the last time that you felt proud of yourself?",
+        "Is it good to reward children too often?"
+      ]
+    },
+    {
+      "id": "p3_t38",
+      "topicNumber": 38,
+      "topic": "Jobs",
+      "questions": [
+        "What kind of jobs do children like?",
+        "How can people find a perfect job?",
+        "What factors should people take into account when choosing a job?",
+        "Which is more important when choosing a job, high salary or interest?",
+        "Is salary the main reason people choose a certain job?"
+      ]
+    },
+    {
+      "id": "p3_t39",
+      "topicNumber": 39,
+      "topic": "Mobile Phones",
+      "questions": [
+        "Do young and old people use phones in the same way?",
+        "What positive and negative effects do mobile phones have on friendship?",
+        "Is it a waste of time to take pictures with mobile phones?",
+        "Many people think mobile phones can be annoying at times. Can you give any examples of that?",
+        "Do you think there should be laws on the use of mobile phones?"
+      ]
+    },
+    {
+      "id": "p3_t40",
+      "topicNumber": 40,
+      "topic": "Fame And Children",
+      "questions": [
+        "What are the advantages and disadvantages of being a famous child?",
+        "What can children do with their fame?",
+        "What can today's children do to become famous?",
+        "Do people become famous just because of their talent?"
+      ]
+    },
+    {
+      "id": "p3_t41",
+      "topicNumber": 41,
+      "topic": "Having A Rest, Doing Exercise",
+      "questions": [
+        "Why is it difficult for some people to relax?",
+        "Do you think there should be classes for training young people and children how to relax?",
+        "Which is more important, mental relaxation or physical relaxation?",
+        "Do people in your country exercise after work?",
+        "What are the benefits of doing exercise?",
+        "What is the place where people spend most of their time in their home?"
+      ]
+    },
+    {
+      "id": "p3_t42",
+      "topicNumber": 42,
+      "topic": "New And Old Things, Toys",
+      "questions": [
+        "Do you think that keeping old things in a family is a great way to connect with the past?",
+        "Why do grown-ups hate to throw away old things?",
+        "How have people's shopping habits changed in recent decades?",
+        "How has the way people buy things changed?",
+        "How do shops attract customers?",
+        "What makes people buy new things?",
+        "Why do all children like toys?",
+        "Do you think it's good for a child to take his or her favourite toy with them all the time?"
+      ]
+    },
+    {
+      "id": "p3_t43",
+      "topicNumber": 43,
+      "topic": "Smiling",
+      "questions": [
+        "Do you think people who like to smile are more friendly?",
+        "Why do most people smile in photographs?",
+        "Do women smile more than men? Why?",
+        "Do people smile more when they are younger or older?"
+      ]
+    },
+    {
+      "id": "p3_t44",
+      "topicNumber": 44,
+      "topic": "Advice",
+      "questions": [
+        "What problems can people face if they ask many different people for advice?",
+        "Why do some people like to ask others for advice on almost everything?",
+        "In general, what kind of person is most suitable for giving advice to others?",
+        "Should people prepare before giving advice?",
+        "Is it good to aks advice from strangers online?",
+        "What are the personalities of people whose job is to give advice to others?"
+      ]
+    },
+    {
+      "id": "p3_t45",
+      "topicNumber": 45,
+      "topic": "Apps Or Programs",
+      "questions": [
+        "What are the drawbacks of having too many apps?",
+        "Why do some people not like using apps?",
+        "What are the most and the least popular apps in your country?",
+        "What kind of apps do you have on your phone?",
+        "What are the differences between old and young people when using apps?"
+      ]
+    },
+    {
+      "id": "p3_t46",
+      "topicNumber": 46,
+      "topic": "Working Abroad, Travelling",
+      "questions": [
+        "Why do people like travelling?",
+        "What jobs can people do abroad for a short period of time?",
+        "Is it good that now people have an opportunity to work abroad?"
+      ]
+    },
+    {
+      "id": "p3_t47",
+      "topicNumber": 47,
+      "topic": "Old Things, Museums",
+      "questions": [
+        "What are the differences between the things that people keep today and the things that people kept in the past?",
+        "As well as family photographs, what are some other things that people keep in their family for a long time?",
+        "In your culture, what sorts of things do people pass down from generation to generation?",
+        "What kinds of things are kept in museums?",
+        "What's the influence of technology on museums?"
+      ]
+    },
+    {
+      "id": "p3_t48",
+      "topicNumber": 48,
+      "topic": "Transportation, Air Pollution",
+      "questions": [
+        "How are transportation systems in rural and urban areas different?",
+        "Which mode of transport is more popular in your country, a bicycle or car?",
+        "Do you think air pollution comes mostly from mobile vehicles?",
+        "Do you think people need to change the way of transportation drastically to protect the environment?"
+      ]
+    },
+    {
+      "id": "p3_t49",
+      "topicNumber": 49,
+      "topic": "Shopping",
+      "questions": [
+        "Do you think that people buy a lot of things that they don't need?",
+        "Do you often buy more than you expected?"
+      ]
+    },
+    {
+      "id": "p3_t50",
+      "topicNumber": 50,
+      "topic": "Imagination",
+      "questions": [
+        "What kind of jobs require imagination?",
+        "Do scientists need imagination in their work?",
+        "Do you think adults can have lots of imagination?",
+        "What subjects are helpful for children's imagination?"
+      ]
+    },
+    {
+      "id": "p3_t51",
+      "topicNumber": 51,
+      "topic": "Films",
+      "questions": [
+        "What makes a movie a blockbuster?",
+        "Are actors and actresses important to movies?",
+        "Do you think films with famous actors or actresses are more likely to become successful films?",
+        "What kinds of movies are successful in your country?",
+        "Do people in your country still like to go to a cinema?",
+        "Where do people watch movies?",
+        "Do people in your country prefer to watch domestic movies or foreign movies?",
+        "Do you think only well-known directors can create the best movies?"
+      ]
+    },
+    {
+      "id": "p3_t52",
+      "topicNumber": 52,
+      "topic": "Stories",
+      "questions": [
+        "Why do most children like listening to stories before bedtime?",
+        "Is a good storyline important for a movie?",
+        "Why do children like hearing the same bedtime story?"
+      ]
+    },
+    {
+      "id": "p3_t53",
+      "topicNumber": 53,
+      "topic": "Intelligence",
+      "questions": [
+        "Are people born clever or need to learn to be clever?",
+        "Why are some children more intelligent than others?",
+        "Do you think society needs people with different types of intelligence?",
+        "Does modern society need talents of all kinds?",
+        "How do children become smart at school?",
+        "Why are some people well-rounded and others only good at one thing?"
+      ]
+    },
+    {
+      "id": "p3_t54",
+      "topicNumber": 54,
+      "topic": "Environmental Protection",
+      "questions": [
+        "How can parents teach their children to protect nature?",
+        "Should schools teach children to get close to nature?",
+        "Do you think there should be laws to protect nature?"
+      ]
+    },
+    {
+      "id": "p3_t55",
+      "topicNumber": 55,
+      "topic": "Spending And Saving Money",
+      "questions": [
+        "What do young people spend money on?",
+        "Is it good and necessary to teach children to save money?",
+        "Do you think it is important to save money?",
+        "Do you think that people buy a lot of things that they don't need?"
+      ]
+    },
+    {
+      "id": "p3_t56",
+      "topicNumber": 56,
+      "topic": "Helping Others",
+      "questions": [
+        "What can children help parents with?",
+        "In your view, should children be taught to help others?",
+        "Should children help their parents with household chores?",
+        "What kind of help do people need when looking for a new job?",
+        "Who should people ask for help, colleagues or family members?"
+      ]
+    },
+    {
+      "id": "p3_t57",
+      "topicNumber": 57,
+      "topic": "Technology, Communication",
+      "questions": [
+        "What are the differences between talking with friends online and face-to-face?",
+        "What technology do people currently use?",
+        "Does technological development have a negative impact on communication among people?",
+        "Do you think technology unites or separates people?",
+        "What effects does technology have on people’s relationships?",
+        "What are the differences between the technology of the past and that of today?",
+        "What are the differences between making friends in real life and online?"
+      ]
+    },
+    {
+      "id": "p3_t58",
+      "topicNumber": 58,
+      "topic": "Music Events",
+      "questions": [
+        "What kind of music events do people like today?"
+      ]
+    },
+    {
+      "id": "p3_t59",
+      "topicNumber": 59,
+      "topic": "Encouraging Others",
+      "questions": [
+        "Is the role of a leader important in a group?",
+        "How can leaders encourage employees?",
+        "When should parents encourage their children?",
+        "Do you think some people are better than others at persuading?",
+        "What kind of encouragement should parents give?"
+      ]
+    },
+    {
+      "id": "p3_t60",
+      "topicNumber": 60,
+      "topic": "Learning New Things",
+      "questions": [
+        "Do you think learning many subjects at one time is better or learning one subject is better?",
+        "Do you think learning many subjects is beneficial to your work?",
+        "Do you think all teachers should have entertaining teaching styles?",
+        "Should teachers make lessons fun?",
+        "Is it important for people to learn new skills all life long?",
+        "Do you think enterprises should provide training for their employees?"
+      ]
+    },
+    {
+      "id": "p3_t61",
+      "topicNumber": 61,
+      "topic": "Making Plans",
+      "questions": [
+        "In general, do you think planning is important?",
+        "Do you think everyone in your country makes everyday plans?",
+        "Do you think children should plan their future careers?",
+        "Should children ask their teachers or parents for advice when making plans?",
+        "What activities do we need to plan ahead?",
+        "Is making study plans popular among young people?",
+        "Do you think choosing a college major is closely related to a person's future career?"
+      ]
+    },
+    {
+      "id": "p3_t62",
+      "topicNumber": 62,
+      "topic": "Drawing, Museums",
+      "questions": [
+        "What is the right age for a child to learn drawing?",
+        "Why do most children draw more often than adults do?",
+        "Why do some people visit galleries or museums instead of viewing artworks online?",
+        "Do you think galleries and museums should be free of charge?",
+        "How do artworks inspire people?"
+      ]
+    },
+    {
+      "id": "p3_t63",
+      "topicNumber": 63,
+      "topic": "Quiet Places",
+      "questions": [
+        "Is it hard to find quiet places in cities?",
+        "Can people bring children to these noise-free places?",
+        "What places should be noise-free?",
+        "Are there many quiet places in your city?",
+        "Why do people sometimes prefer to be alone?",
+        "Why do people go to quiet places?",
+        "Is there any place that is absolutely quiet?",
+        "Why is it difficult to stay in a quiet place?"
+      ]
+    },
+    {
+      "id": "p3_t64",
+      "topicNumber": 64,
+      "topic": "Tv Programs, Videos",
+      "questions": [
+        "What shows do old people and young people watch?",
+        "What other programs do you like to watch?",
+        "What TV programs are popular in your country?",
+        "Do people in your country like to watch foreign TV programs?",
+        "Do you think watching talk shows is a waste of time?",
+        "Do you think we can acquire knowledge from watching TV programs?",
+        "What's the benefit of letting kids watch animal videos rather than visiting zoos?",
+        "Do teachers play videos in class in your country?"
+      ]
+    },
+    {
+      "id": "p3_t65",
+      "topicNumber": 65,
+      "topic": "Buildings, Architecture",
+      "questions": [
+        "Is the appearance of a public building as important as its functionality?",
+        "Is it worth spending a lot of money on the appearance of a building?",
+        "Is it more important for a building to look good on the outside or on the inside?",
+        "Why do people like to visit historical places?",
+        "What types of buildings are popular in your country?"
+      ]
+    },
+    {
+      "id": "p3_t66",
+      "topicNumber": 66,
+      "topic": "Cities",
+      "questions": [
+        "What is the difference between living in the countryside and the city?",
+        "Do you prefer to live in the city or in the countryside?",
+        "Do you think modern cities are suitable for young people or old people?",
+        "Is it good for elderly people to live in large cities?",
+        "Is it possible that all of the population move to cities?",
+        "Will people live in the countryside in the future?",
+        "Do you think people in the countryside are friendlier than in cities?",
+        "What should the government do to improve citizens' safety?",
+        "What changes usually take place in cities and towns?",
+        "Are there any changes in your city?"
+      ]
+    },
+    {
+      "id": "p3_t67",
+      "topicNumber": 67,
+      "topic": "Gifts",
+      "questions": [
+        "Why is it sometimes difficult to buy or choose a gift for someone?",
+        "Is the price of a gift important?",
+        "Will people feel happy when receiving an expensive gift?",
+        "Do you like giving gifts?",
+        "Why do people give gifts?",
+        "When do people normally send gifts to others?",
+        "What gifts are popular in your country?",
+        "What factors do parents consider when choosing a gift for children?"
+      ]
+    },
+    {
+      "id": "p3_t68",
+      "topicNumber": 68,
+      "topic": "Making Friends, Meeting People",
+      "questions": [
+        "What do you think of making friends online?",
+        "Do we benefit from having friends with different personalities?",
+        "Would you only make friends with people who are similar to you?",
+        "Is it important to have the same interests and hobbies when making friends?",
+        "How and where do people in your country make friends these days?",
+        "In what situations would people be willing to get to know new people?",
+        "Is it easy to find real friends on a social networking website?"
+      ]
+    },
+    {
+      "id": "p3_t88",
+      "topicNumber": 88,
+      "topic": "Helping Others",
+      "questions": [
+        "Should children help their parents with household chores?",
+        "What can children help parents with?",
+        "In your view, should children be taught to help others?",
+        "Should parents reward their children when they help others?",
+        "Who should teach children to help others, parents or teachers?",
+        "Do you think parents should give advice to their children?"
+      ]
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Sparkles } from 'lucide-react';
+import { Sparkles, Scale } from 'lucide-react';
 import type { EnglishUserProfile } from '../types';
 import { saveEnglishProfile, acceptEnglishRules } from '../utils/storage';
 
@@ -17,6 +17,7 @@ export const RegistrationModal: React.FC<Props> = ({
   const [name, setName] = useState(initialName.trim() || 'Talaba');
   const [gender, setGender] = useState<'male' | 'female' | null>(null);
   const [rulesAccepted, setRulesAccepted] = useState(false);
+  const [showFullTerms, setShowFullTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -30,7 +31,7 @@ export const RegistrationModal: React.FC<Props> = ({
       return;
     }
     if (!rulesAccepted) {
-      setError("Iltimos, modul qoidalarini tasdiqlang.");
+      setError("Iltimos, huquqiy shartlarni o'qib, shaxsiy javobgarlikni tasdiqlang.");
       return;
     }
 
@@ -48,26 +49,26 @@ export const RegistrationModal: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0a0818]/85 backdrop-blur-md">
-      <div className="relative w-full max-w-sm rounded-[2.5rem] bg-white text-slate-900 p-6 shadow-2xl border border-indigo-100 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0a0818]/90 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-sm rounded-[2.5rem] bg-white text-slate-900 p-6 shadow-2xl border border-indigo-100 my-auto">
         
         {/* Top Header */}
-        <div className="text-center mb-5">
-          <div className="w-14 h-14 rounded-2xl bg-[#7052ff]/10 text-[#7052ff] flex items-center justify-center text-2xl mx-auto mb-3">
+        <div className="text-center mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-[#7052ff]/10 text-[#7052ff] flex items-center justify-center text-2xl mx-auto mb-2.5">
             🇬🇧
           </div>
           <h3 className="text-2xl font-black text-slate-900 tracking-tight">
             Tanishib olamiz! 👋
           </h3>
-          <p className="text-xs text-slate-500 mt-1">
-            Speaking sherik tanlash va AI mashg'ulotlar uchun profilingizni tasdiqlang.
+          <p className="text-xs text-slate-500 mt-0.5">
+            IELTS Speaking, Writing va sherik bilan muloqot xonasi
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           {/* Ism kiritish */}
           <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-1.5">
+            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-1">
               Ismingiz (taxallusingiz)
             </label>
             <input
@@ -79,55 +80,73 @@ export const RegistrationModal: React.FC<Props> = ({
               }}
               maxLength={30}
               placeholder="Ismingizni yozing..."
-              className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#7052ff] outline-none transition-all"
+              className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-800 focus:bg-white focus:border-[#7052ff] outline-none transition-all"
             />
           </div>
 
-          {/* Jinsni tanlash (Two big gender buttons) */}
+          {/* Jinsni tanlash */}
           <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-1.5">
-              Jinsingiz (sherik tanlash uchun)
+            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-1">
+              Jinsingiz (sherik tanlash filtri uchun)
             </label>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => { setGender('male'); setError(null); }}
-                className={`py-3.5 px-3 rounded-2xl border-2 font-black text-xs flex items-center justify-center space-x-2 transition-all ${
+                className={`py-3 px-3 rounded-2xl border-2 font-black text-xs flex items-center justify-center space-x-2 transition-all ${
                   gender === 'male'
                     ? 'border-[#7052ff] bg-[#7052ff]/10 text-[#7052ff] shadow-sm'
                     : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                <span className="text-lg">👦</span>
+                <span className="text-base">👦</span>
                 <span>O'g'il bola</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => { setGender('female'); setError(null); }}
-                className={`py-3.5 px-3 rounded-2xl border-2 font-black text-xs flex items-center justify-center space-x-2 transition-all ${
+                className={`py-3 px-3 rounded-2xl border-2 font-black text-xs flex items-center justify-center space-x-2 transition-all ${
                   gender === 'female'
                     ? 'border-[#7052ff] bg-[#7052ff]/10 text-[#7052ff] shadow-sm'
                     : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
                 }`}
               >
-                <span className="text-lg">👧</span>
+                <span className="text-base">👧</span>
                 <span>Qiz bola</span>
               </button>
             </div>
           </div>
 
-          {/* Qoidalar bloki */}
-          <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-1.5 text-[11px] text-slate-700">
-            <div className="flex items-center space-x-1.5 font-black text-[#534ab7] text-xs mb-1">
-              <ShieldCheck size={14} />
-              <span>Modul qoidalari</span>
+          {/* Qonuniy Huquqiy Ogohlantirish & Foydalanish Shartlari */}
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-400/30 text-[11px] text-slate-800 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-1.5 font-black text-amber-900 text-xs">
+                <Scale size={14} className="text-amber-600" />
+                <span>Huquqiy Ogohlantirish & Shartlar</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowFullTerms(!showFullTerms)}
+                className="text-[10px] font-bold text-[#7052ff] underline"
+              >
+                {showFullTerms ? 'Yopish' : "Batafsil"}
+              </button>
             </div>
-            <p>• Sheriklar bilan xushmuomala bo'ling, haqorat taqiqlanadi.</p>
-            <p>• Shaxsiy yoki maxfiy ma'lumotlaringizni baham ko'rmang.</p>
-            <p>• AI bergan ballar rasmiy emas, taxminiy tayyorgarlik uchundir.</p>
 
-            <label className="flex items-center space-x-2 pt-2 cursor-pointer select-none">
+            <p className="leading-snug text-slate-700">
+              ⚖️ <b>To'liq Shaxsiy Javobgarlik:</b> Foydalanuvchi boshqa ishtirokchilar bilan muloqotda o'zining barcha xatti-harakatlari, shaxsiy axborotlarini o'z ixtiyori bilan ulashishi va o'z xavfsizligi uchun <b>O'zbekiston Respublikasi qonunchiligiga muvofiq to'liq shaxsan javobgar</b> hisoblanadi.
+            </p>
+
+            {showFullTerms && (
+              <div className="mt-2 pt-2 border-t border-amber-200/60 text-[10px] text-slate-600 space-y-1.5 leading-relaxed animate-fade-in">
+                <p>• <b>Daxlsizlik:</b> Platforma va ma'muriyat uchinchi shaxslarning harakatlari, odob-axloq buzilishlari uchun huquqiy yoki moddiy javobgarlikni o'z zimmasiga olmaydi.</p>
+                <p>• <b>Taqiqlangan harakatlar:</b> Haqorat, noqonuniy materiallar, spam yoki bezorilik qat'iyan man etiladi va hisob darhol bloklanadi.</p>
+                <p>• <b>AI baholari:</b> Sun'iy intellekt qo'ygan baholar taxminiy tavsiya bo'lib, rasmiy natija kuchi ga ega emas.</p>
+              </div>
+            )}
+
+            <label className="flex items-start space-x-2 pt-1 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={rulesAccepted}
@@ -135,10 +154,10 @@ export const RegistrationModal: React.FC<Props> = ({
                   setRulesAccepted(e.target.checked);
                   setError(null);
                 }}
-                className="w-4 h-4 rounded text-[#7052ff] accent-[#7052ff] cursor-pointer"
+                className="w-4 h-4 mt-0.5 rounded text-[#7052ff] accent-[#7052ff] cursor-pointer shrink-0"
               />
-              <span className="text-xs font-bold text-slate-800">
-                Qoidalarni qabul qilaman
+              <span className="text-xs font-black text-slate-900 leading-tight">
+                Shartlar bilan tanishdim va barcha shaxsiy javobgarlikni to'liq o'z zimmamga olaman.
               </span>
             </label>
           </div>
@@ -150,13 +169,13 @@ export const RegistrationModal: React.FC<Props> = ({
             </p>
           )}
 
-          {/* Davom etish tugmasi */}
+          {/* Tasdiqlash tugmasi */}
           <button
             type="submit"
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#7052ff] to-[#8b5cf6] text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-indigo-500/25 flex items-center justify-center space-x-2 active:scale-95 transition-all hover:brightness-105"
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#7052ff] to-[#8b5cf6] text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-indigo-500/25 flex items-center justify-center space-x-2 active:scale-95 transition-all hover:brightness-105"
           >
             <Sparkles size={16} />
-            <span>Mashqlarni boshlash 🚀</span>
+            <span>Roziman va Boshlash 🚀</span>
           </button>
         </form>
 
