@@ -57,7 +57,7 @@ export const getTelegramUser = (): TelegramUser => {
   }
   // Default mock user for testing in desktop browser
   return {
-    id: 5466728043,
+    id: 999999,
     first_name: 'Roam',
     username: 'roam_learner',
   };
