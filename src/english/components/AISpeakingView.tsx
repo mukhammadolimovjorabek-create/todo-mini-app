@@ -72,6 +72,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [feedback, setFeedback] = useState<SpeechEvaluationResult | null>(null);
+  const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
 
   // Recognition reference
   const recognitionRef = useRef<any>(null);
@@ -777,14 +778,54 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     const isWarningTime = countdown <= 10;
 
     return (
-      <div className="p-5 space-y-4 animate-in fade-in duration-300">
-        {/* Top Session Bar (NO switch button, only emergency exit) */}
+      <div className="p-5 space-y-4 animate-in fade-in duration-300 relative">
+        {/* Exit Confirmation Modal */}
+        {showExitConfirmModal && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-5 animate-in fade-in">
+            <div className="bg-white rounded-[2rem] p-6 max-w-sm w-full space-y-4 shadow-2xl border border-slate-100 animate-in zoom-in-95">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-xl font-black">
+                ⚠️
+              </div>
+              <div className="text-center space-y-1.5">
+                <h4 className="text-base font-black text-slate-900">Sinovni to'xtatmoqchimisiz?</h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Agar hozir chiqib ketsangiz, topshirilgan javoblaringiz va test natijangiz saqlanmaydi.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5 pt-2">
+                <button
+                  onClick={() => {
+                    triggerHaptic('medium');
+                    setShowExitConfirmModal(false);
+                  }}
+                  className="py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all active:scale-95"
+                >
+                  Yo'q, davom etish
+                </button>
+                <button
+                  onClick={() => {
+                    triggerHaptic('heavy');
+                    window.speechSynthesis?.cancel();
+                    stopListening();
+                    setShowExitConfirmModal(false);
+                    setStep('part_select');
+                  }}
+                  className="py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-all active:scale-95"
+                >
+                  Ha, chiqish
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Top Session Bar */}
         <div className="flex items-center justify-between">
           <button
             onClick={() => {
-              window.speechSynthesis?.cancel();
-              stopListening();
-              setStep('part_select');
+              triggerHaptic('medium');
+              setShowExitConfirmModal(true);
             }}
             className="flex items-center space-x-1 text-xs font-black text-slate-500 hover:text-slate-800"
           >
@@ -793,6 +834,15 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
           </button>
 
           <div className="flex items-center space-x-2">
+            {/* 2-rasm: Audio Equalizer Wave Animation */}
+            <div className="bg-[#110e28] border border-white/10 px-2.5 py-1 rounded-xl flex items-center space-x-1 shadow-sm h-7" title="Jonli ovoz to'lqini">
+              <span className="w-1 bg-[#c4f82a] rounded-full eng-eq-1 inline-block" />
+              <span className="w-1 bg-[#c4f82a] rounded-full eng-eq-2 inline-block" />
+              <span className="w-1 bg-[#c4f82a] rounded-full eng-eq-3 inline-block" />
+              <span className="w-1 bg-[#c4f82a] rounded-full eng-eq-4 inline-block" />
+              <span className="w-1 bg-[#c4f82a] rounded-full eng-eq-5 inline-block" />
+            </div>
+
             <span className="text-[10px] font-black uppercase bg-[#7052ff] text-white px-2.5 py-0.5 rounded-full">
               {getPartBadgeLabel()}: {selectedPart === 'full_mock' ? mockPhase.toUpperCase() : 'LOCKED'}
             </span>
