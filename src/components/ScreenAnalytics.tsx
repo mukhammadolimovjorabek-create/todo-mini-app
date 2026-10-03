@@ -22,7 +22,7 @@ import { getLast7Days, loadTasks, getCategoryColor, getCategoryLabel, shortDay, 
 import { calculateUserPoints, getGlobalRank } from '../utils/points';
 import { loadFriends, type InvitedFriend } from '../utils/friends';
 import type { DayStats, TaskCategory } from '../types';
-import { triggerHaptic } from '../utils/telegram';
+import { triggerHaptic, getTelegramUser } from '../utils/telegram';
 
 const CATEGORIES: TaskCategory[] = ['work', 'personal', 'health', 'learning', 'other'];
 
@@ -85,7 +85,31 @@ export const ScreenAnalytics: React.FC = () => {
   const myAvatar = userProfile.avatarUrl || '';
 
   // Taklif qilingan do'stlar holati (Boshida 0 ta do'st)
-  const [friendsList] = useState<InvitedFriend[]>(loadFriends());
+  const [friendsList, setFriendsList] = useState<InvitedFriend[]>(loadFriends());
+
+  React.useEffect(() => {
+    const fetchRealFriends = async () => {
+      try {
+        const user = getTelegramUser();
+        const userId = user?.id;
+        if (!userId) return;
+        
+        // Localhostdagi Python bot API dan do'stlarni olish
+        const res = await fetch(`https://todo-mini-app.onrender.com/api/friends?user_id=${userId}`);
+        const data = await res.json();
+        
+        if (data.friends && Array.isArray(data.friends)) {
+          setFriendsList(data.friends);
+          // Mahalliy xotiraga ham saqlab qo'yamiz (offline qismi uchun)
+          localStorage.setItem("todo_friends_v1", JSON.stringify(data.friends));
+        }
+      } catch (e) {
+        console.error("API dan do'stlarni olishda xatolik:", e);
+      }
+    };
+    
+    fetchRealFriends();
+  }, []);
 
   // Foydalanuvchining real balli (Agar 0 bo'lsa qat'iy 0!)
   const scoreData = calculateUserPoints();
