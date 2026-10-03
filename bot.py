@@ -193,7 +193,7 @@ async def cmd_start(message: types.Message):
             inviter_text = (
                 "🎉 <b>Ajoyib yangilik! 1-do'stingiz qo'shildi!</b>\n\n"
                 f"👤 <b>{message.from_user.first_name}</b> sizning havolangiz orqali To-Do ilovasiga kirdi.\n"
-                "🎁 Sizga musobaqa balingizga <b>+10 ball</b> berildi!\n"
+                "🎁 Sizga musobaqa balingizga <b>+3 ball</b> berildi!\n"
                 "Ilovadagi <b>Reyting</b> bo'limida do'stingiz bilan jonli duelni ko'rishingiz mumkin ⚔️"
             )
             await bot.send_message(chat_id=ref_chat_id, text=inviter_text, parse_mode="HTML")

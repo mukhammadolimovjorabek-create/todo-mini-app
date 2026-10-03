@@ -446,7 +446,7 @@ export const ScreenAnalytics: React.FC = () => {
                         </div>
                         <div>
                           <div className="flex items-center space-x-1.5">
-                            <p className="text-xs font-black text-slate-900">+10 ball start bonusi</p>
+                            <p className="text-xs font-black text-slate-900">+3 ball start bonusi</p>
                             <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-1.5 rounded">Sovg'a 🎁</span>
                           </div>
                           <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">

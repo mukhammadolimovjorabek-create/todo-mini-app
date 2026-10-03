@@ -10,13 +10,14 @@ export interface BadgeItem {
   condition: (tasks: Task[], streak: number) => boolean;
 }
 
+// ── Nishonlar (Kichik, qadrli va muvozanatli mukofotlar: 1 - 5 tanga) ──
 export const ALL_BADGES: BadgeItem[] = [
   {
     id: 'first_create',
     icon: '🚀',
     label: 'Tezkor start',
     desc: 'Birinchi vazifani yaratish',
-    rewardCoins: 10,
+    rewardCoins: 1,
     condition: (tasks) => tasks.length >= 1,
   },
   {
@@ -24,15 +25,15 @@ export const ALL_BADGES: BadgeItem[] = [
     icon: '⚡',
     label: 'Birinchi g\'alaba',
     desc: 'Birinchi vazifani yakunlash',
-    rewardCoins: 15,
+    rewardCoins: 2,
     condition: (tasks) => tasks.filter((t) => t.done).length >= 1,
   },
   {
     id: 'five_in_day',
     icon: '🔥',
     label: 'Bir kunda 5ta',
-    desc: 'Bir kunning o\'zida 5 ta vazifa',
-    rewardCoins: 20,
+    desc: 'Bir kunda 5 ta vazifa yakunlash',
+    rewardCoins: 3,
     condition: (tasks) => {
       const todayTasks = tasks.filter((t) => t.createdAt === today() && t.done);
       return todayTasks.length >= 5;
@@ -43,7 +44,7 @@ export const ALL_BADGES: BadgeItem[] = [
     icon: '🎯',
     label: '100% kun',
     desc: 'Barcha kunlik rejalarni yopish',
-    rewardCoins: 25,
+    rewardCoins: 3,
     condition: (tasks) => {
       const todayTasks = tasks.filter((t) => t.createdAt === today());
       return todayTasks.length >= 1 && todayTasks.every((t) => t.done);
@@ -54,7 +55,7 @@ export const ALL_BADGES: BadgeItem[] = [
     icon: '🌟',
     label: '3 kun streak',
     desc: '3 kun uzluksiz maqsadli reja',
-    rewardCoins: 30,
+    rewardCoins: 3,
     condition: (_, streak) => streak >= 3,
   },
   {
@@ -62,7 +63,7 @@ export const ALL_BADGES: BadgeItem[] = [
     icon: '🏆',
     label: '10 vazifa',
     desc: 'Jami 10 ta vazifani tugatish',
-    rewardCoins: 35,
+    rewardCoins: 4,
     condition: (tasks) => tasks.filter((t) => t.done).length >= 10,
   },
   {
@@ -70,7 +71,7 @@ export const ALL_BADGES: BadgeItem[] = [
     icon: '💎',
     label: '50 vazifa',
     desc: 'Haqiqiy mahsuldorlik rekordi',
-    rewardCoins: 100,
+    rewardCoins: 5,
     condition: (tasks) => tasks.filter((t) => t.done).length >= 50,
   },
 ];
@@ -79,25 +80,69 @@ const COINS_KEY = 'todo_user_coins_v1';
 const UNLOCKED_BADGES_KEY = 'todo_unlocked_badges_v1';
 const SEEN_ALERTS_KEY = 'todo_seen_badge_alerts_v1';
 
-// ── Tangalarni boshqarish ──
+// ── Vazifa vazniga qarab beriladigan tangalar (Ixcham va adolatli: 1 - 3 tanga) ──
+export const getTaskCoins = (priority?: string): number => {
+  if (priority === 'high') return 3;
+  if (priority === 'medium') return 2;
+  return 1;
+};
+
+// ── Tangalarni qayta to'liq hisoblash (Synchronized Engine) ──
+// Agar barcha vazifalar o'chirilsa yoki bajarilmagan bo'lsa — tanga qat'iy 0 bo'ladi!
+export const recalculateCoins = (): number => {
+  const tasks = loadTasks();
+  const completedTasks = tasks.filter((t) => t.done);
+
+  if (completedTasks.length === 0) {
+    saveUserCoins(0);
+    return 0;
+  }
+
+  let total = 0;
+  completedTasks.forEach((t) => {
+    total += getTaskCoins(t.priority);
+  });
+
+  // Real ochilgan nishonlar bonusi
+  const days = getLast7Days().reverse();
+  let streak = 0;
+  for (const d of days) {
+    if (d.done > 0) streak++;
+    else break;
+  }
+
+  ALL_BADGES.forEach((b) => {
+    if (b.condition(tasks, streak)) {
+      total += b.rewardCoins;
+    }
+  });
+
+  saveUserCoins(total);
+  return total;
+};
+
+// ── Tangalarni olish ──
 export const getUserCoins = (): number => {
+  const tasks = loadTasks();
+  const completedTasks = tasks.filter((t) => t.done);
+
+  // Qat'iy qoida: agar bitta ham bajarilgan vazifa bo'lmasa, tangalar 0 bo'ladi!
+  if (completedTasks.length === 0) {
+    saveUserCoins(0);
+    return 0;
+  }
+
   try {
     const raw = localStorage.getItem(COINS_KEY);
     if (raw !== null) {
-      return parseInt(raw, 10) || 0;
+      const val = parseInt(raw, 10);
+      if (!isNaN(val) && val >= 0) {
+        return val;
+      }
     }
   } catch {}
 
-  // Agar mavjud bo'lmasa, dastlabki ballardan hisoblab chiqamiz
-  const tasks = loadTasks();
-  let initialCoins = 0;
-  tasks.filter((t) => t.done).forEach((t) => {
-    if (t.priority === 'high') initialCoins += 15;
-    else if (t.priority === 'medium') initialCoins += 10;
-    else initialCoins += 5;
-  });
-  saveUserCoins(initialCoins);
-  return initialCoins;
+  return recalculateCoins();
 };
 
 export const saveUserCoins = (coins: number) => {
@@ -140,7 +185,7 @@ export const markBadgeAlertSeen = (badgeId: string) => {
   }
 };
 
-// Vazifa bajarilganda yoki qo'shilganda nishonlarni tekshirish
+// Vazifa bajarilganda nishonlarni tekshirish
 export interface CheckBadgesResult {
   newBadges: BadgeItem[];
   coinsAwarded: number;
@@ -164,7 +209,6 @@ export const checkAndUnlockBadges = (): CheckBadgesResult => {
     if (badge.condition(tasks, streak)) {
       if (!currentlyUnlocked.has(badge.id)) {
         currentlyUnlocked.add(badge.id);
-        // Faqat oldin ko'rsatilmagan bo'lsa yangi deb qaytaramiz
         if (!seenAlerts.has(badge.id)) {
           newBadges.push(badge);
           coinsAwarded += badge.rewardCoins;
@@ -173,7 +217,6 @@ export const checkAndUnlockBadges = (): CheckBadgesResult => {
     }
   });
 
-  // Saqlash
   try {
     localStorage.setItem(UNLOCKED_BADGES_KEY, JSON.stringify(Array.from(currentlyUnlocked)));
   } catch {}
@@ -183,11 +226,4 @@ export const checkAndUnlockBadges = (): CheckBadgesResult => {
   }
 
   return { newBadges, coinsAwarded };
-};
-
-// Vazifa vazniga qarab beriladigan tangalar
-export const getTaskCoins = (priority?: string): number => {
-  if (priority === 'high') return 15;
-  if (priority === 'medium') return 10;
-  return 5;
 };

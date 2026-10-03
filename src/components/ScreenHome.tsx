@@ -9,7 +9,7 @@ import {
 } from '../utils/storage';
 import { triggerHaptic } from '../utils/telegram';
 import {
-  getUserCoins, addCoins, getTaskCoins,
+  getUserCoins, getTaskCoins, recalculateCoins,
   checkAndUnlockBadges, markBadgeAlertSeen,
   type BadgeItem
 } from '../utils/gamification';
@@ -41,13 +41,13 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange 
   const [newDuration, setNewDuration] = useState<number | null>(null);
 
   // Tangalar va Nishon ochilish holatlari
-  const [coins, setCoins] = useState(() => getUserCoins());
+  const [coins, setCoins] = useState(() => recalculateCoins());
   const [unlockedBadge, setUnlockedBadge] = useState<BadgeItem | null>(null);
   const [floatingCoin, setFloatingCoin] = useState<{ amount: number; key: number } | null>(null);
 
   const reload = useCallback(() => {
     setTasks(loadTasks().filter((t) => t.createdAt === today()));
-    setCoins(getUserCoins());
+    setCoins(recalculateCoins());
   }, []);
 
   useEffect(() => {
@@ -67,9 +67,6 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange 
       const coinDiff = getTaskCoins(taskBefore.priority);
 
       if (willBeDone) {
-        // Tanga qo'shish
-        const newTotal = addCoins(coinDiff);
-        setCoins(newTotal);
         setFloatingCoin({ amount: coinDiff, key: Date.now() });
         setTimeout(() => setFloatingCoin(null), 1800);
 
@@ -79,13 +76,10 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange 
           const nextBadge = result.newBadges[0];
           markBadgeAlertSeen(nextBadge.id);
           setUnlockedBadge(nextBadge);
-          setCoins(getUserCoins());
         }
-      } else {
-        // Vazifa qaytarilsa tangani ayirish
-        const newTotal = addCoins(-coinDiff);
-        setCoins(newTotal);
       }
+
+      setCoins(recalculateCoins());
     }
   };
 
@@ -93,6 +87,7 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange 
     triggerHaptic('heavy');
     const updated = deleteTask(id).filter((t) => t.createdAt === today());
     setTasks(updated);
+    setCoins(recalculateCoins());
     onTasksChange?.();
   };
 
