@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Sparkles, BookOpen, Mic, Users, Trophy, Settings, Clock, Award } from 'lucide-react';
+import { ArrowLeft, Sparkles, BookOpen, Mic, Users, Trophy, Settings, Clock, Award, ChevronRight } from 'lucide-react';
 import { EXAM_REGISTRY } from './exams';
 import type { ExamType, EnglishUserProfile, TestResultItem } from './types';
 import { getEnglishProfile, getTestResults } from './utils/storage';
 import { RegistrationModal } from './components/RegistrationModal';
 import { SettingsSheet } from './components/SettingsSheet';
 import { IeltsDashboard } from './components/IeltsDashboard';
+import { MultilevelSpeakingView } from './components/MultilevelSpeakingView';
 import { triggerHaptic } from '../utils/telegram';
 import './tokens.css';
 
@@ -57,6 +58,24 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
           onBack={handleReturnFromExam}
           userName={currentName}
           userGender={currentGender}
+        />
+      </div>
+    );
+  }
+
+  if (selectedExam === 'multilevel') {
+    return (
+      <div className="english-root">
+        {!profile && (
+          <RegistrationModal
+            initialName={telegramUser?.first_name}
+            telegramId={telegramUser?.id}
+            onRegistered={(p) => setProfile(p)}
+          />
+        )}
+        <MultilevelSpeakingView
+          onBack={handleReturnFromExam}
+          userName={currentName}
         />
       </div>
     );
@@ -234,26 +253,59 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
               const ml = EXAM_REGISTRY.multilevel;
               return (
                 <div
-                  className="p-5 rounded-[2rem] border border-dashed border-teal-200/80 bg-teal-50/30 transition-all opacity-85"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    triggerHaptic('medium');
+                    setSelectedExam('multilevel');
+                  }}
+                  className="p-5 rounded-[2rem] border border-teal-200 bg-white hover:border-teal-400 hover:shadow-lg transition-all cursor-pointer group active:scale-[0.99] space-y-3"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 rounded-2xl bg-teal-100/60 text-2xl flex items-center justify-center shrink-0">
+                      <div className="w-12 h-12 rounded-2xl bg-teal-500/10 text-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                         {ml.icon}
                       </div>
                       <div>
                         <div className="flex items-center space-x-2">
-                          <h4 className="text-base font-black text-slate-900">{ml.title}</h4>
-                          <span className="text-[9px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Tez orada</span>
+                          <h4 className="text-base font-black text-slate-900 group-hover:text-teal-700 transition-colors">
+                            {ml.title}
+                          </h4>
+                          <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                            Faol ✓
+                          </span>
                         </div>
                         <p className="text-xs text-slate-500 mt-0.5">{ml.subtitle}</p>
                       </div>
                     </div>
+
+                    <div className="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-all">
+                      <ChevronRight size={16} />
+                    </div>
                   </div>
 
-                  <p className="text-[11px] text-teal-800/80 mt-3 bg-teal-100/50 p-2.5 rounded-xl leading-relaxed">
-                    💡 Rasmiy milliy sertifikat mezonlari kiritilmoqda. Tez orada to'liq ishga tushiriladi.
-                  </p>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    <span className="text-[10px] font-bold bg-teal-50 text-teal-700 px-2.5 py-1 rounded-lg border border-teal-100">
+                      Part 1.1 (30s)
+                    </span>
+                    <span className="text-[10px] font-bold bg-teal-50 text-teal-700 px-2.5 py-1 rounded-lg border border-teal-100">
+                      Part 1.2 (Rasmlar)
+                    </span>
+                    <span className="text-[10px] font-bold bg-teal-50 text-teal-700 px-2.5 py-1 rounded-lg border border-teal-100">
+                      Part 2 (Mavzu)
+                    </span>
+                    <span className="text-[10px] font-bold bg-teal-50 text-teal-700 px-2.5 py-1 rounded-lg border border-teal-100">
+                      Part 3 (Debat)
+                    </span>
+                    <span className="text-[10px] font-black bg-purple-50 text-purple-700 px-2.5 py-1 rounded-lg border border-purple-100">
+                      Full Mock
+                    </span>
+                  </div>
+
+                  <div className="bg-teal-50/60 p-2.5 rounded-xl flex items-center justify-between text-[11px] text-teal-900 font-medium">
+                    <span>🎙️ Rasmiy CEFR mezonlari & 100+ savollar</span>
+                    <span className="font-bold text-teal-700 group-hover:translate-x-0.5 transition-transform">Boshlash →</span>
+                  </div>
                 </div>
               );
             })()}

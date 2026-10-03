@@ -1,0 +1,1309 @@
+{
+  "part1_1": [
+    {
+      "id": "ml_cefr_1_p1_1",
+      "source": "CEFR Speaking Tests",
+      "topic": "CEFR Test 1 - Part 1.1",
+      "questions": [
+        "What do you do in your free time?",
+        "Do you enjoy reading?",
+        "Do you read or write stories or poems?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_cefr_2_p1_1",
+      "source": "CEFR Speaking Tests",
+      "topic": "CEFR Test 2 - Part 1.1",
+      "questions": [
+        "What do/did you study?",
+        "Why do/did you want to study that?",
+        "What subject do you enjoy studying most?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_cefr_3_p1_1",
+      "source": "CEFR Speaking Tests",
+      "topic": "CEFR Test 3 - Part 1.1",
+      "questions": [
+        "What do you do?",
+        "What is the most important part of your job?",
+        "Do you work with other people or alone?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_cefr_4_p1_1",
+      "source": "CEFR Speaking Tests",
+      "topic": "CEFR Test 4 - Part 1.1",
+      "questions": [
+        "Do you live in a house or an apartment?",
+        "What is your favourite room in your house?",
+        "Which room do you spend the most time in?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_cefr_5_p1_1",
+      "source": "CEFR Speaking Tests",
+      "topic": "CEFR Test 5 - Part 1.1",
+      "questions": [
+        "How often do you use a computer?",
+        "What do you use computers for?",
+        "Do you use a mobile phone a lot?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_cefr_6_p1_1",
+      "source": "CEFR Speaking Tests",
+      "topic": "CEFR Test 6 - Part 1.1",
+      "questions": [
+        "How often do you play sports or do exercise?",
+        "What sports are popular in your country?",
+        "Did you play sports at school?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_cefr_7_p1_1",
+      "source": "CEFR Speaking Tests",
+      "topic": "CEFR Test 7 - Part 1.1",
+      "questions": [
+        "What is your favourite food?",
+        "Do you normally eat healthy food?",
+        "Do you enjoy cooking?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_cefr_8_p1_1",
+      "source": "CEFR Speaking Tests",
+      "topic": "CEFR Test 8 - Part 1.1",
+      "questions": [
+        "Do you have any brothers or sisters?",
+        "Tell me about somebody in your family.",
+        "Do you live with your family?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_cefr_9_p1_1",
+      "source": "CEFR Speaking Tests",
+      "topic": "CEFR Test 9 - Part 1.1",
+      "questions": [
+        "Tell me about your school when you were a child.",
+        "What was your favourite subject?",
+        "Who was your favourite teacher?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_cefr_10_p1_1",
+      "source": "CEFR Speaking Tests",
+      "topic": "CEFR Test 10 - Part 1.1",
+      "questions": [
+        "What do you normally do in the morning?",
+        "Do you prefer the morning or the evening?",
+        "What is your breakfast routine?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_aut_11_p1_1",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "topic": "What do you do after school or work",
+      "questions": [
+        "What do you do after school or work?",
+        "What is your favorite type of music?",
+        "What kind of weather do you dislike the most?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_aut_12_p1_1",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "topic": "Do you live in a house or a flat",
+      "questions": [
+        "Do you live in a house or a flat?",
+        "Tell me about your first teacher.",
+        "What is your favorite food?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_aut_13_p1_1",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "topic": "What do you usually eat for breakfast",
+      "questions": [
+        "What do you usually eat for breakfast?",
+        "Tell me about your room.",
+        "Do you like doing any sports?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_aut_14_p1_1",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "topic": "Please tell me about your best friend.",
+      "questions": [
+        "Please tell me about your best friend.",
+        "Tell me about your country.",
+        "What do you like to do in your free time?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_aut_15_p1_1",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "topic": "Tell me about your favorite teacher.",
+      "questions": [
+        "Tell me about your favorite teacher.",
+        "Do you live in a house or a flat?",
+        "What do you like to do on weekends?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_aut_16_p1_1",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "topic": "Please tell me about your favorite food.",
+      "questions": [
+        "Please tell me about your favorite food.",
+        "What do you usually do on weekends?",
+        "Please tell me about your job or studies."
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_aut_17_p1_1",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "topic": "Tell me about your hometown.",
+      "questions": [
+        "Tell me about your hometown.",
+        "Where do you like to go in your free time?",
+        "Tell me about your house."
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_aut_18_p1_1",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "topic": "Do you have any pets",
+      "questions": [
+        "Do you have any pets?",
+        "What do you do to stay healthy?",
+        "Tell me about a typical weekend for you."
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_aut_19_p1_1",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "topic": "What do you usually eat for breakfast",
+      "questions": [
+        "What do you usually eat for breakfast?",
+        "What do you do to stay healthy?",
+        "Tell me about your first teacher."
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_aut_20_p1_1",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "topic": "Do you live in a house or a flat",
+      "questions": [
+        "Do you live in a house or a flat?",
+        "What do you like to do in the evenings?",
+        "Tell me about your school."
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_aut_21_p1_1",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "topic": "What is your favorite season",
+      "questions": [
+        "What is your favorite season?",
+        "What do you usually do on weekends?",
+        "Tell me about your room."
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_aut_22_p1_1",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "topic": "What time do you usually get up",
+      "questions": [
+        "What time do you usually get up?",
+        "What do you do to stay healthy?",
+        "Tell me about your favorite place in your city or town."
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_aut_23_p1_1",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "topic": "What do you usually have for breakfast",
+      "questions": [
+        "What do you usually have for breakfast?",
+        "What do you like to do on weekends?",
+        "Tell me about your house."
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_aut_24_p1_1",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "topic": "Do you go to bed early or late",
+      "questions": [
+        "Do you go to bed early or late?",
+        "What is your favorite drink?",
+        "Do you live in a house or a flat?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "ml_aut_25_p1_1",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "topic": "Tell me about your first teacher.",
+      "questions": [
+        "Tell me about your first teacher.",
+        "What is your favorite food?"
+      ],
+      "secondsPerQuestion": 30
+    }
+  ],
+  "part1_2": [
+    {
+      "id": "ml_cefr_1_p1_2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 1 - Part 1.2 (Pictures Comparison)",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "How do people in your country usually make friends?",
+        "What do you think of making friends on the internet?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_2_p1_2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 2 - Part 1.2 (Pictures Comparison)",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "Do you like to walk on your own or with others?",
+        "Would you say that your city is a good place for walking?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_3_p1_2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 3 - Part 1.2 (Pictures Comparison)",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "Would you prefer to stay alone or with other people?",
+        "Do you remember a time when you needed to cooperate with others?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_4_p1_2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 4 - Part 1.2 (Pictures Comparison)",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "How do you usually say goodbye to friends or family members?",
+        "Have you ever helped anyone to choose anything new to buy?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_5_p1_2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 5 - Part 1.2 (Pictures Comparison)",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "What sports do people in your country like to play?",
+        "Do you like being around other people?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_6_p1_2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 6 - Part 1.2 (Pictures Comparison)",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "Do you prefer to spend your spare time indoors or outdoors?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_7_p1_2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 7 - Part 1.2 (Pictures Comparison)",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "How often do you go out with your friends?",
+        "Do you think your hometown is a good place for a holiday?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_8_p1_2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 8 - Part 1.2 (Pictures Comparison)",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "When you visit other places, do you take photos or buy postcards? [Why/Why not?]",
+        "Should science subjects be compulsory or voluntary at school?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_9_p1_2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 9 - Part 1.2 (Pictures Comparison)",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "What are the advantages of working in a team?",
+        "Can you give an example of a challenging situation you faced in a team?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_10_p1_2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 10 - Part 1.2 (Pictures Comparison)",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "Do you think more people will work from home in the future?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_11_p1_2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 1.2: Which do you think offers more exercise ...",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "Which do you think offers more exercise options: indoor or outdoor sports?",
+        "What benefits can people gain from doing regular sports?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_12_p1_2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 1.2: What are some advantages of traveling by...",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "What are some advantages of traveling by train?",
+        "Why do some people prefer to travel by plane?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_13_p1_2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 1.2: What are some of the advantages of doing...",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "What are some of the advantages of doing sports indoors?",
+        "How do sports bring people together?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_14_p1_2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 1.2: What are some advantages of walking over...",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "What are some advantages of walking over driving?",
+        "Why do some people prefer having a car of their own?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_15_p1_2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 1.2: What are some of the advantages of drivi...",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "What are some of the advantages of driving a car?",
+        "Why do some people prefer to use public transportation?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_16_p1_2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 1.2: What are some of the challenges people f...",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "What are some of the challenges people face when they study online?",
+        "Do you think people learn better online or in classrooms?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_17_p1_2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 1.2: What are some advantages of shopping at ...",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "What are some advantages of shopping at a local farmers' market over a large supermarket?",
+        "Why do some people prefer shopping at large supermarkets?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_18_p1_2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 1.2: What differences are there between shopp...",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "What differences are there between shopping alone and shopping with other people?",
+        "Why do some people dislike bargaining?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_19_p1_2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 1.2: What are the advantages of shopping in s...",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "What are the advantages of shopping in supermarkets compared to open-air markets?",
+        "How can shopping habits reflect cultural differences?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_20_p1_2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 1.2: What are some advantages of traveling by...",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "What are some advantages of traveling by train?",
+        "Why do some people prefer to travel by plane?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_21_p1_2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 1.2: What benefits can people have by avoidin...",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "What benefits can people have by avoiding fast food?",
+        "Why do some people prefer to have unhealthy food?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_22_p1_2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 1.2: What are some challenges people face whi...",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "What are some challenges people face while travelling by plane?",
+        "Do you think traveling makes people more open-minded?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_23_p1_2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 1.2: What are some of the biggest challenges ...",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "What are some of the biggest challenges people face in maintaining healthy eating habits?",
+        "How can we make sure everyone has access to enough healthy food?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_24_p1_2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 1.2: open-air markets?...",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?What are the advantages of shopping in supermarkets compared to",
+        "open-air markets?",
+        "Why do some people get excited about sales and discounts?."
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_25_p1_2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 1.2: Which do you think offers a greater vari...",
+      "prompt": "What do you see in these pictures?",
+      "questions": [
+        "What do you see in these pictures?",
+        "Which do you think offers a greater variety of exercise options: indoor or outdoor sports?",
+        "how can sports be made more accessible to everyone in society?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    }
+  ],
+  "part2": [
+    {
+      "id": "ml_cefr_1_p2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 1 - Part 2 (Topic Presentation)",
+      "questions": [
+        "Do you think teachers are paid enough?",
+        "Do you think your country should spend more money on schools?",
+        "Do you think it is easier to learn as a child or as an adult?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_2_p2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 2 - Part 2 (Topic Presentation)",
+      "questions": [
+        "How do people in your country meet new people?",
+        "Do you think it's safe to meet new people online?",
+        "Do you think it's important for friends to spend time together?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_3_p2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 3 - Part 2 (Topic Presentation)",
+      "questions": [
+        "Should schools teach both arts and science?",
+        "What kinds of courses are useful for university students?",
+        "Why do some students dislike studying at school?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_4_p2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 4 - Part 2 (Topic Presentation)",
+      "questions": [
+        "Do women pay more attention to their health than men?",
+        "Could governments do more to promote healthier lifestyle options?",
+        "Do you think most people worry more about their health as they get older?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_5_p2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 5 - Part 2 (Topic Presentation)",
+      "questions": [
+        "Describe what you think is a healthy diet",
+        "Are there many vegetarians in your country?",
+        "Why do you think some people choose to be vegetarians?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_6_p2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 6 - Part 2 (Topic Presentation)",
+      "questions": [
+        "Do you think modern life gives people enough time for leisure?",
+        "What’s the most important factor for a tourist attraction?",
+        "Do you think we should have more public holidays?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_7_p2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 7 - Part 2 (Topic Presentation)",
+      "questions": [
+        "Why do young people tend to waste money?",
+        "What kinds of things do people like to buy in your country?",
+        "How do people become rich?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_8_p2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 8 - Part 2 (Topic Presentation)",
+      "questions": [
+        "Should actors be paid more?",
+        "What influences do actors or actresses have on young people?",
+        "Are there many people in your country who want to work as an actor?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_9_p2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 9 - Part 2 (Topic Presentation)",
+      "questions": [
+        "Is drama series popular in your country? Why?",
+        "What is the difference between young people and old people’s favourite TV drama? Why?",
+        "Do you think people will change their preference for TV drama when getting older?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_10_p2",
+      "source": "CEFR Speaking Tests",
+      "title": "CEFR Test 10 - Part 2 (Topic Presentation)",
+      "questions": [
+        "How do advertisements attract attention?",
+        "Do young and old people show the same attitude towards advertisements?",
+        "Are advertisements a good or bad influence on children?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_11_p2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 2: Describe the time when you felt happy ab...",
+      "questions": [
+        "Describe the time when you felt happy about something.",
+        "Why do you think it was a significant event for you?",
+        "To what extent do external factors like wealth, relationships, or achievements contribute to happiness?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_12_p2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 2: Tell me about a critical decision you ha...",
+      "questions": [
+        "Tell me about a critical decision you have made.",
+        "How has this decision influenced you and your life?",
+        "What factors have the highest impact on the decisions people make?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_13_p2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 2: Describe a time when you faced a challen...",
+      "questions": [
+        "Describe a time when you faced a challenge.",
+        "What did you learn from this experience?",
+        "How can facing challenges help people grow?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_14_p2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 2: Tell me about a time when you disagreed ...",
+      "questions": [
+        "Tell me about a time when you disagreed with someone.",
+        "How did you handle the disagreement?",
+        "Why is it important to learn how to handle conflicts?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_15_p2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 2: Describe a situation when you had to mak...",
+      "questions": [
+        "Describe a situation when you had to make a difficult choice.",
+        "What did you consider when making this choice?",
+        "Why is it sometimes hard for people to make decisions?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_16_p2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 2: Describe a piece of advice you have rece...",
+      "questions": [
+        "Describe a piece of advice you have received.",
+        "How did this advice help you in your life?",
+        "Why is it important to listen to others' advice?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_17_p2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 2: Tell me about something you did in your ...",
+      "questions": [
+        "Tell me about something you did in your life that was a success.",
+        "How did this success impact your life and the people around you?",
+        "What role do hard work, talent, and opportunity play in achieving success?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_18_p2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 2: Describe the time when you shared a secr...",
+      "questions": [
+        "Describe the time when you shared a secret with another person.",
+        "Why did you think this person was reliable enough to tell your secret?",
+        "Can people who trust others too much get hurt?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_19_p2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 2: Talk about a time you worked in a team....",
+      "questions": [
+        "Talk about a time you worked in a team.",
+        "What were the benefits of working together?",
+        "How can teamwork help achieve goals?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_20_p2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 2: Tell me about the time when you shared a...",
+      "questions": [
+        "Tell me about the time when you shared a secret with another person.",
+        "How did you feel after sharing it?",
+        "How important is it to keep other people's secrets?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_21_p2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 2: Tell me about the time when you tried to...",
+      "questions": [
+        "Tell me about the time when you tried to do something but failed.",
+        "How did this failure impact your life and people around you?",
+        "Do you think accepting failure is an important part of personal growth?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_22_p2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 2: Talk about a skill you have learned rece...",
+      "questions": [
+        "Talk about a skill you have learned recently.",
+        "How has learning this skill been useful to you?",
+        "What skills do you think are most important to learn today?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_23_p2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 2: Describe the time when you felt happy ab...",
+      "questions": [
+        "Describe the time when you felt happy about something.",
+        "Why do you think it was a significant event for you?",
+        "Is happiness relative, that is, does it have a different meaning for each person?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_24_p2",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "title": "Multilevel Part 2: Tell me about a goal you set for yoursel...",
+      "questions": [
+        "Tell me about a goal you set for yourself.",
+        "How did you work towards achieving this goal?",
+        "Why is goal-setting important in life?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    }
+  ],
+  "part3": [
+    {
+      "id": "ml_cefr_1_p3",
+      "source": "CEFR Speaking Tests",
+      "statement": "Should laptops be allowed in classrooms?",
+      "forPoints": [
+        "Enhances practical life skills and productivity",
+        "Promotes equality and cooperation"
+      ],
+      "againstPoints": [
+        "Laptops can be a useful tool in the",
+        "classroom and can enhance learning.",
+        "Laptops can be used to facilitate"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_2_p3",
+      "source": "CEFR Speaking Tests",
+      "statement": "Is it appropriate for adolescents to be sentenced to life without parole?",
+      "forPoints": [
+        "rehabilitation.",
+        "Such a sentence disproportionately",
+        "affects minority youth."
+      ],
+      "againstPoints": [
+        "It can serve as a deterrent to violent",
+        "Life without parole sentences can"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_3_p3",
+      "source": "CEFR Speaking Tests",
+      "statement": "Do school uniforms make school a more effective place to learn?",
+      "forPoints": [
+        "unity and reduce distractions in the",
+        "respect and discipline.",
+        "gang-related violence and other"
+      ],
+      "againstPoints": [
+        "Requires excessive expenditure and resources",
+        "May limit personal choice and freedom"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_4_p3",
+      "source": "CEFR Speaking Tests",
+      "statement": "Are alternative energy sources effective and justified?",
+      "forPoints": [
+        "Alternative energy sources are not",
+        "effective and justified because they are",
+        "not reliable sources of energy."
+      ],
+      "againstPoints": [
+        "Alternative energy sources are",
+        "effective and justified due to their low",
+        "environmental impact."
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_5_p3",
+      "source": "CEFR Speaking Tests",
+      "statement": "Should humans eat to live or live to eat?",
+      "forPoints": [
+        "impact on health and well-being.",
+        "financial hardship.",
+        "control when it comes to food choices."
+      ],
+      "againstPoints": [
+        "Eating to live can help to promote a",
+        "healthy and balanced diet.",
+        "Eating to live can help to reduce the"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_6_p3",
+      "source": "CEFR Speaking Tests",
+      "statement": "Do nice girls finish last?",
+      "forPoints": [
+        "Enhances practical life skills and productivity",
+        "Promotes equality and cooperation"
+      ],
+      "againstPoints": [
+        "Niceness can be a hindrance to success.",
+        "The “nice girl” stereotype can be a",
+        "hindrance to success."
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_7_p3",
+      "source": "CEFR Speaking Tests",
+      "statement": "Is it better to be honest and poor or dishonest and rich?",
+      "forPoints": [
+        "Enhances practical life skills and productivity",
+        "Promotes equality and cooperation"
+      ],
+      "againstPoints": [
+        "Being honest can lead to a greater",
+        "sense of self-worth and pride, which",
+        "can have a positive impact on mental"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_8_p3",
+      "source": "CEFR Speaking Tests",
+      "statement": "What impact does social networking and social networking sites have on",
+      "forPoints": [
+        "They can increase feelings of",
+        "loneliness and depression.",
+        "Social networking and social"
+      ],
+      "againstPoints": [
+        "Social networking and social",
+        "networking sites have a positive impact",
+        "on society because they can help"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_9_p3",
+      "source": "CEFR Speaking Tests",
+      "statement": "Should cell phones be banned in schools?",
+      "forPoints": [
+        "learning in the classroom.",
+        "Cell phones can be used to promote",
+        "collaboration in the classroom."
+      ],
+      "againstPoints": [
+        "Requires excessive expenditure and resources",
+        "May limit personal choice and freedom"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_cefr_10_p3",
+      "source": "CEFR Speaking Tests",
+      "statement": "Is television an effective tool in building the minds of children?",
+      "forPoints": [
+        "Enhances practical life skills and productivity",
+        "Promotes equality and cooperation"
+      ],
+      "againstPoints": [
+        "Television can be an effective tool in",
+        "building the minds of children.",
+        "Television programs can help children"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_11_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Students should wear uniforms at school.",
+      "forPoints": [
+        "or low-quality education"
+      ],
+      "againstPoints": [
+        "Requires significant resources and overhead",
+        "Limits personal freedom and flexibility"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_12_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Electric Cars Should Replace All Traditional Cars.",
+      "forPoints": [
+        "Promotes sustainable habits and equality",
+        "Encourages positive social discipline"
+      ],
+      "againstPoints": [
+        "Reduces carbon emissions and pollution High cost of electric vehicles and charging",
+        "infrastructure",
+        "Lowers dependency on fossil fuels Limited range and charging time can be inconvenient"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_13_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Remote Work Should Become the Standard in the Future.",
+      "forPoints": [
+        "Promotes sustainable habits and equality",
+        "Encourages positive social discipline"
+      ],
+      "againstPoints": [
+        "Increases employee productivity and satisfaction Decreases team collaboration and bonding",
+        "Reduces commuting time and pollution Can lead to isolation and mental health issues",
+        "Saves money on office expenses Difficult to maintain a work-life balance"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_14_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Homework Should Be Abolished in Schools.",
+      "forPoints": [
+        "responsibilities",
+        "Promotes a more balanced lifestyle Helps teachers assess student progress"
+      ],
+      "againstPoints": [
+        "Requires significant resources and overhead",
+        "Limits personal freedom and flexibility"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_15_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Animals Should Have the Same Legal Rights as Humans.",
+      "forPoints": [
+        "Advances moral and legal standards Human rights could be compromised"
+      ],
+      "againstPoints": [
+        "Requires significant resources and overhead",
+        "Limits personal freedom and flexibility"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_16_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Social Media Platforms Should Limit Free Speech.",
+      "forPoints": [
+        "Protects minors from harmful content Limits diverse viewpoints and healthy debate"
+      ],
+      "againstPoints": [
+        "Reduces hate speech and online harassment Violates freedom of expression"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_17_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Zoos Should Be Banned Worldwide.",
+      "forPoints": [
+        "Reduces the risk of cyberbullying and online addiction Prevents children from learning digital literacy early",
+        "Citizens should be allowed to carry personal guns.."
+      ],
+      "againstPoints": [
+        "Animals suffer from captivity and unnatural",
+        "environments",
+        "Protects children from harmful content Limits access to educational resources"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_18_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Increasing the cost of fuel can solve environmental problems.",
+      "forPoints": [
+        "Promotes sustainable habits and equality",
+        "Encourages positive social discipline"
+      ],
+      "againstPoints": [
+        "Higher cost of fuel discourages driving It can be a burden on low-income families",
+        "It promotes alternative transportation It has limited effect on certain industries"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_19_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Smartphones Should Be Banned in Classrooms.",
+      "forPoints": [
+        "Prevents cheating and misuse during exams Restricting phones may feel overly controlling"
+      ],
+      "againstPoints": [
+        "Reduces distractions and increases focus Can be used as educational tools"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_20_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Fast Food Restaurants Should Display Calorie Counts.",
+      "forPoints": [
+        "Encourages healthier eating habits Can create anxiety around food choices",
+        "Could reduce obesity rates Focuses too much on calorie count, not on nutritional",
+        "Electric cars should replace gasoline cars.."
+      ],
+      "againstPoints": [
+        "Requires significant resources and overhead",
+        "Limits personal freedom and flexibility"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_21_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "All Countries Should Adopt a Single Global Language.",
+      "forPoints": [
+        "Simplifies international trade and diplomacy Could lead to dominance of one culture over others"
+      ],
+      "againstPoints": [
+        "Promotes global communication and cooperation Loss of cultural diversity and heritage"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_22_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Remote Work Should Become the Standard in the Future.",
+      "forPoints": [
+        "Single-Use Plastics Should Be Completely Banned."
+      ],
+      "againstPoints": [
+        "Increases employee productivity and satisfaction Decreases team collaboration and bonding",
+        "Reduces commuting time and pollution Can lead to isolation and mental health issues",
+        "Saves money on office expenses Difficult to maintain a work-life balance"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_23_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Fast Food Restaurants Should Display Calorie Counts.",
+      "forPoints": [
+        "Encourages healthier eating habits Can create anxiety around food choices",
+        "Could reduce obesity rates Focuses too much on calorie count, not on nutritional"
+      ],
+      "againstPoints": [
+        "Requires significant resources and overhead",
+        "Limits personal freedom and flexibility"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_24_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Gardening Should Be Taught in Schools.",
+      "forPoints": [
+        "Promotes sustainable habits and equality",
+        "Encourages positive social discipline"
+      ],
+      "againstPoints": [
+        "Encourages sustainable living and environmental",
+        "Requires resources and space",
+        "Provides practical life skills Not all students may be interested"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_25_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Increasing the cost of fuel can solve environmental problems.",
+      "forPoints": [
+        "Promotes sustainable habits and equality",
+        "Encourages positive social discipline"
+      ],
+      "againstPoints": [
+        "Higher cost of fuel discourages driving It can be a burden on low-income families",
+        "It promotes alternative transportation It has limited effect on certain industries"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_26_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Students Should Be Encouraged to Participate in Extracurricular Activities.",
+      "forPoints": [
+        "Promotes sustainable habits and equality",
+        "Encourages positive social discipline"
+      ],
+      "againstPoints": [
+        "Helps in developing soft skills and teamwork May distract from academic studies",
+        "Provides a break from academic pressure Can be stressful if overcommitted"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "ml_aut_27_p3",
+      "source": "Sept-Dec Multilevel Real Exam",
+      "statement": "Owning a Pet Improves Quality of Life.",
+      "forPoints": [
+        "Promotes sustainable habits and equality",
+        "Encourages positive social discipline"
+      ],
+      "againstPoints": [
+        "Provides companionship and emotional support Pets require time, money, and care"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    }
+  ]
+}
