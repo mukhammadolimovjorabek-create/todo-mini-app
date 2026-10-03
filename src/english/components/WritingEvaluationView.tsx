@@ -326,7 +326,7 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
                 {activeTab === 'task1' ? 'Diagramma va Grafik Tahlili' : 'Muammoli Mavzu Bo\'yicha Insho'}
               </h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                Sinov boshlanmaguncha topshiriq matni va {activeTab === 'task1' ? 'grafik' : 'insho savoli'} yashirin holatda turadi. "Sinovni boshlash" tugmasini bosganingizdan so'ng rasmiy {activeTab === 'task1' ? '20' : '40'} daqiqalik taymer ishga tushadi.
+                Rasmiy {activeTab === 'task1' ? '20' : '40'} daqiqalik yozma sinov. Tayyor bo'lsangiz, «Sinovni boshlash» tugmasini bosing.
               </p>
             </div>
 

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Flag, Tag, X, Clock, Zap } from 'lucide-react';
-import type { Task, TaskCategory, TaskPriority } from '../types';
+import type { Task, TaskCategory, TaskPriority, TaskScope } from '../types';
 import {
-  loadTasks, addTask, toggleTask, deleteTask,
+  getActiveTasks, addTask, toggleTask, deleteTask,
   getCategoryColor, getCategoryLabel,
   getPriorityColor, getPriorityLabel,
-  today, updateStats, getLast7Days,
+  updateStats, getLast7Days,
 } from '../utils/storage';
 import { triggerHaptic } from '../utils/telegram';
 import {
@@ -34,6 +34,8 @@ interface ScreenHomeProps {
 
 export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange, onOpenEnglish }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [activeScopeTab, setActiveScopeTab] = useState<'daily' | 'weekly'>('daily');
+  const [newScope, setNewScope] = useState<TaskScope>('daily');
   const [filterCat, setFilterCat] = useState<TaskCategory | 'all'>('all');
   const [showModal, setShowModal] = useState(false);
   const [newText, setNewText] = useState('');
@@ -47,7 +49,7 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
   const [floatingCoin, setFloatingCoin] = useState<{ amount: number; key: number } | null>(null);
 
   const reload = useCallback(() => {
-    setTasks(loadTasks().filter((t) => t.createdAt === today()));
+    setTasks(getActiveTasks());
     setCoins(recalculateCoins());
   }, []);
 
@@ -59,8 +61,8 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
   const handleToggle = (id: string) => {
     triggerHaptic('medium');
     const taskBefore = tasks.find((t) => t.id === id);
-    const updated = toggleTask(id).filter((t) => t.createdAt === today());
-    setTasks(updated);
+    toggleTask(id);
+    setTasks(getActiveTasks());
     onTasksChange?.();
 
     if (taskBefore) {
@@ -86,8 +88,8 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
 
   const handleDelete = (id: string) => {
     triggerHaptic('heavy');
-    const updated = deleteTask(id).filter((t) => t.createdAt === today());
-    setTasks(updated);
+    deleteTask(id);
+    setTasks(getActiveTasks());
     setCoins(recalculateCoins());
     onTasksChange?.();
   };
@@ -95,7 +97,7 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
   const handleAdd = () => {
     if (!newText.trim()) return;
     triggerHaptic('heavy');
-    addTask(newText.trim(), newPriority, newCategory, newDuration ?? undefined);
+    addTask(newText.trim(), newPriority, newCategory, newDuration ?? undefined, newScope);
     setNewText('');
     setNewDuration(null);
     setShowModal(false);
@@ -113,8 +115,12 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
     }
   };
 
-  const done = tasks.filter((t) => t.done).length;
-  const total = tasks.length;
+  const dailyTasks = tasks.filter((t) => (t.scope || 'daily') === 'daily');
+  const weeklyTasks = tasks.filter((t) => t.scope === 'weekly');
+  const currentScopeTasks = activeScopeTab === 'daily' ? dailyTasks : weeklyTasks;
+
+  const done = currentScopeTasks.filter((t) => t.done).length;
+  const total = currentScopeTasks.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
   const pendingCount = total - done;
 
@@ -132,7 +138,9 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
   const ringCircumference = 2 * Math.PI * ringRadius;
   const ringOffset = ringCircumference - (pct / 100) * ringCircumference;
 
-  const filtered = filterCat === 'all' ? tasks : tasks.filter((t) => t.category === filterCat);
+  const filtered = filterCat === 'all'
+    ? currentScopeTasks
+    : currentScopeTasks.filter((t) => t.category === filterCat);
 
   // Hour-based greeting
   const hour = new Date().getHours();
@@ -176,13 +184,13 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
             {/* Chap tomon: Foiz va vazifalar soni */}
             <div>
               <p className="text-[11px] font-extrabold text-[#9e91db] tracking-wider uppercase">
-                BUGUNGI PROGRESS
+                {activeScopeTab === 'daily' ? 'BUGUNGI PROGRESS' : 'HAFTALIK PROGRESS'}
               </p>
               <p className="text-5xl font-black text-white tracking-tight my-1.5">
                 {pct}%
               </p>
               <p className="text-xs font-semibold text-[#b8ace8]">
-                {done} / {total} vazifa bajarildi
+                {done} / {total} {activeScopeTab === 'daily' ? 'kunlik' : 'haftalik'} vazifa bajarildi
               </p>
             </div>
 
@@ -222,11 +230,19 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
           {/* 2-rasmdagi och laym-yashil streak banner */}
           <div className="mt-4 bg-[#c4f82a] text-[#121124] rounded-2xl p-3.5 shadow-sm">
             <p className="text-xs font-black tracking-tight leading-snug">
-              {total === 0
-                ? "Bugungi rejalaringizni kiriting va seriyani boshlang!"
-                : pendingCount === 0
-                ? "Ajoyib! Bugungi barcha vazifalar bajarildi 🔥"
-                : `Yana ${pendingCount} ta vazifa, va ${nextStreak} kunlik seriya ochiladi`}
+              {activeScopeTab === 'daily' ? (
+                total === 0
+                  ? "Bugungi rejalaringizni kiriting va seriyani boshlang!"
+                  : pendingCount === 0
+                  ? "Ajoyib! Bugungi barcha vazifalar bajarildi 🔥"
+                  : `Yana ${pendingCount} ta vazifa, va ${nextStreak} kunlik seriya ochiladi`
+              ) : (
+                total === 0
+                  ? "Haftalik maqsadlaringizni rejalashtiring va hafta davomida bajaring!"
+                  : pendingCount === 0
+                  ? "Qoyilmaqom! Ushbu haftaning barcha rejalari bajarildi! 🏆"
+                  : `Hafta davomida yana ${pendingCount} ta vazifangiz qoldi. Olg'a!`
+              )}
             </p>
           </div>
         </div>
@@ -274,6 +290,51 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
         )}
       </div>
 
+      {/* ── Vazifalar bo'limi: Kunlik va Haftalik (Foydalanuvchi talabi) ── */}
+      <div className="px-5 mt-3 mb-2.5">
+        <div className="flex bg-slate-200/80 p-1.5 rounded-2xl border border-slate-300/40 shadow-xs">
+          <button
+            onClick={() => {
+              triggerHaptic('light');
+              setActiveScopeTab('daily');
+              setFilterCat('all');
+            }}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 ${
+              activeScopeTab === 'daily'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <span>☀️ Kunlik</span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+              activeScopeTab === 'daily' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-300/70 text-slate-600'
+            }`}>
+              {dailyTasks.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic('light');
+              setActiveScopeTab('weekly');
+              setFilterCat('all');
+            }}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 ${
+              activeScopeTab === 'weekly'
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <span>📅 Haftalik</span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+              activeScopeTab === 'weekly' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-300/70 text-slate-600'
+            }`}>
+              {weeklyTasks.length}
+            </span>
+          </button>
+        </div>
+      </div>
+
       {/* ── Category Filters ── */}
       <div className="px-5 mb-3">
         <div className="flex space-x-2 overflow-x-auto no-scrollbar pb-1">
@@ -288,7 +349,7 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
             Hammasi {total > 0 && `(${total})`}
           </button>
           {CATEGORIES.map((cat) => {
-            const count = tasks.filter((t) => t.category === cat).length;
+            const count = currentScopeTasks.filter((t) => t.category === cat).length;
             if (count === 0) return null;
             return (
               <button
@@ -313,12 +374,22 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
       <div className="px-5 flex-1 space-y-2.5">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <span className="text-5xl mb-4">✅</span>
+            <span className="text-5xl mb-4">
+              {activeScopeTab === 'daily' ? '☀️' : '📅'}
+            </span>
             <p className="font-bold text-slate-700 text-base">
-              {tasks.length === 0 ? 'Hali vazifa yo\'q!' : 'Bu toifada vazifa yo\'q'}
+              {currentScopeTasks.length === 0
+                ? activeScopeTab === 'daily'
+                  ? "Bugungi kunga hali vazifa yo'q!"
+                  : "Bu hafta uchun hali vazifa yo'q!"
+                : "Bu toifada vazifa yo'q"}
             </p>
             <p className="text-xs text-slate-400 mt-1">
-              {tasks.length === 0 ? 'Pastdagi + tugmani bosib bugun rejalingizni kiriting' : 'Boshqa toifani tanlang'}
+              {currentScopeTasks.length === 0
+                ? activeScopeTab === 'daily'
+                  ? "Pastdagi + tugmasini bosib bugun rejalingizni kiriting"
+                  : "Pastdagi + tugmasini bosib hafta davomidagi rejalaringizni kiriting"
+                : "Boshqa toifani tanlang"}
             </p>
           </div>
         ) : (
@@ -335,7 +406,11 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
 
       {/* ── 1-rasmdagi zamonaviy binafsha FAB (+) tugmasi ── */}
       <button
-        onClick={() => { triggerHaptic('heavy'); setShowModal(true); }}
+        onClick={() => {
+          triggerHaptic('heavy');
+          setNewScope(activeScopeTab);
+          setShowModal(true);
+        }}
         className="fixed bottom-24 right-5 w-14 h-14 rounded-full bg-[#7052ff] hover:bg-[#6242f6] text-white shadow-xl shadow-indigo-500/40 flex items-center justify-center active:scale-90 transition-all z-30"
       >
         <Plus size={26} strokeWidth={2.8} />
@@ -350,6 +425,38 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
               <h3 className="font-extrabold text-slate-900 text-lg">Yangi vazifa</h3>
               <button onClick={() => setShowModal(false)} className="p-1 text-slate-400">
                 <X size={20} />
+              </button>
+            </div>
+
+            {/* Scope Selector: Kunlik vs Haftalik (4-rasm talabi) */}
+            <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  setNewScope('daily');
+                }}
+                className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 ${
+                  newScope === 'daily'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <span>☀️ Kunlik vazifa</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  setNewScope('weekly');
+                }}
+                className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 ${
+                  newScope === 'weekly'
+                    ? 'bg-white text-indigo-600 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <span>📅 Haftalik vazifa</span>
               </button>
             </div>
 

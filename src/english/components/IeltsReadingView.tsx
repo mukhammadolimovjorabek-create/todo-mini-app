@@ -34,7 +34,7 @@ const READING_PASSAGES: ReadingPassage[] = [
   {
     id: 'passage_cultural_tourist',
     title: 'An Early Cultural Tourist',
-    subtitle: 'IELTS Academic Reading Passage 1 · Cambridge Authentic Material',
+    subtitle: 'IELTS Academic Reading · Passage 1',
     paragraphs: [
       {
         label: 'A',
@@ -645,7 +645,7 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
                 {currentPassage.title}
               </h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                Sinov boshlanmaguncha matn va savollar yashirin holatda turadi. "Sinovni boshlash" tugmasini bosishingiz bilan 20 daqiqalik taymer ishga tushadi.
+                20 daqiqalik rasmiy sinov. Tayyor bo'lsangiz, «Sinovni boshlash» tugmasini bosing va topshiriqlarni bajaring.
               </p>
             </div>
 

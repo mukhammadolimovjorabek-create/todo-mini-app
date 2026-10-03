@@ -358,7 +358,7 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
                 {activeTab === 'task1' ? "Do'stga yoki Rasmiy Xat Yozish" : "Muammoli Mavzu Bo'yicha B2/C1 Insho"}
               </h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                Sinov boshlanmaguncha topshiriq matni va {activeTab === 'task1' ? 'vaziyat/email mavzusi' : 'insho savoli'} yashirin holatda turadi. "Sinovni boshlash" tugmasini bosganingizdan so'ng rasmiy {activeTab === 'task1' ? '20' : '40'} daqiqalik taymer ishga tushadi.
+                Rasmiy {activeTab === 'task1' ? '20' : '40'} daqiqalik sinov. Tayyor bo'lsangiz, «Sinovni boshlash» tugmasini bosing.
               </p>
             </div>
 

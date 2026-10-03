@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, ArrowRight, Flame } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Flame, Users } from 'lucide-react';
 import { AISpeakingView } from './AISpeakingView';
 import { PartnerSpeakingView } from './PartnerSpeakingView';
 import { WritingEvaluationView } from './WritingEvaluationView';
@@ -25,14 +25,14 @@ type ActiveView = 'menu' | 'reading' | 'writing' | 'speaking' | 'ai_speaking' | 
 export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, initialView = 'menu' }) => {
   const [activeView, setActiveView] = useState<ActiveView>(initialView);
 
-  // Compute last scores from test history or fallback to video mock scores
+  // Compute last scores from test history (only if test has actually been taken)
   const { readingScore, writingScore } = useMemo(() => {
     const results = getTestResults();
     const lastReading = results.find((r) => r.testType === 'reading');
     const lastWriting = results.find((r) => r.testType === 'writing_task1' || r.testType === 'writing_task2');
     return {
-      readingScore: lastReading?.overallBand ? lastReading.overallBand.toFixed(1) : '6.0',
-      writingScore: lastWriting?.overallBand ? lastWriting.overallBand.toFixed(1) : '6.5',
+      readingScore: lastReading?.overallBand ? lastReading.overallBand.toFixed(1) : null,
+      writingScore: lastWriting?.overallBand ? lastWriting.overallBand.toFixed(1) : null,
     };
   }, []);
 
@@ -125,9 +125,10 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
                   triggerHaptic('light');
                   setActiveView('partner_speaking');
                 }}
-                className="text-[11px] font-bold text-white/90 bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-xl border border-white/10 transition-all active:scale-95"
+                className="text-[11px] font-extrabold text-indigo-100 bg-gradient-to-r from-indigo-500/30 to-purple-500/25 hover:from-indigo-500/40 hover:to-purple-500/35 px-3 py-1.5 rounded-xl border border-indigo-400/40 shadow-xs flex items-center space-x-1.5 transition-all active:scale-95"
               >
-                Sherik bilan
+                <Users size={12} className="text-indigo-300 shrink-0" />
+                <span>Sherik bilan</span>
               </button>
             </div>
 
@@ -181,11 +182,13 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
               </p>
             </div>
 
-            <div className="mt-3.5">
-              <span className="inline-block text-[10px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
-                Oxirgi: {readingScore}
-              </span>
-            </div>
+            {readingScore && (
+              <div className="mt-3.5">
+                <span className="inline-block text-[10px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+                  Oxirgi: {readingScore}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* WRITING CARD */}
@@ -222,11 +225,13 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
               </p>
             </div>
 
-            <div className="mt-3.5">
-              <span className="inline-block text-[10px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
-                Oxirgi: {writingScore}
-              </span>
-            </div>
+            {writingScore && (
+              <div className="mt-3.5">
+                <span className="inline-block text-[10px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+                  Oxirgi: {writingScore}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

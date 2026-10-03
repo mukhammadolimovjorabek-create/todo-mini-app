@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { ScreenType, TelegramUser } from './types';
 import { getTelegramWebApp, getTelegramUser } from './utils/telegram';
-import { loadTasks, today, getCustomProfile } from './utils/storage';
+import { getActiveTasks, getCustomProfile } from './utils/storage';
 import { ScreenHome } from './components/ScreenHome';
 import { ScreenAI } from './components/ScreenAI';
 import { ScreenAnalytics } from './components/ScreenAnalytics';
@@ -28,9 +28,9 @@ export function App() {
   const [taskStats, setTaskStats] = useState({ pending: 0, pct: 0 });
 
   const updateStatsFromStorage = () => {
-    const allToday = loadTasks().filter((t) => t.createdAt === today());
-    const done = allToday.filter((t) => t.done).length;
-    const total = allToday.length;
+    const allActive = getActiveTasks();
+    const done = allActive.filter((t) => t.done).length;
+    const total = allActive.length;
     setTaskStats({
       pending: total - done,
       pct: total ? Math.round((done / total) * 100) : 0,

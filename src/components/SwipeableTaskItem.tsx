@@ -262,6 +262,14 @@ export const SwipeableTaskItem: React.FC<Props> = ({ task, onToggle, onDelete })
             <span className="text-[10px] font-bold" style={{ color: getPriorityColor(task.priority) }}>
               ● {getPriorityLabel(task.priority)}
             </span>
+            {task.scope === 'weekly' && (
+              <>
+                <span className="text-[10px] text-slate-300">•</span>
+                <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 px-1.5 py-0.2 rounded-md">
+                  📅 Hafta
+                </span>
+              </>
+            )}
             {task.duration && (
               <>
                 <span className="text-[10px] text-slate-300">•</span>

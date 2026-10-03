@@ -1,9 +1,30 @@
-import type { Task, DayStats, TaskCategory, TaskPriority } from '../types';
+import type { Task, DayStats, TaskCategory, TaskPriority, TaskScope } from '../types';
 
 const TASKS_KEY = 'todo_tasks_v2';
 const STATS_KEY = 'todo_stats_v2';
 
 export const today = () => new Date().toISOString().slice(0, 10);
+
+/**
+ * Checks whether a YYYY-MM-DD date falls within the current Monday-to-Sunday week
+ */
+export const isCurrentWeek = (dateStr: string): boolean => {
+  if (!dateStr) return false;
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length < 3) return false;
+  const targetDate = new Date(parts[0], parts[1] - 1, parts[2]);
+
+  const now = new Date();
+  const day = now.getDay(); // 0 is Sunday, 1 is Monday ... 6 is Saturday
+  const diffToMonday = now.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(now.getFullYear(), now.getMonth(), diffToMonday, 0, 0, 0, 0);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+
+  return targetDate >= monday && targetDate <= sunday;
+};
 
 // ────────────────────────────── TASKS ──────────────────────────────
 
@@ -23,7 +44,8 @@ export const addTask = (
   text: string,
   priority: TaskPriority = 'medium',
   category: TaskCategory = 'personal',
-  duration?: number
+  duration?: number,
+  scope: TaskScope = 'daily'
 ): Task => {
   const task: Task = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -31,6 +53,7 @@ export const addTask = (
     done: false,
     priority,
     category,
+    scope,
     createdAt: today(),
     ...(duration ? { duration } : {}),
   };
@@ -59,8 +82,22 @@ export const deleteTask = (id: string): Task[] => {
   return tasks;
 };
 
+export const getActiveTasks = (): Task[] => {
+  const todayStr = today();
+  return loadTasks().filter((t) => {
+    const scope = t.scope || 'daily';
+    if (scope === 'weekly') {
+      return isCurrentWeek(t.createdAt);
+    }
+    return t.createdAt === todayStr;
+  });
+};
+
 export const getTodayTasks = (): Task[] =>
-  loadTasks().filter((t) => t.createdAt === today());
+  loadTasks().filter((t) => (t.scope || 'daily') === 'daily' && t.createdAt === today());
+
+export const getWeeklyTasks = (): Task[] =>
+  loadTasks().filter((t) => t.scope === 'weekly' && isCurrentWeek(t.createdAt));
 
 // ────────────────────────────── STATS ──────────────────────────────
 
@@ -74,9 +111,9 @@ export const loadStats = (): DayStats[] => {
 
 export const updateStats = () => {
   const todayStr = today();
-  const todayTasks = getTodayTasks();
+  const activeTasks = getActiveTasks();
   const stats = loadStats().filter((s) => s.date !== todayStr);
-  stats.push({ date: todayStr, total: todayTasks.length, done: todayTasks.filter((t) => t.done).length });
+  stats.push({ date: todayStr, total: activeTasks.length, done: activeTasks.filter((t) => t.done).length });
   localStorage.setItem(STATS_KEY, JSON.stringify(stats.slice(-30)));
 };
 
