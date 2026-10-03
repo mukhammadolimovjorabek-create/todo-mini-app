@@ -4,16 +4,17 @@ import React from 'react';
  * 1) Speaking waveform: 7 bars SVG native animation (SMIL)
  * Each bar has its own duration and stretches from vertical center (y=22).
  */
-export const SpeakingWaveform: React.FC<{ width?: number; height?: number; className?: string }> = ({
+export const SpeakingWaveform: React.FC<{ width?: number; height?: number; className?: string; color?: string }> = ({
   width = 65,
   height = 44,
   className = '',
+  color = '#C5F82A',
 }) => (
   <svg
     width={width}
     height={height}
     viewBox="0 0 65 44"
-    fill="#C5F82A"
+    fill={color}
     aria-hidden="true"
     className={className}
   >

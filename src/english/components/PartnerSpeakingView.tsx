@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Search, Users, RotateCcw, Clock, ShieldAlert, PhoneCall, Star, ChevronRight, Share2, Check } from 'lucide-react';
+import { ArrowLeft, Search, Users, RotateCcw, Clock, ShieldAlert, PhoneCall, ChevronRight, Share2, Check, Lock, AlertTriangle, Send, Sparkles } from 'lucide-react';
 import { getRandomPart1Topic, getRandomPart2Topic, getRandomPart3Topic, type Part1Topic, type Part2CueCard, type Part3Topic } from '../data/speakingBank';
-import { triggerHaptic, getTelegramWebApp } from '../../utils/telegram';
+import { triggerHaptic, getTelegramWebApp, getTelegramUser } from '../../utils/telegram';
+import {
+  getDislikesCount,
+  setDislikesCount,
+  recordDislike,
+  recordLike,
+  isUserLocked,
+  unlockUser,
+  notifyAdminForUnlock,
+} from '../utils/reputation';
 
 interface Props {
   onBack: () => void;
@@ -37,6 +46,16 @@ const FEMALE_PARTNERS: MatchedPartner[] = [
 ];
 
 export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGender = 'male' }) => {
+  const telegramUser = getTelegramUser();
+  const userId = telegramUser?.id || 'me';
+
+  // Reputation & Lock states
+  const [dislikes, setDislikes] = useState<number>(() => getDislikesCount(userId));
+  const [isLocked, setIsLocked] = useState<boolean>(() => isUserLocked(userId));
+  const [isNotifyingAdmin, setIsNotifyingAdmin] = useState(false);
+  const [adminNotified, setAdminNotified] = useState(false);
+  const [unlockedToast, setUnlockedToast] = useState(false);
+
   const [filterGender, setFilterGender] = useState<GenderFilter>('any');
   const [matchStatus, setMatchStatus] = useState<'idle' | 'searching' | 'matched'>('idle');
   const [searchTimer, setSearchTimer] = useState(0);
@@ -62,14 +81,39 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   const [hasSharedConsent, setHasSharedConsent] = useState(false);
   const [partnerConsented, setPartnerConsented] = useState(false);
 
-  // Rating modal on exit
+  // Like/Dislike rating modal on exit
   const [showRatingModal, setShowRatingModal] = useState(false);
-  const [partnerRating, setPartnerRating] = useState(5);
-  const [ratingComment, setRatingComment] = useState('');
+  const [selectedSticker, setSelectedSticker] = useState<'like' | 'dislike' | null>(null);
+  const [dislikeReason, setDislikeReason] = useState<string>('');
 
   // Real room ID for Telegram direct pairing
   const [roomId] = useState(() => 'room_' + Math.floor(100000 + Math.random() * 900000));
   const [copiedInvite, setCopiedInvite] = useState(false);
+
+  // Check URL params for unblock query (?unblocked=1)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('unblocked') === '1' || urlParams.get('unblock') === 'true') {
+      unlockUser(userId);
+      setDislikes(0);
+      setIsLocked(false);
+      setUnlockedToast(true);
+      setTimeout(() => setUnlockedToast(false), 5000);
+      try {
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, '', cleanUrl);
+      } catch {
+        // ignore
+      }
+    }
+  }, [userId]);
+
+  // Keep lock state synced
+  useEffect(() => {
+    const current = getDislikesCount(userId);
+    setDislikes(current);
+    setIsLocked(current >= 10);
+  }, [userId]);
 
   const handleShareInvite = () => {
     triggerHaptic('medium');
@@ -91,7 +135,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     let interval: any;
     if (matchStatus === 'searching') {
       interval = setInterval(() => {
-        setSearchTimer((prev) => prev + 1);
+        setSearchTimer((prev: number) => prev + 1);
       }, 1000);
 
       // Simulate match after 3.5 seconds
@@ -120,7 +164,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     let timer: any;
     if (isP2TimerRunning && p2Timer > 0) {
       timer = setInterval(() => {
-        setP2Timer((prev) => prev - 1);
+        setP2Timer((prev: number) => prev - 1);
       }, 1000);
     } else if (p2Timer === 0) {
       if (p2Phase === 'prep') {
@@ -157,19 +201,175 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     }, 900);
   };
 
+  const handleRequestUnlock = async () => {
+    setIsNotifyingAdmin(true);
+    triggerHaptic('heavy');
+    await notifyAdminForUnlock({
+      id: userId,
+      name: telegramUser?.first_name || userName || 'Foydalanuvchi',
+      username: telegramUser?.username,
+    });
+    setIsNotifyingAdmin(false);
+    setAdminNotified(true);
+  };
+
   const handleLeaveRoom = () => {
     triggerHaptic('medium');
+    setSelectedSticker(null);
+    setDislikeReason('');
     setShowRatingModal(true);
   };
 
   const handleFinishRating = () => {
     triggerHaptic('heavy');
+    if (selectedSticker === 'dislike') {
+      const updated = recordDislike(userId);
+      setDislikes(updated);
+      if (updated >= 10) {
+        setIsLocked(true);
+      }
+    } else if (selectedSticker === 'like') {
+      const updated = recordLike(userId);
+      setDislikes(updated);
+      if (updated < 10) {
+        setIsLocked(false);
+      }
+    }
+
     setShowRatingModal(false);
+    setSelectedSticker(null);
+    setDislikeReason('');
     setMatchedPartner(null);
     setMatchStatus('idle');
     setHasSharedConsent(false);
     setPartnerConsented(false);
   };
+
+  // ── RENDER LOCKED STATE IF USER HAS >= 10 DISLIKES ──
+  if (isLocked) {
+    return (
+      <div className="english-root min-h-screen bg-[#0a0818] text-slate-100 flex flex-col pb-10">
+        {/* Header */}
+        <div className="px-5 pt-6 pb-4 bg-[#110e24]/90 backdrop-blur-md border-b border-rose-950/40 flex items-center justify-between sticky top-0 z-20">
+          <button
+            onClick={onBack}
+            className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-slate-300 flex items-center justify-center hover:bg-white/10 transition-all active:scale-95"
+            title="Orqaga"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div className="text-center">
+            <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
+              Qulflangan
+            </span>
+            <h2 className="text-base font-black text-white">Sherik bilan Speaking</h2>
+          </div>
+          <div className="w-9" />
+        </div>
+
+        {/* Lock Body */}
+        <div className="p-5 flex-1 max-w-md mx-auto w-full flex flex-col justify-center space-y-5 animate-in fade-in duration-300">
+          {/* Animated Lock Shield */}
+          <div className="relative w-28 h-28 mx-auto flex items-center justify-center">
+            <div className="absolute inset-0 rounded-full bg-rose-500/20 animate-ping" />
+            <div className="absolute inset-2 rounded-full border border-rose-500/40 animate-pulse" />
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-rose-600 to-red-700 text-white flex items-center justify-center shadow-2xl shadow-rose-600/40 border border-rose-400/30">
+              <Lock size={36} className="text-white" />
+            </div>
+          </div>
+
+          <div className="text-center space-y-2">
+            <h3 className="text-xl font-black text-white tracking-tight">
+              Suhbat bo'limi qulflangan! 🔒
+            </h3>
+            <p className="text-xs text-rose-300/90 font-medium leading-relaxed bg-rose-950/30 p-3.5 rounded-2xl border border-rose-800/40 text-left">
+              ⚠️ <strong className="text-rose-200">Sababi:</strong> Siz <b>10 ta shikoyat/dislike</b> oldingiz (odob-axloq qoidalarini buzganlik, kontakt so'rash yoki noo'rin xatti-harakatlar uchun).
+            </p>
+          </div>
+
+          {/* Pricing Card */}
+          <div className="bg-gradient-to-br from-[#171330] to-[#1e173e] rounded-3xl p-5 border border-rose-500/30 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                  Qulfni ochish to'lovi
+                </span>
+                <span className="text-2xl font-black text-[#c4f82a] tracking-tight">
+                  6,700 so'm
+                </span>
+              </div>
+              <span className="text-xs font-bold bg-white/10 text-white px-3 py-1 rounded-full border border-white/10">
+                1 martalik to'lov
+              </span>
+            </div>
+
+            <p className="text-[11px] text-slate-300/80 leading-relaxed">
+              To'lov qilib adminga chekni yuborganingizdan so'ng hisobingizdagi barcha jarimalar 0 ga tushiriladi va speaking tizimi darhol ochiladi.
+            </p>
+
+            {/* Notification Sent or Action Button */}
+            {adminNotified ? (
+              <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-2xl p-4 space-y-2 text-emerald-200 text-xs">
+                <div className="flex items-center space-x-2 font-bold">
+                  <Check size={16} className="text-emerald-400" />
+                  <span>Adminga xabarnoma yuborildi!</span>
+                </div>
+                <p className="text-[11px] text-emerald-300/90 leading-relaxed">
+                  Admin tez orada bot orqali sizga karta yoki telefon raqamini yuboradi. To'lov chekini botga rasm sifatida tashlasangiz, dostup beriladi.
+                </p>
+              </div>
+            ) : (
+              <button
+                onClick={handleRequestUnlock}
+                disabled={isNotifyingAdmin}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 active:scale-95 text-white font-black text-sm shadow-lg shadow-rose-600/30 flex items-center justify-center space-x-2 transition-all disabled:opacity-50"
+              >
+                {isNotifyingAdmin ? (
+                  <>
+                    <RotateCcw className="animate-spin" size={18} />
+                    <span>Adminga yuborilmoqda...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send size={18} />
+                    <span>To'lov qilish / Adminga murojaat</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            <button
+              onClick={() => {
+                const refreshed = getDislikesCount(userId);
+                setDislikes(refreshed);
+                setIsLocked(refreshed >= 10);
+                triggerHaptic('light');
+              }}
+              className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-bold transition-all flex items-center justify-center space-x-1.5"
+            >
+              <RotateCcw size={14} />
+              <span>Qulf holatini qayta tekshirish</span>
+            </button>
+          </div>
+
+          {/* Discreet Testing controls */}
+          <div className="pt-2 text-center space-y-1">
+            <button
+              onClick={() => {
+                unlockUser(userId);
+                setDislikes(0);
+                setIsLocked(false);
+                triggerHaptic('heavy');
+              }}
+              className="text-[10px] text-slate-500 hover:text-slate-300 underline transition-colors"
+            >
+              🛠️ Sinov uchun qulfni ochish (Reset)
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="english-root min-h-screen bg-slate-50 flex flex-col text-slate-900 pb-10">
@@ -211,10 +411,38 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
         )}
       </div>
 
+      {/* Unlocked Toast Banner */}
+      {unlockedToast && (
+        <div className="mx-5 mt-4 bg-emerald-600 text-white p-4 rounded-2xl shadow-lg flex items-center space-x-3 animate-in slide-in-from-top duration-300">
+          <Check size={20} className="shrink-0 text-emerald-200" />
+          <div>
+            <h4 className="text-xs font-black">Qulf ochildi! 🎉</h4>
+            <p className="text-[11px] text-emerald-100">
+              Admin to'lovingizni tasdiqladi. Barcha taqiqlar olib tashlandi, bemalol speaking mashq qilishingiz mumkin!
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="p-5 flex-1 max-w-lg mx-auto w-full space-y-5">
         {/* ── STATE 1: IDLE / SETUP SEARCH ── */}
         {matchStatus === 'idle' && (
           <div className="space-y-5 animate-in fade-in duration-300">
+            {/* Warning if user has any strikes */}
+            {dislikes > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 flex items-center justify-between text-amber-900 animate-in fade-in duration-200">
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+                  <span className="text-xs font-semibold">
+                    Sizda <b>{dislikes}/10</b> ta shikoyat bor. 10 taga yetsa qulflanadi.
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-lg">
+                  Ehtiyot bo'ling
+                </span>
+              </div>
+            )}
+
             {/* Banner card */}
             <div
               className="rounded-[2rem] p-6 text-white relative overflow-hidden shadow-xl"
@@ -333,6 +561,51 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
                 <span>{copiedInvite ? "Nusxalandi ✓" : "Ulashish / Taklif"}</span>
               </button>
             </div>
+
+            {/* Developer / Testing shortcut */}
+            <div className="pt-1 flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-200/60">
+              <span className="text-[10px] text-slate-400">🧪 Sinov:</span>
+              <div className="flex items-center space-x-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const u = recordLike(userId);
+                    setDislikes(u);
+                    triggerHaptic('light');
+                  }}
+                  className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-[10px]"
+                  title="Like berish (jarimani kamaytiradi)"
+                >
+                  +1 👍
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const u = recordDislike(userId);
+                    setDislikes(u);
+                    if (u >= 10) setIsLocked(true);
+                    triggerHaptic('heavy');
+                  }}
+                  className="px-2 py-0.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-[10px]"
+                  title="Dislike berish (+1 jarima)"
+                >
+                  +1 👎 ({dislikes}/10)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDislikesCount(userId, 10);
+                    setDislikes(10);
+                    setIsLocked(true);
+                    triggerHaptic('heavy');
+                  }}
+                  className="px-2 py-0.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-black text-[10px]"
+                  title="10 ta dislike bilan qulflash"
+                >
+                  🔒 Qulflash (10 ta)
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -399,7 +672,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
               <button
                 onClick={() => {
                   triggerHaptic('light');
-                  setSpeakerTurn((prev) => (prev === 'me' ? 'partner' : 'me'));
+                  setSpeakerTurn((prev: 'me' | 'partner') => (prev === 'me' ? 'partner' : 'me'));
                 }}
                 className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
                   speakerTurn === 'me'
@@ -492,7 +765,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
                     disabled={p1QuestionIdx === 0}
                     onClick={() => {
                       triggerHaptic('light');
-                      setP1QuestionIdx((prev) => Math.max(0, prev - 1));
+                      setP1QuestionIdx((prev: number) => Math.max(0, prev - 1));
                     }}
                     className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 disabled:opacity-40"
                   >
@@ -503,7 +776,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
                     disabled={p1QuestionIdx >= p1Topic.questions.length - 1}
                     onClick={() => {
                       triggerHaptic('light');
-                      setP1QuestionIdx((prev) => Math.min(p1Topic.questions.length - 1, prev + 1));
+                      setP1QuestionIdx((prev: number) => Math.min(p1Topic.questions.length - 1, prev + 1));
                     }}
                     className="px-4 py-2 rounded-xl bg-[#7052ff] text-white text-xs font-bold disabled:opacity-40 flex items-center space-x-1"
                   >
@@ -543,7 +816,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
                   <div className="space-y-1 pt-1">
                     <p className="text-[11px] font-bold text-amber-900 uppercase">You should say:</p>
                     <ul className="space-y-1">
-                      {p2Topic.bulletPoints.map((bp, i) => (
+                      {p2Topic.bulletPoints.map((bp: string, i: number) => (
                         <li key={i} className="text-xs text-slate-700 flex items-start space-x-2">
                           <span className="text-amber-500">•</span>
                           <span>{bp}</span>
@@ -632,7 +905,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
                     disabled={p3QuestionIdx === 0}
                     onClick={() => {
                       triggerHaptic('light');
-                      setP3QuestionIdx((prev) => Math.max(0, prev - 1));
+                      setP3QuestionIdx((prev: number) => Math.max(0, prev - 1));
                     }}
                     className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 disabled:opacity-40"
                   >
@@ -643,7 +916,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
                     disabled={p3QuestionIdx >= p3Topic.questions.length - 1}
                     onClick={() => {
                       triggerHaptic('light');
-                      setP3QuestionIdx((prev) => Math.min(p3Topic.questions.length - 1, prev + 1));
+                      setP3QuestionIdx((prev: number) => Math.min(p3Topic.questions.length - 1, prev + 1));
                     }}
                     className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold disabled:opacity-40 flex items-center space-x-1"
                   >
@@ -708,51 +981,125 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
         )}
       </div>
 
-      {/* ── Partner Rating Modal on Exit ── */}
+      {/* ── Partner Rating Modal on Exit (Like / Dislike Stickers) ── */}
       {showRatingModal && matchedPartner && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0a0818]/90 backdrop-blur-md">
           <div className="bg-white rounded-[2rem] p-6 max-w-sm w-full space-y-4 shadow-2xl border border-indigo-100 text-center animate-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mx-auto">
-              ⭐
-            </div>
             <div>
+              <div className="inline-flex items-center space-x-1.5 bg-indigo-50 text-[#7052ff] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider mb-2">
+                <Sparkles size={12} />
+                <span>Muloqot madaniyati</span>
+              </div>
               <h3 className="text-base font-black text-slate-900">
                 Sherigingizni baholang
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
-                {matchedPartner.name} bilan muloqot qanday o'tdi?
+              <p className="text-xs text-slate-500 mt-0.5">
+                <strong className="text-slate-800">{matchedPartner.name}</strong> bilan suhbat qanday o'tdi?
               </p>
             </div>
 
-            {/* Stars */}
-            <div className="flex items-center justify-center space-x-2 py-2">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  onClick={() => setPartnerRating(star)}
-                  className="p-1 hover:scale-125 transition-transform"
-                >
-                  <Star
-                    size={28}
-                    className={star <= partnerRating ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}
-                  />
-                </button>
-              ))}
+            {/* 2 Sticker Selection Cards */}
+            <div className="grid grid-cols-2 gap-3 py-1">
+              {/* LIKE STICKER */}
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('medium');
+                  setSelectedSticker('like');
+                  setDislikeReason('');
+                }}
+                className={`p-4 rounded-2xl border text-center transition-all flex flex-col items-center justify-between ${
+                  selectedSticker === 'like'
+                    ? 'border-emerald-500 bg-emerald-50/80 ring-2 ring-emerald-500/20 shadow-md scale-[1.02]'
+                    : 'border-slate-200 hover:bg-slate-50 bg-white'
+                }`}
+              >
+                <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center text-3xl mb-2 transition-transform active:scale-125">
+                  👍
+                </div>
+                <div className="space-y-1">
+                  <span className="text-xs font-black text-emerald-950 block">Zo'r (Like)</span>
+                  <span className="text-[10px] text-slate-500 block leading-tight">
+                    Odobli, faol va foydali
+                  </span>
+                </div>
+                <span className="mt-2 text-[9px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">
+                  -1 jarima kamayadi
+                </span>
+              </button>
+
+              {/* DISLIKE STICKER */}
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('heavy');
+                  setSelectedSticker('dislike');
+                  if (!dislikeReason) {
+                    setDislikeReason("Kontakt/raqam so'rab bezovta qildi");
+                  }
+                }}
+                className={`p-4 rounded-2xl border text-center transition-all flex flex-col items-center justify-between ${
+                  selectedSticker === 'dislike'
+                    ? 'border-rose-500 bg-rose-50/80 ring-2 ring-rose-500/20 shadow-md scale-[1.02]'
+                    : 'border-slate-200 hover:bg-slate-50 bg-white'
+                }`}
+              >
+                <div className="w-14 h-14 rounded-2xl bg-rose-100 flex items-center justify-center text-3xl mb-2 transition-transform active:scale-125">
+                  👎
+                </div>
+                <div className="space-y-1">
+                  <span className="text-xs font-black text-rose-950 block">Yomon (Dislike)</span>
+                  <span className="text-[10px] text-slate-500 block leading-tight">
+                    Noo'rin harakat / bezovtalik
+                  </span>
+                </div>
+                <span className="mt-2 text-[9px] font-bold text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded-full">
+                  +1 ta shikoyat
+                </span>
+              </button>
             </div>
 
-            <textarea
-              value={ratingComment}
-              onChange={(e) => setRatingComment(e.target.value)}
-              placeholder="Qo'shimcha fikr yoki minnatdorchilik (ixtiyoriy)..."
-              rows={2}
-              className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#7052ff]/30 resize-none"
-            />
+            {/* Reasons if Dislike is selected */}
+            {selectedSticker === 'dislike' && (
+              <div className="space-y-1.5 text-left animate-in fade-in duration-200 bg-rose-50/60 p-3 rounded-2xl border border-rose-200/60">
+                <span className="text-[10px] font-bold text-rose-900 block">
+                  Dislike sababini belgilang:
+                </span>
+                <div className="space-y-1">
+                  {[
+                    "Kontakt/raqam so'rab bezovta qildi",
+                    "Nomaqbul yoki odobsiz so'zlar",
+                    "Inglizcha gaplashmadi / jim o'tirdi",
+                    "Darsdan chalg'ituvchi boshqa harakat",
+                  ].map((reason) => (
+                    <button
+                      key={reason}
+                      type="button"
+                      onClick={() => setDislikeReason(reason)}
+                      className={`w-full text-left px-2.5 py-1.5 rounded-xl text-[11px] font-semibold transition-all border ${
+                        dislikeReason === reason
+                          ? 'bg-rose-600 text-white border-rose-600'
+                          : 'bg-white text-slate-700 border-rose-100 hover:bg-rose-50'
+                      }`}
+                    >
+                      {reason}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Explanatory rule pill */}
+            <div className="text-[10.5px] text-slate-400 bg-slate-50 p-2.5 rounded-xl text-left border border-slate-100">
+              💡 <b>Qoida:</b> 10 ta dislike olgan foydalanuvchi hisobi qulflanadi (qulfni ochish: 6,700 so'm). Har bir Like 1 ta dislike'ni kamaytiradi.
+            </div>
 
             <button
               onClick={handleFinishRating}
-              className="w-full py-3.5 rounded-xl bg-[#7052ff] hover:bg-[#5b3ce0] text-white font-black text-xs shadow-md transition-all active:scale-95"
+              disabled={!selectedSticker}
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#7052ff] to-[#5b3ce0] hover:from-[#5b3ce0] hover:to-[#4a2fd0] text-white font-black text-xs shadow-md shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-40"
             >
-              Baholash va xonani yakunlash
+              Baholashni tasdiqlash va chiqish
             </button>
           </div>
         </div>

@@ -347,7 +347,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
             AI baholari taxminiy, rasmiy IELTS natijasi emas.
           </p>
 
-          {/* Multilevel Quick Switch Card */}
+          {/* Multilevel Quick Switch Card (Dark Luxury Design - 1-rasm talabi) */}
           <div
             role="button"
             tabIndex={0}
@@ -355,28 +355,30 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
               triggerHaptic('medium');
               setSelectedExam('multilevel');
             }}
-            className="p-4.5 rounded-[1.8rem] border border-teal-200 bg-white hover:border-teal-400 hover:shadow-md transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between"
+            className="p-4.5 rounded-[2rem] border border-emerald-500/25 bg-[#181630] hover:border-emerald-400/50 hover:shadow-lg hover:shadow-emerald-950/40 transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between text-white relative overflow-hidden"
           >
-            <div className="flex items-center space-x-3">
-              <div className="w-11 h-11 rounded-2xl bg-teal-500/10 text-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <div className="absolute -top-10 -right-10 w-28 h-28 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="flex items-center space-x-3.5 relative z-10">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-400/30 text-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-inner">
                 🇺🇿
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <h4 className="text-sm font-black text-slate-900 group-hover:text-teal-700 transition-colors">
+                  <h4 className="text-sm font-black text-white group-hover:text-emerald-400 transition-colors">
                     Milliy Multilevel (CEFR)
                   </h4>
-                  <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                  <span className="text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full">
                     Faol ✓
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-0.5">
+                <p className="text-[11px] text-slate-400 mt-0.5">
                   DTM & CEFR B1-C1 · Speaking, Writing, Mock
                 </p>
               </div>
             </div>
 
-            <div className="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-all">
+            <div className="w-8 h-8 rounded-full bg-white/10 text-slate-300 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-all shrink-0 relative z-10">
               <ChevronRight size={16} />
             </div>
           </div>

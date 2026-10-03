@@ -251,6 +251,146 @@ async def show_stats(message: types.Message):
     )
     await message.answer(report_text, parse_mode="HTML")
 
+# 4. Admin qulflangan foydalanuvchi haqidagi xabarga javob (reply) yozganda karta/raqam yuborish
+@dp.message(F.chat.id == ADMIN_ID, F.reply_to_message)
+async def handle_admin_reply(message: types.Message):
+    replied_text = message.reply_to_message.text or message.reply_to_message.caption or ""
+    import re
+    match = re.search(r"ID:\s*(?:<code>)?(\d+)(?:</code>)?", replied_text)
+    if not match:
+        return
+
+    target_user_id = int(match.group(1))
+    payment_info = message.text
+
+    user_text = (
+        "💳 <b>Sherik bilan suhbat qulfini ochish uchun to'lov ma'lumotlari:</b>\n\n"
+        f"<b>{payment_info}</b>\n\n"
+        "💰 To'lov summasi: <b>6,700 so'm</b>\n"
+        "📸 <i>Iltimos, to'lovni amalga oshirgach, to'lov chekini (skrinshot) shu botga rasm ko'rinishida yuboring.</i>"
+    )
+
+    try:
+        await bot.send_message(chat_id=target_user_id, text=user_text, parse_mode="HTML")
+        await message.reply(
+            f"✅ <b>Karta/telefon ma'lumotlari foydalanuvchiga yuborildi!</b>\n"
+            f"🆔 Foydalanuvchi ID: <code>{target_user_id}</code>\n"
+            "Chek yuborilgach, darhol sizga ko'rsatiladi.",
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        await message.reply(f"❌ Foydalanuvchiga xabar yetkazishda xatolik: {e}")
+
+# 5. Foydalanuvchi to'lov chekini (rasm) yuborganida
+@dp.message(F.photo, F.chat.id != ADMIN_ID)
+async def handle_user_check_photo(message: types.Message):
+    user_id = message.from_user.id
+    user_name = message.from_user.first_name
+    username = f"(@{message.from_user.username})" if message.from_user.username else ""
+
+    caption = (
+        "🧾 <b>YANGI TO'LOV CHEKI KELDI!</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"👤 Foydalanuvchi: <b>{user_name}</b> {username}\n"
+        f"🆔 ID: <code>{user_id}</code>\n"
+        "💰 Kutilgan summa: <b>6,700 so'm</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n"
+        "<i>Chekni tekshirib, quyidagi tugma orqali qulfni ochishingiz mumkin:</i>"
+    )
+
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="✅ Qulfni ochish (Dostup berish)",
+                    callback_data=f"unblock:{user_id}"
+                )
+            ]
+        ]
+    )
+
+    try:
+        await bot.send_photo(
+            chat_id=ADMIN_ID,
+            photo=message.photo[-1].file_id,
+            caption=caption,
+            parse_mode="HTML",
+            reply_markup=kb
+        )
+        await message.answer(
+            "✅ <b>Chekingiz adminga yetkazildi!</b>\n\n"
+            "To'lov tekshirilib tasdiqlangach, bot darhol sizga xabar beradi va ilovadagi qulf ochiladi.",
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        logging.error(f"Chekni adminga yuborishda xatolik: {e}")
+
+# 6. Admin «✅ Qulfni ochish» tugmasini bosganda
+@dp.callback_query(F.data.startswith("unblock:"))
+async def handle_unblock_callback(callback: types.CallbackQuery):
+    if callback.from_user.id != ADMIN_ID:
+        await callback.answer("Faqat admin uchun!", show_alert=True)
+        return
+
+    target_user_id = int(callback.data.split(":")[1])
+
+    users = load_users()
+    if str(target_user_id) in users:
+        users[str(target_user_id)]["dislikes"] = 0
+        users[str(target_user_id)]["is_unblocked"] = True
+        with open(USERS_FILE, "w", encoding="utf-8") as f:
+            json.dump(users, f, ensure_ascii=False, indent=2)
+
+    success_text = (
+        "🎉 <b>Ajoyib yangilik! To'lovingiz tasdiqlandi!</b>\n\n"
+        "Sherik bilan suhbat bo'limidagi barcha cheklovlar olib tashlandi va qulf ochildi. "
+        "Endi bemalol speaking mashqlarini davom ettirishingiz mumkin! 🚀"
+    )
+    app_url = f"{WEB_APP_URL}?unblocked=1"
+    user_kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🚀 Ilovaga kirish", web_app=WebAppInfo(url=app_url))
+            ]
+        ]
+    )
+
+    try:
+        await bot.send_message(chat_id=target_user_id, text=success_text, parse_mode="HTML", reply_markup=user_kb)
+    except Exception as e:
+        logging.error(f"Foydalanuvchiga ochilish xabarini yuborishda xatolik: {e}")
+
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await callback.message.reply(f"✅ <b>Foydalanuvchi (ID: {target_user_id}) qulfdan chiqarildi va dostup berildi!</b>", parse_mode="HTML")
+    await callback.answer("Qulf muvaffaqiyatli ochildi!")
+
+# 7. Admin buyrug'i: /unblock <user_id>
+@dp.message(F.chat.id == ADMIN_ID, Command("unblock"))
+async def cmd_manual_unblock(message: types.Message):
+    parts = (message.text or "").split()
+    if len(parts) < 2 or not parts[1].isdigit():
+        await message.answer("Format: <code>/unblock 123456789</code>", parse_mode="HTML")
+        return
+
+    target_user_id = int(parts[1])
+    users = load_users()
+    if str(target_user_id) in users:
+        users[str(target_user_id)]["dislikes"] = 0
+        users[str(target_user_id)]["is_unblocked"] = True
+        with open(USERS_FILE, "w", encoding="utf-8") as f:
+            json.dump(users, f, ensure_ascii=False, indent=2)
+
+    try:
+        await bot.send_message(
+            chat_id=target_user_id,
+            text="🎉 <b>Sizning qulfingiz admin tomonidan ochildi!</b> Ilovaga kirib davom ettirishingiz mumkin.",
+            parse_mode="HTML"
+        )
+    except Exception:
+        pass
+
+    await message.answer(f"✅ Foydalanuvchi {target_user_id} muvaffaqiyatli qulfdan chiqarildi!")
+
 async def main():
     print("=" * 50)
     print("Bot muvaffaqiyatli yangilandi va ishga tushdi!")
