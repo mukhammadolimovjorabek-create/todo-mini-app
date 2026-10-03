@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, CheckCircle2, Circle, Flag, Tag, ChevronDown, X, Clock, Zap } from 'lucide-react';
+import { Plus, Flag, Tag, X, Clock, Zap } from 'lucide-react';
 import type { Task, TaskCategory, TaskPriority } from '../types';
 import {
   loadTasks, addTask, toggleTask, deleteTask,
@@ -14,6 +14,7 @@ import {
   type BadgeItem
 } from '../utils/gamification';
 import { BadgeUnlockModal } from './BadgeUnlockModal';
+import { SwipeableTaskItem } from './SwipeableTaskItem';
 
 const CATEGORIES: TaskCategory[] = ['work', 'personal', 'health', 'learning', 'other'];
 const PRIORITIES: TaskPriority[] = ['high', 'medium', 'low'];
@@ -38,7 +39,6 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange 
   const [newPriority, setNewPriority] = useState<TaskPriority>('medium');
   const [newCategory, setNewCategory] = useState<TaskCategory>('personal');
   const [newDuration, setNewDuration] = useState<number | null>(null);
-  const [swipedId, setSwipedId] = useState<string | null>(null);
 
   // Tangalar va Nishon ochilish holatlari
   const [coins, setCoins] = useState(() => getUserCoins());
@@ -93,7 +93,6 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange 
     triggerHaptic('heavy');
     const updated = deleteTask(id).filter((t) => t.createdAt === today());
     setTasks(updated);
-    setSwipedId(null);
     onTasksChange?.();
   };
 
@@ -286,73 +285,12 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange 
           </div>
         ) : (
           filtered.map((task) => (
-            <div
+            <SwipeableTaskItem
               key={task.id}
-              className="relative overflow-hidden"
-              onMouseLeave={() => setSwipedId(null)}
-            >
-              {/* Delete reveal */}
-              {swipedId === task.id && (
-                <button
-                  onClick={() => handleDelete(task.id)}
-                  className="absolute right-0 top-0 bottom-0 w-16 bg-red-500 rounded-2xl flex items-center justify-center z-10"
-                >
-                  <Trash2 size={18} className="text-white" />
-                </button>
-              )}
-
-              <div
-                className={`flex items-center space-x-3 p-4 rounded-2xl border transition-all ${
-                  task.done
-                    ? 'bg-white/60 border-slate-100 opacity-70'
-                    : 'bg-white border-slate-100 shadow-xs'
-                }`}
-                onClick={() => handleToggle(task.id)}
-                onContextMenu={(e) => { e.preventDefault(); setSwipedId(task.id); }}
-              >
-                {/* Checkbox */}
-                <div className="shrink-0">
-                  {task.done ? (
-                    <CheckCircle2 size={24} style={{ color: getCategoryColor(task.category) }} />
-                  ) : (
-                    <Circle size={24} style={{ color: getCategoryColor(task.category) }} className="opacity-50" />
-                  )}
-                </div>
-
-                {/* Text */}
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-semibold truncate ${task.done ? 'line-through text-slate-400' : 'text-slate-800'}`}>
-                    {task.text}
-                  </p>
-                  <div className="flex items-center space-x-2 mt-0.5 flex-wrap gap-y-0.5">
-                    <span className="text-[10px] font-bold" style={{ color: getCategoryColor(task.category) }}>
-                      {CAT_EMOJIS[task.category]} {getCategoryLabel(task.category)}
-                    </span>
-                    <span className="text-[10px] text-slate-300">•</span>
-                    <span className="text-[10px] font-bold" style={{ color: getPriorityColor(task.priority) }}>
-                      ● {getPriorityLabel(task.priority)}
-                    </span>
-                    {task.duration && (
-                      <>
-                        <span className="text-[10px] text-slate-300">•</span>
-                        <span className="text-[10px] font-bold text-slate-500 flex items-center space-x-0.5">
-                          <Clock size={9} />
-                          <span>{task.duration >= 60 ? `${Math.floor(task.duration / 60)} soat${task.duration % 60 ? ` ${task.duration % 60} daqiqa` : ''}` : `${task.duration} daqiqa`}</span>
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Delete btn (long press alternative) */}
-                <button
-                  onClick={(e) => { e.stopPropagation(); setSwipedId(swipedId === task.id ? null : task.id); }}
-                  className="p-1.5 rounded-full hover:bg-slate-100 text-slate-300 shrink-0"
-                >
-                  <ChevronDown size={15} />
-                </button>
-              </div>
-            </div>
+              task={task}
+              onToggle={handleToggle}
+              onDelete={handleDelete}
+            />
           ))
         )}
       </div>
