@@ -15,7 +15,8 @@ import {
   ShieldCheck,
   Sparkles,
   Swords,
-  UserPlus
+  UserPlus,
+  Zap
 } from 'lucide-react';
 import { getLast7Days, loadTasks, getCategoryColor, getCategoryLabel, shortDay, getCustomProfile } from '../utils/storage';
 import { calculateUserPoints, getGlobalRank } from '../utils/points';
@@ -322,94 +323,148 @@ export const ScreenAnalytics: React.FC = () => {
             <>
               {/* ──────────────── 1-BOSQICH: HALI 1 TA HAM DO'ST CHAQIRILMAGAN HOLAT (0 TA DO'ST) ──────────────── */}
               {friendsList.length === 0 && (
-                <div className="space-y-4">
-                  {/* Banner: Faqat 1-do'st bilan musobaqalashish haqida */}
-                  <div className="px-5">
-                    <div
-                      className="rounded-[2rem] p-5 text-white relative overflow-hidden shadow-xl"
-                      style={{ background: 'linear-gradient(135deg, #1e1552 0%, #351e8c 100%)' }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="inline-flex items-center space-x-1 bg-[#c4f82a] text-[#121124] px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider mb-1.5">
-                            <Trophy size={11} />
-                            <span>Do'stlar Musobaqasi</span>
-                          </div>
-                          <h2 className="text-xl font-black leading-tight">1-do'stingiz bilan musobaqalashing!</h2>
-                          <p className="text-xs text-[#b8ace8] mt-1">Birinchi do'stingiz bilan 1-ga-1 bellashing</p>
+                <div className="space-y-4 px-5">
+                  {/* Hero Matchup Arena Card */}
+                  <div
+                    className="rounded-[2rem] p-6 text-white relative overflow-hidden shadow-2xl"
+                    style={{ background: 'linear-gradient(135deg, #110e28 0%, #1e1552 50%, #2f1d7d 100%)' }}
+                  >
+                    {/* Glowing background neon blobs */}
+                    <div className="absolute top-0 right-0 w-44 h-44 bg-[#c4f82a]/10 rounded-full blur-3xl pointer-events-none" />
+                    <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-[#7052ff]/20 rounded-full blur-2xl pointer-events-none" />
+
+                    {/* Top Pill Badge */}
+                    <div className="flex items-center justify-between mb-4 relative z-10">
+                      <div className="inline-flex items-center space-x-1.5 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-purple-200 border border-white/10">
+                        <Swords size={12} className="text-[#c4f82a]" />
+                        <span>1-ga-1 Do'stona Duel</span>
+                      </div>
+                      <span className="text-[11px] font-extrabold text-[#c4f82a] flex items-center space-x-1">
+                        <Sparkles size={11} />
+                        <span>Yangi musobaqa</span>
+                      </span>
+                    </div>
+
+                    {/* Sarlavha */}
+                    <div className="relative z-10 mb-5">
+                      <h2 className="text-xl font-black tracking-tight leading-snug">
+                        1-do'stingiz bilan musobaqalashing! ⚔️
+                      </h2>
+                      <p className="text-xs text-purple-200/80 mt-1 leading-relaxed">
+                        Yolg'iz rejalashdan ko'ra, eng yaqin do'stingiz bilan bellashing va 3 barobar ko'proq natijaga erishing!
+                      </p>
+                    </div>
+
+                    {/* Visual VS Arena (Siz ⚡ VS ⚡ 1-do'st bo'sh joy) */}
+                    <div className="relative z-10 bg-[#0d0a21]/60 backdrop-blur-md rounded-2xl p-3.5 border border-white/10 flex items-center justify-between">
+                      {/* Chap tomon: Siz */}
+                      <div className="flex items-center space-x-2.5 flex-1 min-w-0">
+                        <div className="w-11 h-11 rounded-2xl bg-[#c4f82a] text-[#121124] flex items-center justify-center font-black text-sm shrink-0 overflow-hidden ring-2 ring-[#c4f82a]/40 shadow-md">
+                          {myAvatar ? (
+                            <img src={myAvatar} alt="avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            myName[0] || 'U'
+                          )}
                         </div>
-                        <div className="w-14 h-14 rounded-2xl bg-[#c4f82a]/20 border border-[#c4f82a]/30 flex items-center justify-center text-3xl">
-                          ⚔️
+                        <div className="min-w-0">
+                          <div className="flex items-center space-x-1">
+                            <p className="text-xs font-black text-white truncate">{myName}</p>
+                            <span className="text-[8px] font-black bg-[#c4f82a] text-[#121124] px-1 rounded">Siz</span>
+                          </div>
+                          <p className="text-[10px] text-purple-200/90 font-bold mt-0.5">
+                            {myPoints > 0 ? `${myPoints} ball` : "0 ball"}
+                          </p>
                         </div>
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
-                        <span className="text-purple-200">Holat:</span>
-                        <span className="font-black text-[#c4f82a] text-sm">Hali do'st taklif qilinmagan</span>
+                      {/* Markaziy VS yorlig'i */}
+                      <div className="px-2.5 flex flex-col items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-[#7052ff] text-[#c4f82a] flex items-center justify-center text-xs font-black ring-4 ring-[#121124] shadow-lg">
+                          VS
+                        </div>
+                      </div>
+
+                      {/* O'ng tomon: 1-do'st (Kutilmoqda / Taklif qilinmagan) */}
+                      <div className="flex items-center space-x-2.5 flex-1 min-w-0 justify-end text-right">
+                        <div className="min-w-0">
+                          <p className="text-xs font-black text-slate-300 truncate">1-do'stingiz</p>
+                          <span className="text-[9px] font-extrabold text-[#c4f82a] bg-[#c4f82a]/15 px-1.5 py-0.5 rounded-md inline-block mt-0.5">
+                            Kutilmoqda...
+                          </span>
+                        </div>
+                        <div className="w-11 h-11 rounded-2xl border-2 border-dashed border-[#c4f82a]/50 bg-white/5 flex items-center justify-center text-purple-300 shrink-0">
+                          <UserPlus size={18} className="text-[#c4f82a]" />
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Faqat 1 ta do'stni taklif qilishga qiziqtiruvchi karta */}
-                  <div className="px-5">
-                    <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-11 h-11 rounded-2xl bg-[#7052ff]/10 text-[#7052ff] flex items-center justify-center shrink-0">
-                          <Swords size={22} />
+                  {/* 3 ta Zamonaviy Afzallik Kartalari (Modern Glass Style) */}
+                  <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider">
+                        Nega do'st bilan musobaqalashish kerak?
+                      </h3>
+                      <span className="text-[10px] font-black text-[#7052ff] bg-purple-50 px-2 py-0.5 rounded-full">
+                        3 ta ustunlik
+                      </span>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {/* 1-afzallik */}
+                      <div className="flex items-start space-x-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100/80 transition-all border border-slate-100">
+                        <div className="w-9 h-9 rounded-xl bg-purple-100 text-[#7052ff] flex items-center justify-center shrink-0 font-black shadow-xs">
+                          <Zap size={18} />
                         </div>
                         <div>
-                          <h3 className="font-black text-slate-900 text-sm">1-do'stingizni taklif qiling! ⚔️</h3>
-                          <p className="text-[11px] text-slate-500">Kim ko'p vazifa bajarsa — o'sha g'olib!</p>
+                          <p className="text-xs font-black text-slate-900">3 barobar ko'proq motivatsiya</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                            Do'stingiz bilan birga rejalashtirish dangasalikni butunlay yengishning eng yaxshi usuli.
+                          </p>
                         </div>
                       </div>
 
-                      <p className="text-xs text-slate-600 leading-relaxed">
-                        Yolg'iz rejalashtirish o'rniga, eng yaqin <b>1 ta do'stingizni</b> chaqiring va o'zaro bellashing!
-                      </p>
-
-                      {/* 1 ta do'st chaqirishning 3 ta ustunligi */}
-                      <div className="space-y-2.5">
-                        <div className="flex items-start space-x-3 bg-purple-50/70 p-3 rounded-2xl border border-purple-100">
-                          <span className="text-base leading-none">🚀</span>
-                          <div>
-                            <p className="text-xs font-black text-slate-900">3 barobar ko'proq motivatsiya</p>
-                            <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                              Do'stingiz bilan birga rejalashtirish dangasalikni butunlay unutishning eng yaxshi usuli.
-                            </p>
-                          </div>
+                      {/* 2-afzallik */}
+                      <div className="flex items-start space-x-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100/80 transition-all border border-slate-100">
+                        <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 font-black shadow-xs">
+                          <Flame size={18} />
                         </div>
-
-                        <div className="flex items-start space-x-3 bg-amber-50/70 p-3 rounded-2xl border border-amber-100">
-                          <span className="text-base leading-none">⚡</span>
-                          <div>
-                            <p className="text-xs font-black text-slate-900">1-ga-1 do'stona duel</p>
-                            <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                              Do'stingizning har bir bajargan vazifasini ko'rib turasiz va o'zaro o'zib ketishga intilasiz!
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start space-x-3 bg-emerald-50/70 p-3 rounded-2xl border border-emerald-100">
-                          <span className="text-base leading-none">🎁</span>
-                          <div>
-                            <p className="text-xs font-black text-slate-900">+10 ball bonus</p>
-                            <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                              Do'stingiz taklif havolangiz orqali ilovani ochishi bilan ikkalangizga ham bonus beriladi!
-                            </p>
-                          </div>
+                        <div>
+                          <p className="text-xs font-black text-slate-900">1-ga-1 do'stona duel</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                            Do'stingizning har bir bajargan vazifasini jonli ko'rib, o'zaro o'zib ketishga intilasiz!
+                          </p>
                         </div>
                       </div>
 
-                      {/* 1-do'stni taklif qilish tugmasi */}
+                      {/* 3-afzallik */}
+                      <div className="flex items-start space-x-3 p-3 rounded-2xl bg-slate-50 hover:bg-slate-100/80 transition-all border border-slate-100">
+                        <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 font-black shadow-xs">
+                          <Award size={18} />
+                        </div>
+                        <div>
+                          <div className="flex items-center space-x-1.5">
+                            <p className="text-xs font-black text-slate-900">+10 ball start bonusi</p>
+                            <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-1.5 rounded">Sovg'a 🎁</span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                            Do'stingiz taklif havolangiz orqali ilovani ochishi bilan ikkalangizga ham bonus beriladi!
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bosh Harakat Tugmasi (Vibrant Neon Glow CTA) */}
+                    <div className="pt-2 space-y-2">
                       <button
                         onClick={shareScoreToTelegram}
                         className="w-full py-3.5 px-4 rounded-2xl bg-[#7052ff] hover:bg-[#6242f6] text-white text-sm font-black shadow-lg shadow-indigo-500/30 flex items-center justify-center space-x-2 active:scale-95 transition-all"
                       >
-                        <UserPlus size={17} />
+                        <UserPlus size={18} />
                         <span>Telegram orqali 1-do'stni taklif qilish 🚀</span>
                       </button>
 
-                      {/* Havola nusxalash */}
+                      {/* Havola nusxalash tugmasi */}
                       <button
                         onClick={copyReferralLink}
                         className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center space-x-2 active:scale-95 transition-all"
@@ -417,6 +472,12 @@ export const ScreenAnalytics: React.FC = () => {
                         {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} className="text-slate-500" />}
                         <span>{copied ? 'Shaxsiy havolangiz nusxalandi!' : 'Shaxsiy taklif havolasidan nusxa olish'}</span>
                       </button>
+                    </div>
+
+                    {/* Maxfiylik eslatmasi */}
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-center space-x-1.5 text-[10px] text-slate-400">
+                      <Lock size={11} className="text-slate-400 shrink-0" />
+                      <span>Do'stingiz faqat to'plagan ballaringizni ko'radi, shaxsiy rejalaringiz maxfiy qoladi.</span>
                     </div>
                   </div>
                 </div>
