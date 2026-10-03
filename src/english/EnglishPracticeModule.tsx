@@ -6,7 +6,7 @@ import { getEnglishProfile, getTestResults } from './utils/storage';
 import { RegistrationModal } from './components/RegistrationModal';
 import { SettingsSheet } from './components/SettingsSheet';
 import { IeltsDashboard } from './components/IeltsDashboard';
-import { MultilevelSpeakingView } from './components/MultilevelSpeakingView';
+import { MultilevelDashboard } from './components/MultilevelDashboard';
 import { triggerHaptic } from '../utils/telegram';
 import './tokens.css';
 
@@ -73,7 +73,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
             onRegistered={(p) => setProfile(p)}
           />
         )}
-        <MultilevelSpeakingView
+        <MultilevelDashboard
           onBack={handleReturnFromExam}
           userName={currentName}
         />
@@ -286,16 +286,13 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
 
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     <span className="text-[10px] font-bold bg-teal-50 text-teal-700 px-2.5 py-1 rounded-lg border border-teal-100">
-                      Part 1.1 (30s)
+                      🎙️ Speaking (P1-P3)
                     </span>
-                    <span className="text-[10px] font-bold bg-teal-50 text-teal-700 px-2.5 py-1 rounded-lg border border-teal-100">
-                      Part 1.2 (Rasmlar)
+                    <span className="text-[10px] font-bold bg-amber-50 text-amber-800 px-2.5 py-1 rounded-lg border border-amber-200">
+                      ✍️ Writing (Task 1 & 2)
                     </span>
-                    <span className="text-[10px] font-bold bg-teal-50 text-teal-700 px-2.5 py-1 rounded-lg border border-teal-100">
-                      Part 2 (Mavzu)
-                    </span>
-                    <span className="text-[10px] font-bold bg-teal-50 text-teal-700 px-2.5 py-1 rounded-lg border border-teal-100">
-                      Part 3 (Debat)
+                    <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg border border-emerald-100">
+                      📘 43 ta Savollar Bazasi
                     </span>
                     <span className="text-[10px] font-black bg-purple-50 text-purple-700 px-2.5 py-1 rounded-lg border border-purple-100">
                       Full Mock
@@ -303,7 +300,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
                   </div>
 
                   <div className="bg-teal-50/60 p-2.5 rounded-xl flex items-center justify-between text-[11px] text-teal-900 font-medium">
-                    <span>🎙️ Rasmiy CEFR mezonlari & 100+ savollar</span>
+                    <span>🇺🇿 DTM & CEFR B1-C1 to'liq savollar bazasi</span>
                     <span className="font-bold text-teal-700 group-hover:translate-x-0.5 transition-transform">Boshlash →</span>
                   </div>
                 </div>

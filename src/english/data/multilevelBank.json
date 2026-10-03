@@ -1,5 +1,645 @@
 {
+  "part1_1_questions_43": [
+    {
+      "number": 1,
+      "question": "Who is your favorite athlete?",
+      "sampleAnswer": "My favorite athlete is Cristiano Ronaldo. I admire him because of his strong discipline and outstanding performance on the field. He is extremely hardworking and always tries to improve himself. What I like most about him is his motivation and confidence. Even after becoming very successful, he continues to train seriously. I think he is a great role model for many young people."
+    },
+    {
+      "number": 2,
+      "question": "Where do you live?",
+      "sampleAnswer": "I live in Tashkent, which is the capital city of Uzbekistan. It is a large and modern city with many parks, restaurants, and shopping centers. I like living here because everything is quite convenient and there are many opportunities for education and work. However, sometimes the traGic can be heavy, especially during rush hours. Overall, I think it is a comfortable place to live."
+    },
+    {
+      "number": 3,
+      "question": "What do you usually do after school or work?",
+      "sampleAnswer": "After school or work, I usually take some time to relax and recharge. I often listen to music or watch short videos to clear my mind. Sometimes, I go for a walk, which helps me feel more refreshed. In the evening, I usually focus on my personal tasks, like studying or improving my skills. I think it is important to use this time productively, but also to have enough rest."
+    },
+    {
+      "number": 4,
+      "question": "What kind of weather do you dislike?",
+      "sampleAnswer": "I really dislike extremely hot weather. When the temperature is too high, I feel tired and uncomfortable, and it becomes diGicult to focus on daily activities. For example, in Tashkent, summers can be very hot, which makes it hard to spend time outside. I prefer mild or slightly cool weather because it is more comfortable and enjoyable."
+    },
+    {
+      "number": 5,
+      "question": "What is your favorite type of music?",
+      "sampleAnswer": "My favorite type of music is pop music. I enjoy it because it is catchy and easy to listen to in diGerent situations. Most pop songs have simple melodies and meaningful lyrics, which makes them enjoyable. I usually listen to music when I am relaxing or doing daily tasks. Sometimes, I also explore songs by artists like Ed Sheeran, whose music I find very calming and emotional."
+    },
+    {
+      "number": 6,
+      "question": "Do you live in a house or a flat?",
+      "sampleAnswer": "I live in a flat. It is quite comfortable and located in a convenient area of Tashkent. I like living in a flat because it is easier to maintain and usually closer to shops and public transport. However, sometimes it can be a bit noisy because of neighbors. Overall, I think it is a practical place to live."
+    },
+    {
+      "number": 7,
+      "question": "Can you tell me about your first teacher?",
+      "sampleAnswer": "My first teacher was a very kind and patient person. She had a gentle voice and always explained things in a clear and simple way. I remember she created a friendly and supportive classroom environment, so I never felt nervous to ask questions. She also used creative methods, like games and visual materials, to make lessons more engaging. Because of her, I developed a positive attitude toward learning from an early age."
+    },
+    {
+      "number": 8,
+      "question": "What hobbies do you enjoy?",
+      "sampleAnswer": "I enjoy several hobbies, but my favorite one is reading. I usually read books in my free time because it helps me relax and expand my vocabulary. I am especially interested in fiction and self-development books. Reading also improves my imagination and gives me new ideas. Sometimes, I also spend time listening to music or going for a walk, which helps me feel refreshed."
+    },
+    {
+      "number": 9,
+      "question": "What do you usually do with your close friends?",
+      "sampleAnswer": "I usually spend relaxed and enjoyable time with my close friends. We often meet at a café, have long conversations, and share our daily experiences. Sometimes we watch movies or play simple games together. I really enjoy these moments because they help me reduce stress and feel more positive. We also support each other and give useful advice when someone has a problem."
+    },
+    {
+      "number": 10,
+      "question": "Where is your hometown?",
+      "sampleAnswer": "My hometown is Tashkent. It is a large and vibrant city with a mix of modern buildings and green spaces. I like it because it has a lively atmosphere and many facilities, such as parks, cafés, and shopping centers. The city is also quite convenient for daily life. Although it can be busy at times, I still enjoy living there."
+    },
+    {
+      "number": 11,
+      "question": "Can you describe your room?",
+      "sampleAnswer": "My room is quite simple but comfortable. It is not very big, but it is well- organized and tidy. I have a bed, a study desk, and a small bookshelf. The desk is my favorite place because I spend a lot of time there studying and working. I also have some personal items, like photos and decorations, which make the room feel cozy. I prefer a clean and quiet environment, so I always try to keep everything in order."
+    },
+    {
+      "number": 12,
+      "question": "Where do you usually go in summer?",
+      "sampleAnswer": "In summer, I usually travel to quieter places to relax. Sometimes I visit the mountains or countryside, where the air is fresh and the environment is peaceful. I prefer natural places because they help me escape from the heat and busy city life. Occasionally, I also spend time at home in Tashkent, especially when I have plans or personal tasks. Overall, I like to use summer as a time to rest and recharge."
+    },
+    {
+      "number": 13,
+      "question": "What kind of movies do you like to watch?",
+      "sampleAnswer": "I like to watch movies with strong stories and deep emotions. My favorite genres are drama and thriller because they are engaging and sometimes unpredictable. I enjoy films that have well-developed characters and realistic situations. For example, movies like Inception are interesting to me because they make me think and focus. I usually watch movies in my free time to relax and enjoy a good storyline."
+    },
+    {
+      "number": 14,
+      "question": "Can you describe your neighbourhood?",
+      "sampleAnswer": "My neighbourhood is quite peaceful and well-organized. It has several apartment buildings, small shops, and green areas. There are also parks where people can walk or relax. I like it because it is not too crowded and the environment feels safe. In Tashkent, many neighbourhoods are developing, so there are modern facilities nearby, which makes daily life more convenient."
+    },
+    {
+      "number": 15,
+      "question": "What do you do in the evenings?",
+      "sampleAnswer": "In the evenings, I usually try to relax after a long day. I often spend time at home, listening to music or watching something interesting. Sometimes, I review my notes or focus on self-study. If I feel tired, I prefer calm activities like reading or taking a short walk. This helps me clear my mind and prepare for the next day."
+    },
+    {
+      "number": 16,
+      "question": "What is the best time of the year for you?",
+      "sampleAnswer": "For me, the best time of the year is spring. The weather is mild and pleasant, and everything looks fresh and green. In Tashkent, spring is especially beautiful because trees start to bloom and the air feels clean. I enjoy going outside, walking in parks, and spending time in nature. It also gives me more energy and motivation."
+    },
+    {
+      "number": 17,
+      "question": "What do you do when you feel bored?",
+      "sampleAnswer": "When I feel bored, I try to do something useful or entertaining. I often listen to music or watch interesting videos. Sometimes, I read a book or learn something new online. If I want to change my mood, I go for a short walk or talk to my friends. These activities help me feel more active and positive."
+    },
+    {
+      "number": 18,
+      "question": "Can you tell me about a person you like?",
+      "sampleAnswer": "I really like a person who is very kind and supportive. He is someone I respect because he always treats others with care and understanding. What I appreciate most is his positive attitude and strong mindset. He is also very responsible and hardworking, which makes him a good example for others. I enjoy spending time with him because conversations are always meaningful and interesting."
+    },
+    {
+      "number": 19,
+      "question": "What is your favorite meal?",
+      "sampleAnswer": "My favorite meal is plov. It is a traditional dish from Uzbekistan, and it has a very rich and flavorful taste. It is usually made with rice, meat, carrots, and spices, which create a unique combination. I like it because it is both filling and delicious. I often eat it with my family, especially on special occasions, so it also has a strong cultural meaning for me."
+    },
+    {
+      "number": 20,
+      "question": "Do you live in a house or a flat?",
+      "sampleAnswer": "I live in a flat. It is practical and easy to manage. I like it because everything is nearby, such as shops and public transport. My flat is also quite comfortable and well-organized. In Tashkent, many people prefer flats because they are more convenient for daily life."
+    },
+    {
+      "number": 21,
+      "question": "What is your favorite hobby?",
+      "sampleAnswer": "My favorite hobby is reading. I enjoy it because it helps me relax and improve my vocabulary. I usually read fiction and self-development books, which give me new ideas and perspectives. Reading also improves my imagination and concentration. I often spend my free time with a book, especially in a quiet and comfortable place."
+    },
+    {
+      "number": 22,
+      "question": "What are traditional clothes in your country?",
+      "sampleAnswer": "In Uzbekistan, traditional clothes are very colorful and elegant. Men often wear a long coat called a chapan, while women wear beautiful dresses with bright patterns and detailed embroidery. These clothes are usually made from light fabrics, which are comfortable in warm weather. I think traditional clothing is important because it reflects culture and national identity."
+    },
+    {
+      "number": 23,
+      "question": "Do you have a healthy diet?",
+      "sampleAnswer": "Yes, I try to have a balanced and healthy diet. I usually eat fresh vegetables, fruits, and home-cooked meals. I also try to avoid too much fast food and sugary drinks. In my opinion, eating healthy food helps me feel more energetic and focused. Sometimes I eat traditional dishes, but I try to keep everything in moderation."
+    },
+    {
+      "number": 24,
+      "question": "Do you use the internet?",
+      "sampleAnswer": "Yes, I use the internet every day, and it plays a very important role in my daily life. I mainly use it for studying, such as searching for reliable information, watching educational videos, and improving my language skills. It also helps me stay updated with news and global trends. In addition, I use the internet for entertainment, like listening to music or watching interesting content. Sometimes, I communicate with my friends through social media or messaging platforms. However, I try to manage my time online carefully and avoid spending too much time on unnecessary things."
+    },
+    {
+      "number": 25,
+      "question": "What is your favorite drink?",
+      "sampleAnswer": "My favorite drink is green tea. I like it because it has a light and refreshing taste, and it is also good for health. I usually drink it in the morning or after meals, as it helps me feel relaxed and refreshed. In Uzbekistan, tea is an important part of daily life, so I grew up drinking it quite often. I prefer it without sugar because it tastes more natural and clean."
+    },
+    {
+      "number": 26,
+      "question": "What is your favorite pet?",
+      "sampleAnswer": "My favorite pet is a dog. I like dogs because they are loyal, friendly, and very intelligent. They can easily build a strong bond with their owners and provide emotional support. I especially enjoy spending time with dogs, such as playing or going for walks. In my opinion, having a dog can also teach responsibility and care. Overall, I think dogs make great companions and bring positive energy to daily life."
+    },
+    {
+      "number": 27,
+      "question": "What does your typical day look like?",
+      "sampleAnswer": "My typical day is quite structured and productive. I usually start my day early and prepare for my main tasks, such as studying or working. During the day, I focus on my responsibilities and try to stay organized and eGicient. I often take short breaks to relax and refresh my mind. In the evening, I spend time reviewing what I learned or working on personal goals. Sometimes, I also relax by listening to music or watching something interesting. Overall, I try to keep a balanced routine between work and rest."
+    },
+    {
+      "number": 28,
+      "question": "How do you decorate your room?",
+      "sampleAnswer": "I prefer a simple and organized style when I decorate my room. I use a few decorations like photos, small plants, and soft lighting to create a cozy atmosphere. I also choose colors that are calm and neutral, which helps me feel relaxed. My desk area is always clean and functional, because I spend a lot of time studying there. I think a well-decorated room should be both comfortable and practical."
+    },
+    {
+      "number": 29,
+      "question": "Do you have many books at home?",
+      "sampleAnswer": "Yes, I have quite a few books at home, especially educational and self- development books. I keep them on a small bookshelf near my desk, so they are easy to access. I like having books around because they create a positive and intellectual environment. Even when I am not reading, I feel motivated when I see them. I try to build my collection slowly and choose books that are useful and meaningful."
+    },
+    {
+      "number": 30,
+      "question": "What do you do on holidays?",
+      "sampleAnswer": "On holidays, I usually try to relax and take a break from my daily routine. I often spend time with my family or close friends, which makes the day more enjoyable and meaningful. Sometimes, we go out to parks, cafés, or other interesting places. I also like to use this time for rest, such as watching movies or listening to music. If I have enough time, I may focus on my hobbies or personal goals. Overall, holidays help me recharge and feel more refreshed."
+    },
+    {
+      "number": 31,
+      "question": "Can you tell me about your bedroom?",
+      "sampleAnswer": "My bedroom is simple but very comfortable. It is not very large, but it is well- organized and clean. I have a bed, a study desk, and a small bookshelf. The desk is the most important part for me because I spend a lot of time there studying and working. I also keep some personal items like photos and a small plant, which make the room feel more cozy and lively. I prefer a quiet and tidy space, so I always try to keep everything in order."
+    },
+    {
+      "number": 32,
+      "question": "Do you do any sport?",
+      "sampleAnswer": "Yes, I do sport regularly, although not at a professional level. I usually go for a run or do light exercises to stay active and healthy. Sometimes, I also play football with my friends, which is both fun and energetic. Sport helps me reduce stress and improve my physical condition. I think it is important to stay consistent and make it a part of daily routine."
+    },
+    {
+      "number": 33,
+      "question": "What do you enjoy doing most at home?",
+      "sampleAnswer": "At home, I mostly enjoy activities that help me relax and stay productive at the same time. I like reading books and improving my knowledge, especially in a quiet environment. I also enjoy listening to music or watching interesting videos when I want to rest. Sometimes, I focus on self-study or work on my personal goals. Being at home gives me a comfortable and peaceful atmosphere, which makes these activities more enjoyable."
+    },
+    {
+      "number": 34,
+      "question": "Do you like watching TV?",
+      "sampleAnswer": "Yes, I sometimes watch TV, but not very often. I prefer using the internet because it gives me more control over what I watch. However, TV can still be useful for watching news or interesting programs. When I have free time, I occasionally watch movies or shows, especially if they are engaging and informative."
+    },
+    {
+      "number": 35,
+      "question": "What food do you like in your country?",
+      "sampleAnswer": "In Uzbekistan, I really like traditional food because it is rich and full of flavor. My favorite dish is plov, which is made with rice, meat, carrots, and spices. I also enjoy other local dishes because they are usually fresh and satisfying. I think Uzbek food is special because it reflects our culture and hospitality."
+    },
+    {
+      "number": 36,
+      "question": "Do you study or work?",
+      "sampleAnswer": "At the moment, I am mainly focused on my studies. I spend most of my time learning new things and improving my skills, especially in areas that are important for my future career. My daily routine is quite structured, and I try to stay consistent and disciplined. Sometimes, I also do small tasks or personal projects to gain practical experience. Overall, I see this period as an important stage for my development."
+    },
+    {
+      "number": 37,
+      "question": "When do you usually get up?",
+      "sampleAnswer": "I usually get up early in the morning, around 7 o'clock. I prefer waking up early because it gives me enough time to prepare for the day and start my tasks without stress. In the morning, I feel more fresh and focused, so I can be more productive. Sometimes, on weekends or holidays, I wake up a bit later to rest more. Overall, I try to keep a consistent routine."
+    },
+    {
+      "number": 38,
+      "question": "What do you do to stay healthy?",
+      "sampleAnswer": "I try to follow a balanced lifestyle to stay healthy. I usually do light physical activities like walking or simple exercises, which help me stay active. I also pay attention to my diet and try to eat fresh and nutritious food. In addition, I make sure to get enough sleep because it is important for both physical and mental health. I believe consistency is the key to maintaining a healthy routine."
+    },
+    {
+      "number": 39,
+      "question": "Do you have a computer?",
+      "sampleAnswer": "Yes, I do have a computer, and I use it almost every day. It is an essential tool for my studies and daily tasks. I usually use it to search for information, watch educational videos, and improve my skills. I also use it for writing and organizing my work. Sometimes, I use it for entertainment, like watching movies or listening to music. Overall, it is very useful and saves a lot of time."
+    },
+    {
+      "number": 40,
+      "question": "What animal do you like?",
+      "sampleAnswer": "I really like dogs because they are loyal, friendly, and intelligent. They can easily build a strong connection with people and give emotional support. I enjoy spending time with dogs, especially playing or going for walks. I also think they are very protective and can be good companions. Overall, dogs bring a lot of positive energy and happiness."
+    },
+    {
+      "number": 41,
+      "question": "How do you spend time with your family?",
+      "sampleAnswer": "I usually spend quality time with my family in a relaxed and comfortable way. We often have meals together and talk about our daily activities, which helps us stay connected. Sometimes, we watch movies or TV programs, especially in the evening. On weekends or holidays, we may go out to parks or visit relatives. I really value these moments because they create a warm and supportive atmosphere at home."
+    },
+    {
+      "number": 42,
+      "question": "Can you tell me about your neighborhood?",
+      "sampleAnswer": "My neighborhood is quite calm and well-organized. It has several apartment buildings, small local shops, and some green areas where people can relax. The environment is generally clean and safe, which makes it comfortable for daily life. In Tashkent, many neighborhoods are becoming more modern, so there are also new facilities nearby. I like my area because it is not too crowded, but still convenient and accessible."
+    },
+    {
+      "number": 43,
+      "question": "What is your favourite colour?",
+      "sampleAnswer": "My favourite colour is blue. I like it because it is calm and relaxing, and it creates a peaceful atmosphere. Blue also reminds me of the sky and the sea, which gives a sense of freshness and freedom. I often choose blue in my clothes or personal items because it looks simple but elegant. Overall, I think it is a very balanced and comfortable colour."
+    }
+  ],
+  "part1_1_docx_questions": [
+    "What is your favorite food?",
+    "Describe your hometown.",
+    "What is your favorite weather?",
+    "Describe your house.",
+    "Do you get up early or late?",
+    "what is your favorite drink?",
+    "What is your favorite season?",
+    "Tell me about your school.",
+    "Do you think you could be a teacher?",
+    "What do you do to relax?",
+    "Tell me about your family.",
+    "What is your favorite number?",
+    "Tell me about yourself.",
+    "What time do you usually go to bed?",
+    "What is your favorite type of music?",
+    "What is your favorite color?",
+    "Do you like shopping?",
+    "What do you do on weekends?",
+    "Do you like travelling?",
+    "Who is your best friend?",
+    "What types of books do you like to read?",
+    "Who is your first teacher?",
+    "Are you living in a flat or house?",
+    "What do you do in the evening?",
+    "Do you work or are you a student?",
+    "How important it is to use the internet for you?",
+    "Who is your favorite singer?",
+    "What do you usually eat for breakfast?",
+    "Where do you like to go shopping?",
+    "Tell me about popular museums in your country?",
+    "How do you go to work or school?",
+    "How often do you go to the cinema?",
+    "Do you enjoy shopping for clothes?",
+    "Do you enjoy cooking?",
+    "When do you wake up?",
+    "What kind of exercise do you like to do?",
+    "Do you have a large family or a small family?",
+    "Have you ever tried any extreme sports?",
+    "Do you have a healthy diet?",
+    "What do you like to do at home?",
+    "Do you play any musical instruments?",
+    "What is your favorite way to relax after a busy day?",
+    "What is your favorite season?",
+    "What do you do in the evening?",
+    "Do you often go to concerts?",
+    "What is your hobby?",
+    "What is your country famous for?",
+    "Do you keep photographs in your computer?",
+    "Who is your favorite person your family?",
+    "Have you ever given anybody flowers?",
+    "Do you read newspapers?",
+    "Do you usually run in the morning?",
+    "Do you watch advertisements?",
+    "What type of accommodation do you live?",
+    "Do you like outdoor activities?",
+    "What is your favorite type of transport?",
+    "Do you watch sports on TV?",
+    "Do you like watching movies? What movies do you like to watch?"
+  ],
   "part1_1": [
+    {
+      "id": "official_p1_1_set_1",
+      "source": "Multilevel Speaking Part 1.1 (43 ta savol)",
+      "topic": "Official Topic Set 1",
+      "questions": [
+        "Who is your favorite athlete?",
+        "Where do you live?",
+        "What do you usually do after school or work?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "official_p1_1_set_2",
+      "source": "Multilevel Speaking Part 1.1 (43 ta savol)",
+      "topic": "Official Topic Set 2",
+      "questions": [
+        "What kind of weather do you dislike?",
+        "What is your favorite type of music?",
+        "Do you live in a house or a flat?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "official_p1_1_set_3",
+      "source": "Multilevel Speaking Part 1.1 (43 ta savol)",
+      "topic": "Official Topic Set 3",
+      "questions": [
+        "Can you tell me about your first teacher?",
+        "What hobbies do you enjoy?",
+        "What do you usually do with your close friends?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "official_p1_1_set_4",
+      "source": "Multilevel Speaking Part 1.1 (43 ta savol)",
+      "topic": "Official Topic Set 4",
+      "questions": [
+        "Where is your hometown?",
+        "Can you describe your room?",
+        "Where do you usually go in summer?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "official_p1_1_set_5",
+      "source": "Multilevel Speaking Part 1.1 (43 ta savol)",
+      "topic": "Official Topic Set 5",
+      "questions": [
+        "What kind of movies do you like to watch?",
+        "Can you describe your neighbourhood?",
+        "What do you do in the evenings?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "official_p1_1_set_6",
+      "source": "Multilevel Speaking Part 1.1 (43 ta savol)",
+      "topic": "Official Topic Set 6",
+      "questions": [
+        "What is the best time of the year for you?",
+        "What do you do when you feel bored?",
+        "Can you tell me about a person you like?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "official_p1_1_set_7",
+      "source": "Multilevel Speaking Part 1.1 (43 ta savol)",
+      "topic": "Official Topic Set 7",
+      "questions": [
+        "What is your favorite meal?",
+        "Do you live in a house or a flat?",
+        "What is your favorite hobby?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "official_p1_1_set_8",
+      "source": "Multilevel Speaking Part 1.1 (43 ta savol)",
+      "topic": "Official Topic Set 8",
+      "questions": [
+        "What are traditional clothes in your country?",
+        "Do you have a healthy diet?",
+        "Do you use the internet?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "official_p1_1_set_9",
+      "source": "Multilevel Speaking Part 1.1 (43 ta savol)",
+      "topic": "Official Topic Set 9",
+      "questions": [
+        "What is your favorite drink?",
+        "What is your favorite pet?",
+        "What does your typical day look like?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "official_p1_1_set_10",
+      "source": "Multilevel Speaking Part 1.1 (43 ta savol)",
+      "topic": "Official Topic Set 10",
+      "questions": [
+        "How do you decorate your room?",
+        "Do you have many books at home?",
+        "What do you do on holidays?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "official_p1_1_set_11",
+      "source": "Multilevel Speaking Part 1.1 (43 ta savol)",
+      "topic": "Official Topic Set 11",
+      "questions": [
+        "Can you tell me about your bedroom?",
+        "Do you do any sport?",
+        "What do you enjoy doing most at home?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "official_p1_1_set_12",
+      "source": "Multilevel Speaking Part 1.1 (43 ta savol)",
+      "topic": "Official Topic Set 12",
+      "questions": [
+        "Do you like watching TV?",
+        "What food do you like in your country?",
+        "Do you study or work?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "official_p1_1_set_13",
+      "source": "Multilevel Speaking Part 1.1 (43 ta savol)",
+      "topic": "Official Topic Set 13",
+      "questions": [
+        "When do you usually get up?",
+        "What do you do to stay healthy?",
+        "Do you have a computer?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "official_p1_1_set_14",
+      "source": "Multilevel Speaking Part 1.1 (43 ta savol)",
+      "topic": "Official Topic Set 14",
+      "questions": [
+        "What animal do you like?",
+        "How do you spend time with your family?",
+        "Can you tell me about your neighborhood?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_1",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 1",
+      "questions": [
+        "What is your favorite food?",
+        "Describe your hometown.",
+        "What is your favorite weather?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_2",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 2",
+      "questions": [
+        "Describe your house.",
+        "Do you get up early or late?",
+        "what is your favorite drink?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_3",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 3",
+      "questions": [
+        "What is your favorite season?",
+        "Tell me about your school.",
+        "Do you think you could be a teacher?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_4",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 4",
+      "questions": [
+        "What do you do to relax?",
+        "Tell me about your family.",
+        "What is your favorite number?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_5",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 5",
+      "questions": [
+        "Tell me about yourself.",
+        "What time do you usually go to bed?",
+        "What is your favorite type of music?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_6",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 6",
+      "questions": [
+        "What is your favorite color?",
+        "Do you like shopping?",
+        "What do you do on weekends?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_7",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 7",
+      "questions": [
+        "Do you like travelling?",
+        "Who is your best friend?",
+        "What types of books do you like to read?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_8",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 8",
+      "questions": [
+        "Who is your first teacher?",
+        "Are you living in a flat or house?",
+        "What do you do in the evening?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_9",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 9",
+      "questions": [
+        "Do you work or are you a student?",
+        "How important it is to use the internet for you?",
+        "Who is your favorite singer?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_10",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 10",
+      "questions": [
+        "What do you usually eat for breakfast?",
+        "Where do you like to go shopping?",
+        "Tell me about popular museums in your country?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_11",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 11",
+      "questions": [
+        "How do you go to work or school?",
+        "How often do you go to the cinema?",
+        "Do you enjoy shopping for clothes?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_12",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 12",
+      "questions": [
+        "Do you enjoy cooking?",
+        "When do you wake up?",
+        "What kind of exercise do you like to do?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_13",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 13",
+      "questions": [
+        "Do you have a large family or a small family?",
+        "Have you ever tried any extreme sports?",
+        "Do you have a healthy diet?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_14",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 14",
+      "questions": [
+        "What do you like to do at home?",
+        "Do you play any musical instruments?",
+        "What is your favorite way to relax after a busy day?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_15",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 15",
+      "questions": [
+        "What is your favorite season?",
+        "What do you do in the evening?",
+        "Do you often go to concerts?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_16",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 16",
+      "questions": [
+        "What is your hobby?",
+        "What is your country famous for?",
+        "Do you keep photographs in your computer?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_17",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 17",
+      "questions": [
+        "Who is your favorite person your family?",
+        "Have you ever given anybody flowers?",
+        "Do you read newspapers?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_18",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 18",
+      "questions": [
+        "Do you usually run in the morning?",
+        "Do you watch advertisements?",
+        "What type of accommodation do you live?"
+      ],
+      "secondsPerQuestion": 30
+    },
+    {
+      "id": "docx_p1_1_set_19",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "topic": "Exam Topic Set 19",
+      "questions": [
+        "Do you like outdoor activities?",
+        "What is your favorite type of transport?",
+        "Do you watch sports on TV?"
+      ],
+      "secondsPerQuestion": 30
+    },
     {
       "id": "ml_cefr_1_p1_1",
       "source": "CEFR Speaking Tests",
@@ -276,6 +916,307 @@
     }
   ],
   "part1_2": [
+    {
+      "id": "ml_unit1_nature_vs_city",
+      "source": "Multilevel Speaking Part 1.2 - Unit 1",
+      "title": "Nature vs Busy Urban Environment",
+      "prompt": "Look at the pictures comparing a person relaxing quietly in nature with a bustling, crowded city street.",
+      "questions": [
+        "What do you see in these pictures?",
+        "What are the benefits of spending time in nature compared to being in a busy city?",
+        "Why do some people enjoy living in a quiet area rather than in a busy urban environment?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_1",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: Why people like to travel by plane...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "Why people like to travel by plane?",
+        "Which transport do you prefer?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_2",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: Why do people get excited about sales an...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "Why do people get excited about sales and discounts?",
+        "Do you prefer indoor or outdoor markets?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_3",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: what is your favorite outdoor activity...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "what is your favorite outdoor activity?",
+        "Which one is more important? Outdoor or indoor sports?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_4",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: What kind of park do you like to go...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "What kind of park do you like to go?",
+        "Why people like to go to different places?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_5",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: Do you prefer taking selfies or taking p...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "Do you prefer taking selfies or taking pictures with a camera?",
+        "Why do people prefer to take pictures with their phones?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_6",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: Are traditional holidays better than vis...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "Are traditional holidays better than visiting museums?",
+        "Why do some people think that museums are boring?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_7",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: what are the advantages of working from ...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "what are the advantages of working from home?",
+        "why do some people prefer to work in an office?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_8",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: What is the impact of bicycles and cars ...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "What is the impact of bicycles and cars on the environment?",
+        "Why do some people prefer to have their own car?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_9",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: In which way can people get more informa...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "In which way can people get more information?",
+        "Why some people prefer reading books than watching news?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_10",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: Why do some people prefer going to the c...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "Why do some people prefer going to the concerts?",
+        "Which one is better for you? Going to concerts or listening to music by headphones?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_11",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: Do you prefer travelling by taxi or buy ...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "Do you prefer travelling by taxi or buy bus?",
+        "Why do some people think cars are better than public transport?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_12",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: What are the main advantages of online e...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "What are the main advantages of online education?",
+        "What suggestion would you give to improve educational sytem?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_13",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: What kind of food do you eat...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "What kind of food do you eat?",
+        "Why do some people prefer junk food over healthy food?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_14",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: Do you prefer eating alone or with other...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "Do you prefer eating alone or with others?",
+        "What kind of food do people eat in your country?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_15",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: What are the advantages of reading e-boo...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "What are the advantages of reading e-books?",
+        "Why do some people prefer to read paper books?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_16",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: What are the advantages of indoor/outdoo...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "What are the advantages of indoor/outdoor activities?",
+        "Why do some children like outdoor activities?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_17",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: What are the advantages of online shoppi...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "What are the advantages of online shopping?",
+        "How has the internet changed the way people do shopping?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_18",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: What is the advantage of buying products...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "What is the advantage of buying products from local farmers over the supermarket?",
+        "Why do some people prefer to shop in supermarkets?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_19",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: What are the benefits of travelling by t...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "What are the benefits of travelling by train?",
+        "Why do some people prefer to travel by plane?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_20",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: What are the advantages of family travel...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "What are the advantages of family travelling?",
+        "Which types of trip would you prefer?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_21",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: What are the advantages of doing shoppin...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "What are the advantages of doing shopping with friends?",
+        "Why do some people prefer to shop alone?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_22",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: What are the benefits of eating alone...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "What are the benefits of eating alone?",
+        "What are the benefits of eating with friends?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_23",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: What are disadvantages of playing phone ...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "What are disadvantages of playing phone too much?",
+        "What are the advantages of playing outside?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p1_2_24",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Picture Topic: What do you see in the pictures...",
+      "prompt": "Look at the pictures comparing two aspects and answer the questions.",
+      "questions": [
+        "What do you see in the pictures?",
+        "What are the advantages of living in the countryside?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
     {
       "id": "ml_cefr_1_p1_2",
       "source": "CEFR Speaking Tests",
@@ -602,6 +1543,78 @@
   ],
   "part2": [
     {
+      "id": "docx_p2_1",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Tell me about a moment you had to be honest althou...",
+      "questions": [
+        "Tell me about a moment you had to be honest although it was difficult.",
+        "How did the other person react to your honesty?",
+        "Why do you think being honest, even in challenging situations."
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p2_2",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Tell me about a time when you achieved something i...",
+      "questions": [
+        "Tell me about a time when you achieved something important.",
+        "How did this achievement make you feel?",
+        "What do you think are the key factors to achieving success in life?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p2_3",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Tell me about a time when you received a piece of ...",
+      "questions": [
+        "Tell me about a time when you received a piece of advice",
+        "How did this advice help you?",
+        "Do you think it is better to get advice from family or friends?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p2_4",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Tell me about a difficult task you had to do....",
+      "questions": [
+        "Tell me about a difficult task you had to do.",
+        "How did you handle the task?",
+        "What are some common challenges that people face in their daily lives?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p2_5",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Tell me about an important decision you made indep...",
+      "questions": [
+        "Tell me about an important decision you made independently.",
+        "How did this decision impact on your life?",
+        "How important is it to get advice while making a decision?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p2_6",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "title": "Tell me about a time when you did something but fa...",
+      "questions": [
+        "Tell me about a time when you did something but failed.",
+        "How did this failure impact on your life?",
+        "Is failure important for people to grow?"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
       "id": "ml_cefr_1_p2",
       "source": "CEFR Speaking Tests",
       "title": "CEFR Test 1 - Part 2 (Topic Presentation)",
@@ -891,6 +1904,91 @@
     }
   ],
   "part3": [
+    {
+      "id": "docx_p3_1",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "statement": "Public transport should be completely free of charge for all citizens.",
+      "forPoints": [
+        "Free transport significantly reduces traffic congestion in cities",
+        "It ensures equal mobility and access for low-income populations",
+        "Encourages eco-friendly travel and cuts urban emissions"
+      ],
+      "againstPoints": [
+        "Funding free transport burdens taxpayers and municipal budgets",
+        "Severe overcrowding could reduce overall quality and punctuality",
+        "People might undervalue or misuse free public infrastructure"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p3_2",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "statement": "Younger students (under 16) should be restricted from unrestricted Internet access.",
+      "forPoints": [
+        "Protects young students from dangerous and harmful online material",
+        "Reduces classroom and study disruptions and social media distractions",
+        "Prevents screen addiction and preserves healthy sleep routines"
+      ],
+      "againstPoints": [
+        "The internet is an indispensable educational and research tool",
+        "Students need early digital literacy to prepare for modern careers",
+        "Strict bans might lead to secretive behavior rather than responsible usage"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p3_3",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "statement": "Books are better than movies for deep storytelling and emotional impact.",
+      "forPoints": [
+        "Books allow readers to build rich imaginations of characters and worlds",
+        "Written narratives explore internal psychology and subtleties in detail",
+        "Enhances language comprehension and cognitive analytical skills"
+      ],
+      "againstPoints": [
+        "Movies offer immersive visual and musical sensory experiences",
+        "Films are more accessible and save time for busy individuals",
+        "Cinematography communicates collective emotions instantly"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p3_4",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "statement": "Learning to play a musical instrument should be a mandatory school subject.",
+      "forPoints": [
+        "Improves brain plasticity, memory, and concentration in children",
+        "Teaches patience, discipline, and emotional self-expression",
+        "Fosters creativity beyond standard STEM academic subjects"
+      ],
+      "againstPoints": [
+        "Instruments and specialized instructors are expensive for public schools",
+        "Forcing unmusical students can cause undue stress and resentment",
+        "Curriculum time could be better allocated to core literacy and science"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
+    {
+      "id": "docx_p3_5",
+      "source": "2025-2026 Multilevel Exam Archive",
+      "statement": "Governments should increase the cost of fuel to protect the natural environment.",
+      "forPoints": [
+        "Incentivizes drivers to shift towards public transit and electric cars",
+        "Directly reduces fossil fuel consumption and toxic emissions",
+        "Generates tax revenue that can be invested in green renewable projects"
+      ],
+      "againstPoints": [
+        "Higher fuel prices trigger rapid inflation across food and logistics",
+        "Disproportionately hurts rural and low-income commuters without alternatives",
+        "May harm industrial competitiveness without stopping global polluters"
+      ],
+      "prepSeconds": 60,
+      "speakingSeconds": 120
+    },
     {
       "id": "ml_cefr_1_p3",
       "source": "CEFR Speaking Tests",

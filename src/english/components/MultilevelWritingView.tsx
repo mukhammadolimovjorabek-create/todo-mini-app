@@ -1,0 +1,552 @@
+import React, { useState } from 'react';
+import { ArrowLeft, Sparkles, CheckCircle2, AlertCircle, Clock, Eye, EyeOff } from 'lucide-react';
+import { triggerHaptic } from '../../utils/telegram';
+import { saveTestResult } from '../utils/storage';
+import type { TestResultItem } from '../types';
+import {
+  multilevelWritingBank,
+  type MultilevelWritingTask1Exercise,
+  type MultilevelWritingTask2Topic,
+} from '../data/multilevelBank';
+
+interface Props {
+  onBack: () => void;
+  userName: string;
+}
+
+type WritingTab = 'task1' | 'task2';
+
+interface WritingBandBreakdown {
+  overallBand: number;
+  cefrLevel: string;
+  taskResponse: number;
+  coherenceCohesion: number;
+  lexicalResource: number;
+  grammaticalRange: number;
+  wordCount: number;
+  strengths: string[];
+  improvements: string[];
+  recommendedVocabulary: { word: string; meaning: string; example: string }[];
+}
+
+export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _userName }) => {
+  const [activeTab, setActiveTab] = useState<WritingTab>('task2');
+  
+  // Task 1 state
+  const [task1Idx, setTask1Idx] = useState(0);
+  const [subTask1Mode, setSubTask1Mode] = useState<'task1_1' | 'task1_2'>('task1_2');
+  
+  // Task 2 state
+  const [task2Idx, setTask2Idx] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+
+  // Input & evaluation
+  const [essayText, setEssayText] = useState('');
+  const [showModelAnswer, setShowModelAnswer] = useState(false);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [result, setResult] = useState<WritingBandBreakdown | null>(null);
+
+  // Timer: 60 minutes default
+  const [timeLeft, setTimeLeft] = useState<number>(60 * 60);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+  // Time tracking
+  const [startTime] = useState<string>(() => {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  });
+
+  const task1List = multilevelWritingBank.task1_exercises || [];
+  const currentTask1: MultilevelWritingTask1Exercise | undefined = task1List[task1Idx];
+
+  const task2List = multilevelWritingBank.task2_topics || [];
+  const filteredTask2 = selectedCategory === 'ALL'
+    ? task2List
+    : task2List.filter((t) => t.category.toLowerCase().includes(selectedCategory.toLowerCase()));
+  const currentTask2: MultilevelWritingTask2Topic | undefined = filteredTask2[task2Idx] || task2List[0];
+
+  const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
+  const minWordsRequired = activeTab === 'task1' ? (subTask1Mode === 'task1_1' ? 50 : 120) : 180;
+  const targetWords = activeTab === 'task1' ? (subTask1Mode === 'task1_1' ? '50-60' : '120-150') : '180-200';
+
+  // Format timer
+  const formatTimer = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  React.useEffect(() => {
+    let interval: any = null;
+    if (isTimerRunning && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isTimerRunning, timeLeft]);
+
+  const handleEvaluate = () => {
+    if (wordCount < 30) {
+      triggerHaptic('heavy');
+      alert(`Iltimos, baholash uchun kamida 30 ta so'z yozing. Hozirda: ${wordCount} ta so'z.`);
+      return;
+    }
+
+    setIsEvaluating(true);
+    triggerHaptic('heavy');
+
+    setTimeout(() => {
+      // Dynamic criteria evaluation
+      let baseScore = 5.0;
+      if (wordCount >= minWordsRequired) baseScore += 1.5;
+      else if (wordCount >= minWordsRequired * 0.7) baseScore += 0.8;
+
+      const complexWords = [
+        'furthermore', 'moreover', 'consequently', 'nevertheless', 'specifically',
+        'significant', 'perspective', 'demonstrate', 'illustrate', 'substantially',
+        'moreover', 'although', 'whereas', 'however', 'fundamentally'
+      ];
+      const foundComplex = complexWords.filter((w) => essayText.toLowerCase().includes(w));
+      const lexicalScore = Math.min(8.5, Number((baseScore + foundComplex.length * 0.35).toFixed(1)));
+
+      const sentences = essayText.split(/[.!?]+/).filter(Boolean);
+      const avgLen = sentences.length > 0 ? wordCount / sentences.length : 0;
+      const grammarScore = avgLen >= 10 && avgLen <= 26 ? Math.min(8.5, baseScore + 0.6) : Math.max(5.0, baseScore - 0.4);
+
+      const cohesionScore = Math.min(8.5, Number((baseScore + (foundComplex.length > 2 ? 0.8 : 0.2)).toFixed(1)));
+      const taskScore = wordCount >= minWordsRequired ? Math.min(8.5, baseScore + 0.7) : Math.max(4.5, baseScore - 0.6);
+
+      const overall = Number(((taskScore + cohesionScore + lexicalScore + grammarScore) / 4).toFixed(1));
+
+      let cefr = 'B1 (Threshold)';
+      if (overall >= 7.5) cefr = 'C1 (Advanced)';
+      else if (overall >= 6.0) cefr = 'B2 (Vantage)';
+
+      const evaluation: WritingBandBreakdown = {
+        overallBand: overall,
+        cefrLevel: cefr,
+        taskResponse: taskScore,
+        coherenceCohesion: cohesionScore,
+        lexicalResource: lexicalScore,
+        grammaticalRange: grammarScore,
+        wordCount,
+        strengths: [
+          wordCount >= minWordsRequired
+            ? `Belgilangan hajm me'yori bajarildi (${wordCount} ta so'z).`
+            : `Fikrlar ifodalangan, lekin hajm to'ldirilishi kerak (${wordCount}/${minWordsRequired}).`,
+          foundComplex.length > 0
+            ? `Bog'lovchi so'zlar qo'llanildi: ${foundComplex.slice(0, 3).join(', ')}.`
+            : `Fikr ketma-ketligi shakllantirildi.`,
+          `Mavzu talablariga mos yozish uslubi saqlangan.`,
+        ],
+        improvements: [
+          wordCount < minWordsRequired
+            ? `So'zlar sonini kamida ${minWordsRequired} taga yetkazing (hozir ${wordCount} ta).`
+            : `B2/C1 darajasidagi akademik bog'lovchilar ('Consequently', 'On the contrary') miqdorini oshiring.`,
+          `Xat yoki inshoda har bir fikr uchun alohida misol (example) keltiring.`,
+          `Grammatik murakkablikni (Compound & Complex sentences) oshiring.`,
+        ],
+        recommendedVocabulary: [
+          { word: 'Substantial', meaning: 'Sezilarli, salmoqli', example: 'This approach offers substantial advantages.' },
+          { word: 'Consequently', meaning: 'Natijada, binobarin', example: 'Consequently, the public benefits directly.' },
+          { word: 'Essential', meaning: 'Juda muhim, asosiy', example: 'Time management is an essential life skill.' },
+        ],
+      };
+
+      setResult(evaluation);
+      setIsEvaluating(false);
+
+      // Save to Test Results History
+      const now = new Date();
+      const endTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const dateStr = now.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.');
+
+      const title = activeTab === 'task1'
+        ? `Milliy Multilevel: Writing Task 1 (${subTask1Mode === 'task1_1' ? 'Do\'stga xat' : 'Rasmiy xat'})`
+        : `Milliy Multilevel: Writing Task 2 (Insho)`;
+
+      const topicTitle = activeTab === 'task1'
+        ? (currentTask1?.title || 'Letter Writing')
+        : (currentTask2?.title || 'Essay Topic');
+
+      const historyItem: TestResultItem = {
+        id: `ml_writing_${Date.now()}`,
+        date: dateStr,
+        startTime,
+        endTime,
+        testType: activeTab === 'task1' ? 'writing_task1' : 'writing_task2',
+        title,
+        topic: topicTitle,
+        overallBand: evaluation.overallBand,
+        criteriaScores: {
+          c1Name: 'Task Response',
+          c1Score: evaluation.taskResponse,
+          c2Name: 'Coherence',
+          c2Score: evaluation.coherenceCohesion,
+          c3Name: 'Lexical Resource',
+          c3Score: evaluation.lexicalResource,
+          c4Name: 'Grammar Accuracy',
+          c4Score: evaluation.grammaticalRange,
+        },
+        strengths: evaluation.strengths,
+        improvements: evaluation.improvements,
+      };
+
+      saveTestResult(historyItem);
+      triggerHaptic('heavy');
+    }, 1500);
+  };
+
+  const categories = ['ALL', 'EDUCATION', 'TECHNOLOGY', 'HEALTH & LIFESTYLE', 'ENVIRONMENT', 'SOCIETY & COMMUNITY', 'CRIME & SAFETY', 'BUSINESS & WORK', 'CULTURE & GLOBAL SOCIETY'];
+
+  return (
+    <div className="english-root min-h-screen bg-slate-50 flex flex-col text-slate-900 pb-12">
+      {/* ── Top Header ── */}
+      <div className="px-5 pt-6 pb-4 bg-white/80 backdrop-blur-md border-b border-teal-100 flex items-center justify-between sticky top-0 z-20">
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={onBack}
+            className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center hover:bg-slate-200 transition-all active:scale-95"
+            title="Orqaga"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div>
+            <div className="flex items-center space-x-1.5">
+              <span className="text-xs font-black uppercase tracking-wider text-teal-700">Milliy Multilevel</span>
+              <span className="text-[10px] font-bold bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full">Writing B2-C1</span>
+            </div>
+            <h2 className="text-lg font-black text-slate-900 tracking-tight leading-tight">
+              Writing Sinovi ✍️
+            </h2>
+          </div>
+        </div>
+
+        {/* Timer Control */}
+        <button
+          onClick={() => setIsTimerRunning(!isTimerRunning)}
+          className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center space-x-1.5 transition-all ${
+            isTimerRunning
+              ? 'bg-rose-50 border-rose-200 text-rose-700 animate-pulse'
+              : 'bg-slate-50 border-slate-200 text-slate-600'
+          }`}
+          title={isTimerRunning ? "Taymerni to'xtatish" : "Taymerni boshlash"}
+        >
+          <Clock size={13} />
+          <span>{formatTimer(timeLeft)}</span>
+        </button>
+      </div>
+
+      {/* ── Main Content Container ── */}
+      <div className="flex-1 p-5 space-y-4">
+        
+        {/* Task 1 vs Task 2 Tabs */}
+        <div className="flex p-1 bg-slate-200/70 rounded-2xl">
+          <button
+            onClick={() => {
+              triggerHaptic('light');
+              setActiveTab('task1');
+              setEssayText('');
+              setResult(null);
+              setShowModelAnswer(false);
+            }}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all ${
+              activeTab === 'task1'
+                ? 'bg-white text-teal-700 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Task 1: Xatlar (19 ta)
+          </button>
+          <button
+            onClick={() => {
+              triggerHaptic('light');
+              setActiveTab('task2');
+              setEssayText('');
+              setResult(null);
+              setShowModelAnswer(false);
+            }}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all ${
+              activeTab === 'task2'
+                ? 'bg-white text-teal-700 shadow-sm'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Task 2: Insho (25 ta B2/C1)
+          </button>
+        </div>
+
+        {/* ── TASK 1 SECTION ── */}
+        {activeTab === 'task1' && currentTask1 && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* Task 1 Exercise Selector */}
+            <div className="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-100 shadow-xs">
+              <span className="text-xs font-bold text-slate-500">
+                Mashq {task1Idx + 1} / {task1List.length}
+              </span>
+              <div className="flex items-center space-x-1.5">
+                <button
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setTask1Idx((prev) => (prev > 0 ? prev - 1 : task1List.length - 1));
+                    setEssayText('');
+                    setResult(null);
+                  }}
+                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"
+                >
+                  ← Oldingi
+                </button>
+                <button
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setTask1Idx((prev) => (prev < task1List.length - 1 ? prev + 1 : 0));
+                    setEssayText('');
+                    setResult(null);
+                  }}
+                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700"
+                >
+                  Keyingi →
+                </button>
+              </div>
+            </div>
+
+            {/* Scenario Email Card */}
+            <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm space-y-3">
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-black bg-teal-50 text-teal-700 px-2 py-0.5 rounded-md">
+                  Vaziyat / Email
+                </span>
+                <h4 className="text-sm font-black text-slate-900">{currentTask1.title}</h4>
+              </div>
+
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-800 leading-relaxed font-sans whitespace-pre-line">
+                {currentTask1.scenario}
+              </div>
+
+              {/* Sub-task switch: Task 1.1 (Friend ~50w) vs Task 1.2 (Coordinator 120-150w) */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setSubTask1Mode('task1_1');
+                    setEssayText('');
+                    setResult(null);
+                  }}
+                  className={`p-3 rounded-2xl border text-left transition-all ${
+                    subTask1Mode === 'task1_1'
+                      ? 'bg-teal-50/80 border-teal-300 ring-2 ring-teal-500/20'
+                      : 'bg-white border-slate-200 opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  <span className="text-[10px] font-black uppercase text-teal-700 block">Task 1.1: Do'stga xat</span>
+                  <span className="text-xs font-bold text-slate-900">~50 so'z (10 daqiqa)</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setSubTask1Mode('task1_2');
+                    setEssayText('');
+                    setResult(null);
+                  }}
+                  className={`p-3 rounded-2xl border text-left transition-all ${
+                    subTask1Mode === 'task1_2'
+                      ? 'bg-teal-50/80 border-teal-300 ring-2 ring-teal-500/20'
+                      : 'bg-white border-slate-200 opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  <span className="text-[10px] font-black uppercase text-teal-700 block">Task 1.2: Rasmiy xat</span>
+                  <span className="text-xs font-bold text-slate-900">120-150 so'z (20 daqiqa)</span>
+                </button>
+              </div>
+
+              {/* Prompt box */}
+              <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200 text-xs text-amber-900 leading-relaxed whitespace-pre-line">
+                {subTask1Mode === 'task1_1' ? currentTask1.task1_1.prompt : currentTask1.task1_2.prompt}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── TASK 2 SECTION ── */}
+        {activeTab === 'task2' && currentTask2 && (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            {/* Category horizontal scrolling selector */}
+            <div className="flex space-x-1.5 overflow-x-auto pb-1 scrollbar-none">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setSelectedCategory(cat);
+                    setTask2Idx(0);
+                    setEssayText('');
+                    setResult(null);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all ${
+                    selectedCategory === cat
+                      ? 'bg-teal-600 text-white shadow-xs'
+                      : 'bg-white text-slate-600 border border-slate-200'
+                  }`}
+                >
+                  {cat === 'ALL' ? 'Barchasi (25)' : cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Task 2 Topic Card */}
+            <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">
+                  {currentTask2.category} • #{currentTask2.number}
+                </span>
+                <span className="text-[10px] font-bold text-slate-400">180-200 so'z</span>
+              </div>
+
+              <h3 className="text-base font-black text-slate-900 leading-snug">
+                "{currentTask2.title}"
+              </h3>
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed">
+                {currentTask2.prompt}
+              </div>
+
+              {/* Model Answer button */}
+              {currentTask2.modelResponse && (
+                <div>
+                  <button
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setShowModelAnswer(!showModelAnswer);
+                    }}
+                    className="flex items-center space-x-1.5 text-xs font-bold text-teal-700 hover:text-teal-900"
+                  >
+                    {showModelAnswer ? <EyeOff size={14} /> : <Eye size={14} />}
+                    <span>{showModelAnswer ? "Namunani yashirish" : "Model javobni ko'rish (B2/C1)"}</span>
+                  </button>
+
+                  {showModelAnswer && (
+                    <div className="mt-2.5 p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-xs text-slate-800 leading-relaxed font-sans animate-in fade-in">
+                      <div className="flex items-center justify-between mb-1.5 pb-1 border-b border-emerald-200/60">
+                        <span className="text-[10px] font-black text-emerald-800 uppercase">B2/C1 Rasmiy Namuna:</span>
+                        <span className="text-[10px] text-emerald-700 font-mono">180-200 so'z</span>
+                      </div>
+                      <p className="whitespace-pre-line text-slate-800">{currentTask2.modelResponse}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── WRITING TEXTAREA CONTAINER ── */}
+        <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-700">
+              Sizning yozgan matningiz:
+            </span>
+            <div className="flex items-center space-x-2 text-xs font-mono">
+              <span className={`font-bold ${wordCount >= minWordsRequired ? 'text-emerald-600' : 'text-amber-600'}`}>
+                {wordCount} ta so'z
+              </span>
+              <span className="text-slate-400">/ maqsad: {targetWords}</span>
+            </div>
+          </div>
+
+          <textarea
+            value={essayText}
+            onChange={(e) => setEssayText(e.target.value)}
+            placeholder="Matningizni shu yerga yozing..."
+            rows={8}
+            className="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 text-sm leading-relaxed outline-none focus:border-teal-500 focus:bg-white transition-all resize-y"
+          />
+
+          <button
+            onClick={handleEvaluate}
+            disabled={isEvaluating}
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-black text-sm shadow-md shadow-teal-500/20 hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+          >
+            {isEvaluating ? (
+              <span className="flex items-center space-x-2">
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>AI tekshirmoqda va baholamoqda...</span>
+              </span>
+            ) : (
+              <>
+                <Sparkles size={16} />
+                <span>Tekshirish va Baholash (CEFR Mezonida)</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* ── EVALUATION RESULTS CARD ── */}
+        {result && (
+          <div className="bg-white rounded-[2rem] p-5 border border-teal-200 shadow-lg space-y-4 animate-in fade-in duration-300">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <span className="text-[10px] font-black uppercase text-teal-700">Natija va Daraja</span>
+                <h3 className="text-lg font-black text-slate-900">{result.cefrLevel}</h3>
+              </div>
+              <div className="text-right">
+                <span className="text-2xl font-black text-teal-600 font-mono">
+                  {result.overallBand.toFixed(1)}
+                </span>
+                <span className="block text-[9px] text-slate-400 font-bold uppercase">Umumiy Ball</span>
+              </div>
+            </div>
+
+            {/* Criteria Grid */}
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <span className="text-sm font-black text-slate-900 block font-mono">{result.taskResponse.toFixed(1)}</span>
+                <span className="text-[9px] text-slate-500 font-bold">Task Resp.</span>
+              </div>
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <span className="text-sm font-black text-slate-900 block font-mono">{result.coherenceCohesion.toFixed(1)}</span>
+                <span className="text-[9px] text-slate-500 font-bold">Coherence</span>
+              </div>
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <span className="text-sm font-black text-slate-900 block font-mono">{result.lexicalResource.toFixed(1)}</span>
+                <span className="text-[9px] text-slate-500 font-bold">Lexical</span>
+              </div>
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <span className="text-sm font-black text-slate-900 block font-mono">{result.grammaticalRange.toFixed(1)}</span>
+                <span className="text-[9px] text-slate-500 font-bold">Grammar</span>
+              </div>
+            </div>
+
+            {/* Strengths */}
+            <div className="space-y-1.5">
+              <h5 className="text-xs font-black text-emerald-800 flex items-center space-x-1.5">
+                <CheckCircle2 size={13} className="text-emerald-600" />
+                <span>Yutuqlar:</span>
+              </h5>
+              <div className="space-y-1 text-xs text-slate-700 bg-emerald-50/50 p-3 rounded-xl border border-emerald-100">
+                {result.strengths.map((s, i) => (
+                  <p key={i}>• {s}</p>
+                ))}
+              </div>
+            </div>
+
+            {/* Recommendations */}
+            <div className="space-y-1.5">
+              <h5 className="text-xs font-black text-amber-800 flex items-center space-x-1.5">
+                <AlertCircle size={13} className="text-amber-600" />
+                <span>Tavsiyalar:</span>
+              </h5>
+              <div className="space-y-1 text-xs text-slate-700 bg-amber-50/50 p-3 rounded-xl border border-amber-100">
+                {result.improvements.map((imp, i) => (
+                  <p key={i}>• {imp}</p>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+};

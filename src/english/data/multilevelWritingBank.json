@@ -1,0 +1,554 @@
+{
+  "task1_exercises": [
+    {
+      "id": "ml_w1_ex_1",
+      "title": "Exercise 1: You are a student. You received an email from yo",
+      "scenario": "You are a student. You received an email from your school coordinator. \nDear Student, \nWe regret to inform you that the planned school trip to the historical city has \nbeen cancelled due to transportation problems. We understand that many \nstudents were looking forward to this trip. \nWe are now considering several alternatives. Should we postpone the trip to \na later date? Would you prefer to organize a diGerent local activity instead? \nOr should we arrange an online virtual tour? \nWe would like to hear your opinion before making a final decision. \nKind regards, \nThe Coordinator",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_2",
+      "title": "Exercise 2: You are a member of a university club. You recei",
+      "scenario": "You are a member of a university club. You received an email from the club \nleader. \nDear Member, \nWe regret to inform you that the invited guest speaker will not be able to \nattend the upcoming event due to personal reasons. We know that many \nmembers were excited about this session. \nWe are now considering diGerent options. Should we invite another \nspeaker? Would you prefer to postpone the event? Or should we arrange an \nonline talk instead? \nWe would appreciate your opinion. \nKind regards, \nThe Club Leader",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_3",
+      "title": "Exercise 3: You are a member of a sports club. You received ",
+      "scenario": "You are a member of a sports club. You received an email from the club \nmanager. \nDear Member, \nWe regret to inform you that the weekend sports tournament has been \ncancelled due to bad weather conditions. We understand that many \nmembers were preparing for this event. \nWe are considering several alternatives. Should we postpone the \ntournament? Would you prefer to organize indoor activities instead? Or \nshould we cancel the event completely? \nPlease share your opinion and suggestions. \nKind regards, \nThe Manager",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_4",
+      "title": "Exercise 4: You are a member of a cinema club. You received ",
+      "scenario": "You are a member of a cinema club. You received an email from the club \nmanager. \nDear Member, \nWe regret to inform you that the planned group trip to the film festival has \nbeen cancelled due to scheduling conflicts with the venue. We understand \nthat many members were looking forward to this special event. \nWe are currently considering several alternatives. Should we postpone the \ntrip? Would you prefer to organize a movie night at the club instead? Or \nshould we arrange an online screening of selected films? \nWe would appreciate your opinion before making a final decision. \nKind regards, \nThe Manager",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_5",
+      "title": "Exercise 5: You are a member of a training center. You recei",
+      "scenario": "You are a member of a training center. You received an email from the \ncourse coordinator. \nDear Participant, \nWe regret to inform you that the upcoming training course has been \ncancelled due to a low number of participants. We understand that many of \nyou were interested in attending this program. \nWe are now considering diGerent options. Should we postpone the course to \na later date? Would you prefer to join a similar course online? Or should we \noGer a refund? \nWe would like to hear your opinion before making a final decision. \nKind regards, \nThe Coordinator",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_6",
+      "title": "Exercise 6: You are a member of a public library. You receiv",
+      "scenario": "You are a member of a public library. You received an email from the library \nmanager. \nDear Member, \nWe are currently considering making some changes to our library system. In \norder to modernize our services, we are planning to replace most physical \nbooks with digital reading stations. \nIn addition, we are thinking of reducing the number of quiet study areas and \nintroducing more group discussion spaces. \nBefore making a final decision, we would like to hear your opinion. Do you \nthink these changes would be useful for visitors? How do you feel about \nreplacing books with digital options? Do you have any other suggestions? \nWe would appreciate your feedback. \nKind regards, \nThe Library Manager",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_7",
+      "title": "Exercise 7: You are a student. You received an email from yo",
+      "scenario": "You are a student. You received an email from your school principal. \nDear Student, \nWe are planning to change the school schedule starting next month. In order \nto improve productivity, classes will begin earlier in the morning and finish \nearlier in the afternoon. \nIn addition, we are thinking of reducing break times between lessons to \nallow more teaching hours. \nBefore making a final decision, we would like to hear your opinion. Do you \nthink the new schedule would be suitable for students? How do you feel \nabout shorter breaks? Do you have any other suggestions? \nKind regards, \nThe Principal",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_8",
+      "title": "Exercise 8: You are a member of a fitness club. You received",
+      "scenario": "You are a member of a fitness club. You received an email from the club \nmanager. \nDear Member, \nWe are currently considering making some changes to our membership \nsystem. In order to manage the number of members more eGectively, we are \nplanning to increase membership fees. \nIn addition, we are thinking of limiting access to certain equipment during \npeak hours. \nBefore making a final decision, we would like to hear your opinion. Do you \nthink the new pricing system is fair? How do you feel about limiting access \nduring busy times? Do you have any other suggestions? \nWe would appreciate your feedback. \nKind regards, \nThe Manager",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_9",
+      "title": "Exercise 9: You recently stayed at a hotel. After your visit",
+      "scenario": "You recently stayed at a hotel. After your visit, you received an email from \nthe hotel manager. \nDear Guest, \nThank you for staying at our hotel. We hope you had a pleasant experience. \nWe are always looking for ways to improve our services and would like to \nhear your feedback. \nCould you please t",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_10",
+      "title": "Exercise 10: You recently visited a gym. After your visit, y",
+      "scenario": "You recently visited a gym. After your visit, you received an email from the \ngym manager. \nDear Member, \nThank you for visiting our gym. We hope you had a good experience. We \nwould like to know your opinion about our facilities. \nHow would you describe the condition of the equipment? Were you sati",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_11",
+      "title": "Exercise 11: You recently visited a shopping mall. After you",
+      "scenario": "You recently visited a shopping mall. After your visit, you received an email \nfrom the mall manager. \nDear Customer, \nThank you for visiting our shopping mall. We would like to know more about \nyour experience. \nHow satisfied were you with the variety of shops? Did you find the facilities \nclean an",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_12",
+      "title": "Exercise 12: You are a member of a local community center. Y",
+      "scenario": "You are a member of a local community center. You received an email from \nthe center manager. \nDear Member, \nWe are planning to introduce new activities at our community center next \nmonth. Some members have suggested adding fitness classes and sports \nactivities, while others prefer creative workshops such as art or music \nsessions. \nBefore making a final decision, we would like to hear your opinion. Which \ntype of activity do you think would be more useful or interesting for  \n\n   \n \nmembers? Do you have any other suggestions that could improve our \nprograms? \nWe would appreciate your feedback. \nKind regards, \nThe Manager",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_13",
+      "title": "Exercise 13: You are a resident of a city. You received an e",
+      "scenario": "You are a resident of a city. You received an email from the city council. \nDear Resident, \nWe are planning to improve the public transport system in our city. Some \npeople have suggested increasing the number of buses, while others believe \nit would be better to introduce more bicycle lanes and encourage eco-\nfriendly transport. \nBefore making a final decision, we would like to hear your opinion. Which \noption do you think would be more eGective? Do you have any other \nsuggestions to improve transportation in the city? \nWe would appreciate your feedback. \nKind regards, \nThe City Council",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_14",
+      "title": "Exercise 14: You are a member of a school club. You received",
+      "scenario": "You are a member of a school club. You received an email from the club \nleader. \nDear Member, \nWe are planning to improve our club and make it more interesting for \nstudents. Some members have suggested organizing competitions and \nevents, while others prefer adding more regular meetings and discussion \nsessions. \nBefore making a final decision, we would like to hear your opinion. Which \noption do you think would be better? Do you have any other ideas that could \nhelp improve the club? \nWe would appreciate your feedback and suggestions. \nKind regards, \nThe Club Leader",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_15",
+      "title": "Exercise 15: You are a regular user of a public library. You",
+      "scenario": "You are a regular user of a public library. You received an email from the \nlibrary manager. \nDear Visitor, \nWe have recently received several complaints about noise levels in our \nlibrary. Some visitors have mentioned that the study areas are no longer as \nquiet as before, especially during busy hours. \nWe would like to improve the situation and ensure a comfortable \nenvironment for all users. What problems have you noticed? What do you \nthink is causing the noise? What suggestions do you have to make the library \nquieter? \nWe would appreciate your feedback and recommendations. \nKind regards, \nThe Library Manager",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_16",
+      "title": "Exercise 16: You are a member of a fitness club. You receive",
+      "scenario": "You are a member of a fitness club. You received an email from the club \nmanager. \nDear Member, \nWe have noticed that our gym has become very crowded during peak hours. \nSome members have reported long waiting times for equipment and limited \nspace for training. \nWe would like to improve this situation. What problems have you \nexperienced? What do you think is causing this issue? What suggestions do \nyou have to reduce overcrowding? \nWe would appreciate your feedback. \nKind regards, \nThe Manager",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_17",
+      "title": "Exercise 17: You are a regular customer of a restaurant. You",
+      "scenario": "You are a regular customer of a restaurant. You received an email from the \nrestaurant manager. \nDear Customer, \nWe have recently received some complaints about our service. Some \ncustomers have mentioned that the service is slow and that staG are \nsometimes not attentive. \nWe would like to improve our service and provide a better experience. What \nproblems have you noticed? What do you think is causing these issues? \nWhat suggestions do you have to improve our service? \nWe would appreciate your feedback and recommendations. \nKind regards, \nThe Restaurant Manager",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_18",
+      "title": "Exercise 18: You are a student at a learning center. You rec",
+      "scenario": "You are a student at a learning center. You received an email from the center \nmanager. \nDear Student, \nWe are planning our future courses and would like to make them more \nconvenient for students. Some students prefer online classes, while others \nbelieve that traditional face-to-face lessons are more eGective. \nBefore making a final decision, we would like to hear your opinion. Which \noption do you prefer? Why do you think it is better? Do you have any \nsuggestions to improve the learning experience? \nWe would appreciate your feedback. \nKind regards, \nThe Manager",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    },
+    {
+      "id": "ml_w1_ex_19",
+      "title": "Exercise 19: You are a member of a sports club. You received",
+      "scenario": "You are a member of a sports club. You received an email from the club \nmanager. \nDear Member, \nWe are planning to organize regular activities for our members. Some people \nprefer morning sessions, while others would rather have activities in the \nevening. \nBefore making a final decision, we would like to hear your opinion. Which \noption do you prefer? Why do you think it is more suitable? Do you have any \nother suggestions? \nWe would appreciate your feedback. \n \n\n   \n \nKind regards, \nThe Manager",
+      "task1_1": {
+        "type": "informal_email",
+        "prompt": "Write a letter to your friend.\n• explain the situation\n• express your feelings\n• suggest what should be done.",
+        "wordLimit": "~50 words",
+        "timeMinutes": 10
+      },
+      "task1_2": {
+        "type": "formal_letter",
+        "prompt": "Write a letter to the coordinator/manager.\n• give your opinion about the cancellation/change\n• explain which option you prefer\n• give recommendations and suggestions.",
+        "wordLimit": "120-150 words",
+        "timeMinutes": 20
+      }
+    }
+  ],
+  "task2_topics": [
+    {
+      "id": "ml_w2_1",
+      "number": 1,
+      "category": "EDUCATION",
+      "title": "Should schools teach financial literacy as a compulsory",
+      "prompt": "You are participating in an online discussion for students and teachers.\nThe question is: \"Should schools teach financial literacy as a compulsory subject?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, teaching financial literacy at school has become an important issue in\nmodern education. Although traditional subjects remain essential, I believe students\nshould also learn how to manage money because these skills directly affect their future\nindependence and security.\nOne of the main reasons is that many young people leave school without understanding\nbasic financial decisions. This is particularly important because financial problems can\ncause stress and limit future opportunities. As a result, practical money skills could help\nstudents become more confident and responsible adults.\nI used to think that financial knowledge was something people naturally learned after\nstarting work. However, I have realized that early guidance can prevent many\nunnecessary problems. If schoo"
+    },
+    {
+      "id": "ml_w2_2",
+      "number": 2,
+      "category": "EDUCATION",
+      "title": "Should students be allowed to choose more of the subjects",
+      "prompt": "You are participating in an online discussion for students and teachers.\nThe question is: \"Should students be allowed to choose more of the subjects they study at school?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, giving students more choice over school subjects has become an important\nissue in education. Although everyone needs a strong foundation in subjects such as\nmathematics and languages, I believe older students should have more freedom because\ntheir interests and future goals are different.\nOne major advantage is that choice can increase motivation. As a result, a more flexible\ncurriculum could help students develop their strengths and make better career decisions.\nI have personally seen students become much more confident after choosing subjects\nconnected to their interests.\nI used to think that the same curriculum was fair for everyone, but I have realized that\nstudents learn in different ways. If schools allowed more choice in the final years,\nteenagers would have more time"
+    },
+    {
+      "id": "ml_w2_3",
+      "number": 3,
+      "category": "EDUCATION",
+      "title": "Do school exams measure students' abilities fairly?",
+      "prompt": "You are participating in an online discussion for students and teachers.\nThe question is: \"Do school exams measure students' abilities fairly?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, the way schools measure students' abilities has become an important issue\nin modern education. Although exams can show how well students understand certain\nsubjects, I do not believe they always provide a fair picture because people have different\nstrengths and respond differently to pressure.\nOne of the main problems is that many exams depend heavily on memory and speed.\nStudents who understand a topic well may still perform badly if they become nervous or\nneed more time to organize their ideas. As a result, schools may overlook creative,\npractical, or communication skills that are difficult to measure in an exam hall.\nI used to think that high exam scores automatically meant someone was the strongest\nstudent. However, I have realized that teamwork, problem-solving, and con"
+    },
+    {
+      "id": "ml_w2_4",
+      "number": 4,
+      "category": "EDUCATION",
+      "title": "Should every student have some work experience before",
+      "prompt": "You are participating in an online discussion for students and teachers.\nThe question is: \"Should every student have some work experience before finishing school?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, preparing students for working life has become an important part of\nmodern education. Although schools must provide strong academic knowledge, I believe\nevery student should have some work experience before graduation because it can build\npractical skills and improve career awareness.\nOne major benefit is that students can see how workplaces actually operate. This is\nparticularly useful because classroom lessons cannot fully reproduce real working\nsituations. As a result, students may become more mature and make better decisions\nabout future study or employment.\nI used to think that work experience was mainly useful for students who did not plan to\nattend university. However, I have realized that almost everyone can benefit from it. If\nschools organized short placements with"
+    },
+    {
+      "id": "ml_w2_5",
+      "number": 5,
+      "category": "TECHNOLOGY",
+      "title": "Has artificial intelligence made students too dependent on",
+      "prompt": "You are participating in an online discussion about education and technology.\nThe question is: \"Has artificial intelligence made students too dependent on technology?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, the growing use of artificial intelligence in education has become an\nimportant issue. Although AI tools can make learning faster and more accessible, I believe\nthey may make some students too dependent on technology because ready-made answers\ncan reduce independent thinking and effort.\nOne of the main problems is that students can now complete difficult tasks without fully\nunderstanding them. This matters because education is not only about producing correct\nanswers but also about learning how to think, solve problems, and express ideas. As a\nresult, excessive dependence on AI could weaken long-term learning.\nI have used AI tools for explanations and have found them useful when a topic is\nconfusing. If schools taught students how to use AI responsibly, learners would be abl"
+    },
+    {
+      "id": "ml_w2_6",
+      "number": 6,
+      "category": "TECHNOLOGY",
+      "title": "Should children have a daily limit on screen time?",
+      "prompt": "You are participating in an online discussion for parents and young people.\nThe question is: \"Should children have a daily limit on screen time?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, children's screen time has become an important issue in modern family\nlife. Although phones, tablets, and computers can be useful for learning and\nentertainment, I believe children should have reasonable daily limits because too much\nscreen time can affect their health, sleep, and social habits.\nOne of the main concerns is that long hours online often replace physical activity and\nface-to-face communication. As a result, excessive screen use can create unhealthy\nroutines that are difficult to change later.\nI used to think that screen time was only a problem when children watched unsuitable\ncontent. However, I have realized that even harmless entertainment can become\nunhealthy when it takes up most of the day. If parents set clear and realistic limits,\nchildren would have mor"
+    },
+    {
+      "id": "ml_w2_7",
+      "number": 7,
+      "category": "TECHNOLOGY",
+      "title": "Has the internet made it harder for people to know which",
+      "prompt": "You are participating in an online discussion about media and technology.\nThe question is: \"Has the internet made it harder for people to know which information is true?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, finding reliable information has become more difficult in the digital age.\nAlthough the internet gives people quick access to an enormous amount of knowledge, I\nbelieve it has also made it harder to know what is true because false or misleading content\ncan spread extremely quickly.\nOne major problem is that anyone can publish information online without checking the\nfacts. As a result, being able to evaluate information has become an essential modern skill.\nI used to assume that information appearing on popular websites was generally reliable.\nHowever, I have realized that even widely shared posts can contain mistakes or present\nonly one side of a story. If schools taught media literacy more seriously, students would\nlearn to compare sources, check evidence, and recognize emo"
+    },
+    {
+      "id": "ml_w2_8",
+      "number": 8,
+      "category": "TECHNOLOGY",
+      "title": "Has working from home improved people's work-life",
+      "prompt": "You are participating in an online discussion for employees and employers.\nThe question is: \"Has working from home improved people's work-life balance?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, working from home has become an important part of modern\nemployment. Although remote work is not suitable for every profession, I believe it can\nimprove work-life balance because employees save commuting time and often have more\ncontrol over their daily routines.\nOne major advantage is flexibility. As a result, remote workers may have more energy for\nexercise, hobbies, or family responsibilities after finishing their tasks.\nI used to think that working from home would always be easier than going to an office.\nHowever, I have realized that it also requires self-discipline and clear boundaries. If\nemployees answer messages late at night or work without regular breaks, their work-life\nbalance may actually become worse. Companies should therefore set realistic working\nhours so t"
+    },
+    {
+      "id": "ml_w2_9",
+      "number": 9,
+      "category": "HEALTH & LIFESTYLE",
+      "title": "Should advertisements for unhealthy food aimed at",
+      "prompt": "You are participating in an online discussion about public health.\nThe question is: \"Should advertisements for unhealthy food aimed at children be restricted?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, advertising unhealthy food to children has become an important\npublic-health issue. Although companies have the right to promote their products, I\nbelieve advertisements aimed directly at children should be restricted because young\npeople are easily influenced and may not understand the health consequences of their\nchoices.\nOne of the main problems is that unhealthy food is often presented as exciting,\nfashionable, or connected with fun activities. As a result, aggressive advertising may\ncontribute to obesity and other long-term health problems.\nI used to think that parents alone were responsible for what children ate. However, I have\nrealized that advertising can create strong pressure, especially when it appears constantly\non social media and video platforms. If government"
+    },
+    {
+      "id": "ml_w2_10",
+      "number": 10,
+      "category": "HEALTH & LIFESTYLE",
+      "title": "Should physical education be compulsory for all school",
+      "prompt": "You are participating in an online discussion for students and teachers.\nThe question is: \"Should physical education be compulsory for all school students?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, physical education has become increasingly important as many young\npeople are becoming less active. Although not every student enjoys competitive sport, I\nbelieve some form of physical education should be compulsory because regular exercise\nsupports both physical health and mental well- being.\nOne of the main benefits is that school sport creates a regular opportunity for movement.\nAs a result, regular physical activity can help students feel healthier and perform better\nacademically.\nI used to think that physical education mainly benefited students who were naturally good\nat sport. However, I have realized that lessons can include many activities such as\nwalking, swimming, fitness, or team games. If schools offered more choice, students\nwould be more likely to find an activ"
+    },
+    {
+      "id": "ml_w2_11",
+      "number": 11,
+      "category": "HEALTH & LIFESTYLE",
+      "title": "Why are many young people not getting enough sleep, and",
+      "prompt": "You are participating in an online discussion about young people's health.\nThe question is: \"Why are many young people not getting enough sleep, and what can be done about it?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, lack of sleep has become a serious health problem among young people\nbecause many teenagers stay online late at night, have heavy study schedules, and do not\nfollow regular sleep routines. Although this problem may seem harmless, it can affect\nconcentration, mood, and overall health.\nOne of the main causes is excessive phone use before bedtime. As a result, tired students\nmay struggle to focus at school and become more stressed during the day.\nI used to think that losing a few hours of sleep was easy to recover from at the weekend.\nHowever, I have realized that regular sleep is much more important than occasional long\nrest. If young people set a fixed bedtime and stopped using phones shortly before sleeping,\nthey would probably rest better. Parents and schools should also pr"
+    },
+    {
+      "id": "ml_w2_12",
+      "number": 12,
+      "category": "HEALTH & LIFESTYLE",
+      "title": "Are young people under too much pressure to be",
+      "prompt": "You are participating in an online discussion for young people and parents.\nThe question is: \"Are young people under too much pressure to be successful?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, pressure to succeed has become a major issue for many young people.\nAlthough ambition can encourage teenagers to work hard and achieve their goals, I\nbelieve excessive pressure can be harmful because young people may start measuring\ntheir value only through grades, money, or career success.\nOne of the main sources of pressure is comparison. As a result, young people can become\nanxious, lose confidence, or set unrealistic expectations for themselves.\nI have personally seen students feel disappointed even after receiving good results\nbecause they were comparing themselves with the highest-performing students.\nI used to think that pressure always improved performance, but I have realized that\nencouragement is far more effective. If parents and teachers focused more on individua"
+    },
+    {
+      "id": "ml_w2_13",
+      "number": 13,
+      "category": "ENVIRONMENT",
+      "title": "What are the main causes of plastic waste, and how can it",
+      "prompt": "You are participating in an online discussion about environmental issues.\nThe question is: \"What are the main causes of plastic waste, and how can it be reduced?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, plastic waste has become one of the most visible environmental problems\nbecause modern lifestyles depend heavily on disposable packaging and single-use\nproducts. Although plastic is cheap and convenient, the amount we throw away is\ndamaging rivers, oceans, and natural areas around the world.\nOne of the main causes is unnecessary packaging. Consumers who buy drinks, takeaway\nmeals, and everyday products often receive several pieces of plastic that are used only\nonce. As a result, wildlife can be harmed and public spaces become increasingly polluted.\nI used to think that recycling alone could solve the plastic problem. However, I have\nrealized that reducing consumption is even more important. If shops offered more\nreusable or paper-based packaging, customers would produce less"
+    },
+    {
+      "id": "ml_w2_14",
+      "number": 14,
+      "category": "ENVIRONMENT",
+      "title": "Should cities make public transport cheaper to reduce",
+      "prompt": "You are participating in an online discussion about city life and the environment.\nThe question is: \"Should cities make public transport cheaper to reduce traffic and pollution?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, improving public transport has become an important issue for growing\ncities. Although making buses and trains cheaper would cost governments money, I\nbelieve it could reduce both traffic and air pollution because more people would have a\npractical alternative to private cars.\nOne of the main reasons is that cost strongly influences daily travel choices. As a result,\naffordable public transport could make city centres cleaner and reduce the amount of\ntime people spend stuck in traffic.\nI used to think that building more roads was the best solution to congestion. However, I\nhave realized that extra roads often encourage even more driving. If cities provided\ncheap, frequent, and comfortable buses and trains, many commuters would choose them\ninstead. Local authorities should als"
+    },
+    {
+      "id": "ml_w2_15",
+      "number": 15,
+      "category": "ENVIRONMENT",
+      "title": "Should schools teach climate change as a separate subject?",
+      "prompt": "You are participating in an online discussion for students and teachers.\nThe question is: \"Should schools teach climate change as a separate subject?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, climate education has become increasingly important as environmental\nproblems affect more parts of everyday life. Although climate change can already be\ndiscussed in science and geography, I believe schools should give it more focused\nattention because students need both scientific knowledge and practical understanding of\nenvironmental responsibility.\nOne major advantage is that a dedicated course could connect different topics in a clear\nway. This matters because climate change is not only a scientific issue; it also affects\nhealth, economics, and communities. As a result, better education could help young\npeople make more informed decisions.\nI used to think that environmental education mainly meant learning about recycling and\nplanting trees. However, I have realized that "
+    },
+    {
+      "id": "ml_w2_16",
+      "number": 16,
+      "category": "ENVIRONMENT",
+      "title": "Should governments give more support to households that",
+      "prompt": "You are participating in an online discussion about energy and the environment.\nThe question is: \"Should governments give more support to households that use renewable energy?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, the transition to renewable energy has become an important\nenvironmental and economic issue. Although installing solar panels or other clean-energy\nsystems can be expensive at first, I believe governments should support households that\nchoose them because this can reduce pollution and encourage wider use of sustainable\ntechnology.\nOne of the main barriers is the initial cost. This matters because cleaner energy benefits\nsociety as a whole, not only the individual household. As a result, financial support such as\ngrants, tax reductions, or low-interest loans could make renewable energy available to\nmore people.\nI used to think that renewable energy was mainly the responsibility of large companies\nand governments. However, I have realized that households can also make a meanin"
+    },
+    {
+      "id": "ml_w2_17",
+      "number": 17,
+      "category": "SOCIETY & COMMUNITY",
+      "title": "Should community service be a compulsory part of",
+      "prompt": "You are participating in an online discussion for students and teachers.\nThe question is: \"Should community service be a compulsory part of secondary education?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, encouraging students to support their communities has become an\nimportant part of education. Although community service should not take too much time\naway from academic study, I believe a small amount should be compulsory because it can\nteach responsibility, cooperation, and respect for other people.\nOne of the main benefits is that students gain experience outside the classroom. As a\nresult, community work can make students more socially aware and confident.\nI used to think that volunteering was valuable only when people chose it completely\nfreely. However, I have realized that students sometimes discover meaningful interests\nonly after being encouraged to try something new. If schools required a limited number of\ncommunity-service hours, teenagers would still have choice o"
+    },
+    {
+      "id": "ml_w2_18",
+      "number": 18,
+      "category": "SOCIETY & COMMUNITY",
+      "title": "Do neighbourhoods need more shared public spaces for",
+      "prompt": "You are participating in an online discussion about community life.\nThe question is: \"Do neighbourhoods need more shared public spaces for people to meet and socialize?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, creating shared public spaces has become increasingly important as many\npeople spend more time indoors or online. Although cafés and shopping centres provide\nplaces to meet, I believe neighbourhoods need more free public spaces because they can\nstrengthen relationships and make communities feel safer and more welcoming.\nOne of the main benefits is that parks, libraries, sports areas, and community centres\nbring different groups together. As a result, shared spaces can reduce isolation and\nencourage neighbours to support one another.\nI have personally noticed that people interact more when an area has a pleasant park or\npublic seating.\nI used to think that community spirit depended mainly on individual personality, but I\nhave realized that good public design also matters. If "
+    },
+    {
+      "id": "ml_w2_19",
+      "number": 19,
+      "category": "CRIME & SAFETY",
+      "title": "Should schools do more to teach young people about",
+      "prompt": "You are participating in an online discussion for students and teachers.\nThe question is: \"Should schools do more to teach young people about online safety and cybercrime?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, online safety has become an essential part of education because young\npeople spend much of their time on digital platforms. Although parents also have an\nimportant role, I believe schools should teach more about cybercrime so that students\nknow how to protect their personal information and recognize online risks.\nOne of the main problems is that teenagers often use social media, online games, and\nshopping websites without fully understanding privacy or security. As a result, basic\ndigital-safety education is now as practical as many traditional life skills.\nI used to think that young people naturally understood technology better than adults.\nHowever, I have realized that knowing how to use an app is very different from\nunderstanding online risks. If schools provided regular "
+    },
+    {
+      "id": "ml_w2_20",
+      "number": 20,
+      "category": "CRIME & SAFETY",
+      "title": "What can communities do to prevent young people from",
+      "prompt": "You are participating in an online discussion about social problems.\nThe question is: \"What can communities do to prevent young people from becoming involved in crime?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, preventing youth crime has become an important challenge for many\ncommunities because punishment alone does not address the reasons why some\nteenagers become involved in illegal behaviour. Although personal responsibility matters,\nyoung people also need guidance, opportunities, and positive environments.\nOne of the main causes of youth crime is a lack of meaningful activities and support. As a\nresult, prevention should begin before young people enter the criminal justice system.\nI used to think that stricter punishment was the most effective way to reduce crime.\nHowever, I have realized that education and opportunity can be more powerful. If\ncommunities offered affordable sports clubs, training programmes, mentoring, and\npart-time work, teenagers would have more positive way"
+    },
+    {
+      "id": "ml_w2_21",
+      "number": 21,
+      "category": "BUSINESS & WORK",
+      "title": "Should governments give more support to small local",
+      "prompt": "You are participating in an online discussion about business and the economy.\nThe question is: \"Should governments give more support to small local businesses?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, supporting small local businesses has become an important economic\nissue. Although large companies can offer low prices and a wide range of products, I\nbelieve governments should provide reasonable support to smaller businesses because\nthey create local jobs and keep money within communities.\nOne of the main benefits is employment. As a result, a healthy mix of small and large\nbusinesses can make local economies more stable.\nI used to think that successful businesses should grow without any government help.\nHowever, I have realized that new companies often face high rents, taxes, and\ncompetition before they have built a loyal customer base. If governments offered training,\nsimpler regulations, or temporary financial support, more small businesses could survive\ntheir first di"
+    },
+    {
+      "id": "ml_w2_22",
+      "number": 22,
+      "category": "BUSINESS & WORK",
+      "title": "Is practical experience more valuable than a university",
+      "prompt": "You are participating in an online discussion for students and employers.\nThe question is: \"Is practical experience more valuable than a university degree when applying for a job?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, the balance between qualifications and practical experience has become\nan important issue in today's job market. Although a university degree is essential for\nsome professions, I believe practical experience can be equally valuable because\nemployers need people who can apply knowledge effectively in real working situations.\nOne major advantage of experience is that it develops workplace skills. As a result,\nexperience can make a candidate more confident and easier to train.\nI used to think that having a degree was always the most important requirement for a\ngood career. However, I have realized that the answer depends on the profession. If\nuniversities included more placements and real projects, graduates would leave with both\nacademic knowledge and practical ability. Employ"
+    },
+    {
+      "id": "ml_w2_23",
+      "number": 23,
+      "category": "CULTURE & GLOBAL SOCIETY",
+      "title": "Does international tourism do more good than harm to",
+      "prompt": "You are participating in an online discussion about travel and local communities.\nThe question is: \"Does international tourism do more good than harm to local communities?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, international tourism has become an important source of both opportunity\nand pressure for local communities. Although large numbers of visitors can create\nenvironmental and social problems, I believe tourism can do more good than harm when\nit is managed responsibly because it creates jobs and supports local businesses.\nOne of the main benefits is economic opportunity. As a result, tourism can improve\ninfrastructure and give small businesses access to a much larger market.\nI used to think that more tourists always meant more benefits for a destination. However,\nI have realized that uncontrolled tourism can increase waste, traffic, housing costs, and\ndamage to natural areas. If local authorities limited overcrowding and required tourism\nbusinesses to follow environmental rules"
+    },
+    {
+      "id": "ml_w2_24",
+      "number": 24,
+      "category": "CULTURE & GLOBAL SOCIETY",
+      "title": "Should young people make more effort to preserve local",
+      "prompt": "You are participating in an online discussion about culture and traditions.\nThe question is: \"Should young people make more effort to preserve local traditions?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, preserving local traditions has become increasingly important in a\nglobalized world. Although young people naturally adopt new lifestyles, music,\ntechnology, and ideas, I believe they should still make an effort to understand and protect\ntheir cultural traditions because these traditions give communities a sense of identity and\nhistory.\nOne of the main reasons is that traditions can disappear when they are no longer\npractised. As a result, communities may gradually become less distinctive.\nI used to think that traditions belonged mainly to older generations. However, I have\nrealized that culture survives only when younger people take part in it. If schools and\nlocal organizations created more cultural events, workshops, and projects, teenagers\nwould have easier ways to learn"
+    },
+    {
+      "id": "ml_w2_25",
+      "number": 25,
+      "category": "CULTURE & GLOBAL SOCIETY",
+      "title": "Has learning foreign languages become more important",
+      "prompt": "You are participating in an online discussion for language learners.\nThe question is: \"Has learning foreign languages become more important than ever before?\"\nPost your response, giving reasons and examples.\nWrite 180-200 words.",
+      "wordLimit": "180-200 words",
+      "modelResponse": "In my opinion, learning foreign languages has become more important than ever because\neducation, travel, business, and online communication increasingly connect people from\ndifferent countries. Although translation technology has improved rapidly, I believe\nlanguage learning still offers benefits that technology cannot fully replace.\nOne of the main advantages is direct communication. People who speak another language\ncan understand not only words but also humour, culture, and social habits more\nnaturally. As a result, language skills can improve travel experiences, international\nfriendships, and career opportunities.\nI used to think that automatic translation would eventually make language learning\nunnecessary. However, I have realized that technology works best as support. If students\nre"
+    }
+  ]
+}
