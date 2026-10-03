@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Sparkles } from 'lucide-react';
+import { Home, Sparkles, Trophy } from 'lucide-react';
 import type { ScreenType } from '../types';
 import { triggerHaptic } from '../utils/telegram';
 
@@ -8,6 +8,7 @@ interface Props {
   onChangeScreen: (screen: ScreenType) => void;
   pendingCount?: number;
   userInitial?: string;
+  userAvatar?: string;
   progressPct?: number;
 }
 
@@ -16,110 +17,109 @@ export const BottomNav: React.FC<Props> = ({
   onChangeScreen,
   pendingCount = 0,
   userInitial = 'J',
-  progressPct = 0,
+  userAvatar = '',
 }) => {
-  // SVG circular ring circumference for profile (radius 18)
-  const radius = 17;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (progressPct / 100) * circumference;
-
   return (
     <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-40 px-4 pb-4 select-none">
-      {/* 1-rasmdagi to'q qora-binafsha pill dock */}
-      <div className="bg-[#121124] rounded-full p-2 flex items-center justify-between shadow-2xl border border-white/5">
+      {/* Zamonaviy suzuvchi dock */}
+      <div className="bg-[#121124]/95 backdrop-blur-xl rounded-full p-2 flex items-center justify-between shadow-[0_12px_36px_rgba(0,0,0,0.45)] border border-white/10">
         
         {/* 1. Vazifalar (Home) Tab */}
         {activeScreen === 'home' ? (
           <button
             onClick={() => { triggerHaptic('light'); onChangeScreen('home'); }}
-            className="flex items-center space-x-2 bg-[#c4f82a] text-[#121124] px-4 py-2.5 rounded-full font-bold text-sm shadow-md transition-all active:scale-95"
+            className="flex items-center space-x-2 bg-[#c4f82a] text-[#121124] px-4 py-2.5 rounded-full font-bold text-xs shadow-lg shadow-lime-400/20 transition-all duration-300 active:scale-95"
           >
             <Home size={18} strokeWidth={2.5} />
-            <span className="tracking-tight text-[13px] font-extrabold">Vazifalar</span>
-            <span className="w-5 h-5 rounded-full bg-[#121124] text-[#c4f82a] text-[11px] font-black flex items-center justify-center">
-              {pendingCount}
-            </span>
+            <span className="tracking-tight text-[13px] font-black">Vazifalar</span>
+            {pendingCount > 0 && (
+              <span className="w-5 h-5 rounded-full bg-[#121124] text-[#c4f82a] text-[10px] font-black flex items-center justify-center">
+                {pendingCount}
+              </span>
+            )}
           </button>
         ) : (
           <button
             onClick={() => { triggerHaptic('light'); onChangeScreen('home'); }}
-            className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition-all active:scale-90"
+            className="relative w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 active:scale-90"
+            title="Vazifalar"
           >
-            <Home size={20} />
+            <Home size={20} strokeWidth={2} />
+            {pendingCount > 0 && (
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#c4f82a] ring-2 ring-[#121124]" />
+            )}
           </button>
         )}
 
-        {/* 2. AI Tahlil Tab (Neon Purple Orb with Orange notification dot) */}
-        <button
-          onClick={() => { triggerHaptic('medium'); onChangeScreen('ai'); }}
-          className="relative group transition-all active:scale-90"
-        >
-          <div
-            className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
-              activeScreen === 'ai'
-                ? 'bg-[#5e43f3] text-white shadow-lg ring-2 ring-[#c4f82a]/50 scale-105'
-                : 'bg-[#5e43f3] text-white/90 hover:opacity-90'
-            }`}
+        {/* 2. AI Murabbiy Tab */}
+        {activeScreen === 'ai' ? (
+          <button
+            onClick={() => { triggerHaptic('medium'); onChangeScreen('ai'); }}
+            className="flex items-center space-x-2 bg-gradient-to-r from-[#7052ff] to-[#9333ea] text-white px-4 py-2.5 rounded-full font-bold text-xs shadow-lg shadow-purple-500/30 transition-all duration-300 active:scale-95"
           >
             <Sparkles size={18} fill="currentColor" />
-          </div>
-          {/* 1-rasmdagi to'q sariq bildirishnoma nuqtasi 🟠 */}
-          <span className="absolute top-0 right-0 w-3 h-3 bg-[#ff5e3a] rounded-full border-2 border-[#121124]" />
-        </button>
+            <span className="tracking-tight text-[13px] font-black">AI Murabbiy</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => { triggerHaptic('medium'); onChangeScreen('ai'); }}
+            className="relative w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-[#a78bfa] hover:bg-white/5 transition-all duration-200 active:scale-90"
+            title="AI Murabbiy"
+          >
+            <Sparkles size={20} strokeWidth={2} />
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#ff5e3a] ring-2 ring-[#121124]" />
+          </button>
+        )}
 
-        {/* 3. Analitika Tab (3-bar chart icon inside dark circular container) */}
-        <button
-          onClick={() => { triggerHaptic('light'); onChangeScreen('analytics'); }}
-          className={`w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-90 ${
-            activeScreen === 'analytics'
-              ? 'bg-[#222138] text-[#c4f82a] ring-2 ring-[#c4f82a]/40 scale-105'
-              : 'bg-[#222138] text-slate-300 hover:text-white'
-          }`}
-        >
-          {/* Custom 3-bar icon styled exactly like the screenshot */}
-          <div className="flex items-end space-x-[3px] h-4">
-            <span className="w-1 h-2 bg-[#c4f82a] rounded-full" />
-            <span className="w-1 h-4 bg-white rounded-full" />
-            <span className="w-1 h-3 bg-purple-300 rounded-full" />
-          </div>
-        </button>
+        {/* 3. Reyting Tab */}
+        {activeScreen === 'analytics' ? (
+          <button
+            onClick={() => { triggerHaptic('light'); onChangeScreen('analytics'); }}
+            className="flex items-center space-x-2 bg-gradient-to-r from-[#c4f82a] to-[#a3e635] text-[#121124] px-4 py-2.5 rounded-full font-bold text-xs shadow-lg shadow-lime-400/20 transition-all duration-300 active:scale-95"
+          >
+            <Trophy size={18} strokeWidth={2.5} />
+            <span className="tracking-tight text-[13px] font-black">Reyting</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => { triggerHaptic('light'); onChangeScreen('analytics'); }}
+            className="relative w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 active:scale-90"
+            title="Reyting"
+          >
+            <Trophy size={20} strokeWidth={2} />
+          </button>
+        )}
 
-        {/* 4. Profil Tab (User letter with animated circular lime progress ring) */}
-        <button
-          onClick={() => { triggerHaptic('light'); onChangeScreen('profile'); }}
-          className={`relative w-11 h-11 flex items-center justify-center transition-all active:scale-90 ${
-            activeScreen === 'profile' ? 'scale-105' : ''
-          }`}
-        >
-          {/* Circular progress SVG */}
-          <svg className="w-11 h-11 -rotate-90" viewBox="0 0 44 44">
-            <circle
-              cx="22"
-              cy="22"
-              r={radius}
-              stroke="rgba(255,255,255,0.12)"
-              strokeWidth="2.5"
-              fill="none"
-            />
-            <circle
-              cx="22"
-              cy="22"
-              r={radius}
-              stroke="#c4f82a"
-              strokeWidth="2.5"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              strokeLinecap="round"
-              fill="none"
-              className="transition-all duration-700"
-            />
-          </svg>
-
-          {/* Central initial bubble */}
-          <div className="absolute inset-1.5 rounded-full bg-[#5e43f3] flex items-center justify-center text-white text-xs font-black">
-            {userInitial.toUpperCase()}
-          </div>
-        </button>
+        {/* 4. Profil Tab */}
+        {activeScreen === 'profile' ? (
+          <button
+            onClick={() => { triggerHaptic('light'); onChangeScreen('profile'); }}
+            className="flex items-center space-x-2 bg-[#7052ff] text-white px-3.5 py-2.5 rounded-full font-bold text-xs shadow-lg shadow-indigo-500/30 transition-all duration-300 active:scale-95"
+          >
+            {userAvatar ? (
+              <img src={userAvatar} alt="Profile" className="w-5 h-5 rounded-full object-cover ring-1 ring-white/50" />
+            ) : (
+              <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-black">
+                {userInitial.toUpperCase()}
+              </div>
+            )}
+            <span className="tracking-tight text-[13px] font-black">Profil</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => { triggerHaptic('light'); onChangeScreen('profile'); }}
+            className="relative w-11 h-11 rounded-full flex items-center justify-center hover:bg-white/5 transition-all duration-200 active:scale-90"
+            title="Profil"
+          >
+            {userAvatar ? (
+              <img src={userAvatar} alt="Profile" className="w-7 h-7 rounded-full object-cover ring-2 ring-white/20" />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-[#5e43f3]/60 text-white flex items-center justify-center text-xs font-bold ring-1 ring-white/20">
+                {userInitial.toUpperCase()}
+              </div>
+            )}
+          </button>
+        )}
 
       </div>
     </div>

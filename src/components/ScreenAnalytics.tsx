@@ -107,10 +107,10 @@ export const ScreenAnalytics: React.FC = () => {
   const myRankIndex = leaderboard.findIndex((u) => u.isMe);
   const myRank = myPoints > 0 ? myRankIndex + 1 : null;
 
-  // Shaxsiy referral link
+  // Shaxsiy referral link - Telegram bot universal havola (doim xatosiz ochiladi)
   const botUsername = 'aitasklistbot';
   const myTelegramId = '5466728043';
-  const referralLink = `https://t.me/${botUsername}/app?startapp=ref_${myTelegramId}`;
+  const referralLink = `https://t.me/${botUsername}?start=ref_${myTelegramId}`;
 
   const copyReferralLink = () => {
     triggerHaptic('medium');
@@ -122,7 +122,9 @@ export const ScreenAnalytics: React.FC = () => {
   const shareScoreToTelegram = () => {
     triggerHaptic('heavy');
     const shareText = encodeURIComponent(
-      `🔥 Men bu hafta To-Do ilovasida ${myPoints} ball to'pladim va #${myRank}-o'rindaman! Meni o'zib ket 👇`
+      myRank && myPoints > 0
+        ? `🔥 Men bu hafta To-Do ilovasida ${myPoints} ball to'pladim va #${myRank}-o'rindaman! Meni o'zib ket 👇`
+        : `🔥 Men To-Do ilovasida vazifalarni bajarishni boshladim! Menga qo'shil va birgalikda musobaqalashamiz 👇`
     );
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${shareText}`;
     window.open(shareUrl, '_blank');

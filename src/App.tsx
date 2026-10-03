@@ -68,6 +68,7 @@ export function App() {
           onChangeScreen={setScreen}
           pendingCount={taskStats.pending}
           userInitial={userInitial}
+          userAvatar={customProfile.avatarUrl}
           progressPct={taskStats.pct}
         />
       </div>

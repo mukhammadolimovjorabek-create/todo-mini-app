@@ -121,31 +121,51 @@ async def cmd_start(message: types.Message):
         "username": message.from_user.username or ""
     }
     
+    # Referral parametrini tekshirish (masalan: /start ref_5466728043)
+    referrer_id = None
+    parts = (message.text or "").split()
+    if len(parts) > 1 and parts[1].startswith("ref_"):
+        referrer_id = parts[1].replace("ref_", "").strip()
+        user_info["referred_by"] = referrer_id
+
     # Bazaga yozish va yangi foydalanuvchini aniqlash
     is_new, total_visitors = save_user(user_id, user_info)
     
+    app_url = f"{WEB_APP_URL}?ref={referrer_id}" if referrer_id else WEB_APP_URL
+
     # Katta qulay "Ilovani ochish" tugmasi
     inline_kb = InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
                     text="🚀 Ilovani ochish (To-Do & AI)",
-                    web_app=WebAppInfo(url=WEB_APP_URL)
+                    web_app=WebAppInfo(url=app_url)
                 )
             ]
         ]
     )
     
-    caption_text = (
-        f"Assalomu alaykum, <b>{message.from_user.first_name}</b>! 👋\n\n"
-        "🎯 <b>Smart To-Do & AI</b> — kuningizni samarali rejalashtirish va "
-        "sun'iy intellekt orqali tahlil qilish platformasiga xush kelibsiz!\n\n"
-        "✨ <b>Asosiy imkoniyatlar:</b>\n"
-        "• Kunlik vazifalar va vaqt (taymer) belgilash\n"
-        "• Sun'iy intellekt (AI) murabbiy tahlili va motivatsiya\n"
-        "• Kunlik seriya (streak) va o'sish statistikasi\n\n"
-        "👇 <i>Boshlash uchun quyidagi tugmani bosing:</i>"
-    )
+    if referrer_id and is_new:
+        caption_text = (
+            f"Assalomu alaykum, <b>{message.from_user.first_name}</b>! 👋\n\n"
+            "🎯 Sizni do'stingiz <b>Smart To-Do & AI</b> duel musobaqasiga taklif qildi!\n\n"
+            "✨ <b>Musobaqa qoidalari:</b>\n"
+            "• Kunlik rejalaringizni tuzing va bajaring\n"
+            "• Har bir to'g'ri bajarilgan vazifa uchun ball oling\n"
+            "• Do'stingiz bilan real vaqtda reytingda bellashing!\n\n"
+            "👇 <i>Do'stingizga qarshi bellashish uchun ilovani oching:</i>"
+        )
+    else:
+        caption_text = (
+            f"Assalomu alaykum, <b>{message.from_user.first_name}</b>! 👋\n\n"
+            "🎯 <b>Smart To-Do & AI</b> — kuningizni samarali rejalashtirish va "
+            "sun'iy intellekt orqali tahlil qilish platformasiga xush kelibsiz!\n\n"
+            "✨ <b>Asosiy imkoniyatlar:</b>\n"
+            "• Kunlik vazifalar va vaqt (taymer) belgilash\n"
+            "• Sun'iy intellekt (AI) murabbiy tahlili va motivatsiya\n"
+            "• Kunlik seriya (streak) va o'sish statistikasi\n\n"
+            "👇 <i>Boshlash uchun quyidagi tugmani bosing:</i>"
+        )
     
     # Rasm bilan yoki rasmsiz xabar yuborish
     if os.path.exists(BANNER_PATH):
@@ -166,6 +186,20 @@ async def cmd_start(message: types.Message):
     if user_id == ADMIN_ID:
         await message.answer("Siz bot adminsiz. Pastdagi tugma orqali hisobotni ko'rishingiz mumkin:", reply_markup=admin_kb)
     
+    # Agar taklif qiluvchi bo'lsa va bu yangi user bo'lsa, taklif qiluvchiga xushxabar yuboramiz
+    if is_new and referrer_id and referrer_id.isdigit():
+        try:
+            ref_chat_id = int(referrer_id)
+            inviter_text = (
+                "🎉 <b>Ajoyib yangilik! 1-do'stingiz qo'shildi!</b>\n\n"
+                f"👤 <b>{message.from_user.first_name}</b> sizning havolangiz orqali To-Do ilovasiga kirdi.\n"
+                "🎁 Sizga musobaqa balingizga <b>+10 ball</b> berildi!\n"
+                "Ilovadagi <b>Reyting</b> bo'limida do'stingiz bilan jonli duelni ko'rishingiz mumkin ⚔️"
+            )
+            await bot.send_message(chat_id=ref_chat_id, text=inviter_text, parse_mode="HTML")
+        except Exception as e:
+            logging.error(f"Referrerga xabar yuborishda xatolik: {e}")
+
     # Agar yangi foydalanuvchi bo'lsa va bu admin bo'lmasa, adminga bildirishnoma boradi
     if is_new and user_id != ADMIN_ID:
         try:
@@ -175,7 +209,8 @@ async def cmd_start(message: types.Message):
             alert_text = (
                 "🔔 <b>Yangi foydalanuvchi qo'shildi!</b>\n\n"
                 f"👤 Ismi: {message.from_user.first_name} {username_txt}\n"
-                f"🆔 ID: <code>{user_id}</code>\n\n"
+                f"🆔 ID: <code>{user_id}</code>\n"
+                f"🔗 Taklif qilgan: <code>{referrer_id or 'Organik'}</code>\n\n"
                 f"👥 <b>Hozirda foydalanuvchilar:</b> {active_count} ta\n"
                 f"📈 <b>Jami tashrif buyurganlar:</b> {total_visitors} ta"
             )
