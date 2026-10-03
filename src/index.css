@@ -56,3 +56,13 @@ body {
   animation: fadeIn 0.25s ease-out forwards;
 }
 
+@keyframes subtleWiggle {
+  0%, 100% { transform: rotate(-3deg) scale(1); }
+  50% { transform: rotate(3deg) scale(1.05); }
+}
+
+.animate-wiggle {
+  animation: subtleWiggle 1.4s ease-in-out infinite;
+  display: inline-block;
+}
+

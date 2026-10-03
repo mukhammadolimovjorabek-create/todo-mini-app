@@ -194,7 +194,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
                       className="bg-slate-50 hover:bg-indigo-50/80 p-2.5 rounded-xl transition-all active:scale-95 text-center group border border-transparent hover:border-indigo-100"
                     >
                       <BookOpen size={16} className="mx-auto text-[#7052ff] mb-1 group-hover:scale-110 transition-transform" />
-                      <p className="text-[10px] font-bold text-slate-700">Writing (Task 1 & 2)</p>
+                      <p className="text-[10px] font-bold text-slate-700">Writing</p>
                     </button>
 
                     <button

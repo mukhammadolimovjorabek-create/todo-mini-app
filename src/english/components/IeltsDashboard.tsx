@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Mic, Users, BookOpen, ChevronRight, Award, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Mic, Users, BookOpen, ChevronRight, Award } from 'lucide-react';
 import { AISpeakingView } from './AISpeakingView';
 import { PartnerSpeakingView } from './PartnerSpeakingView';
 import { WritingEvaluationView } from './WritingEvaluationView';
@@ -151,7 +151,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
             </div>
           </div>
 
-          {/* 3. Writing Task 2 */}
+          {/* 3. Writing */}
           <div
             onClick={() => {
               triggerHaptic('medium');
@@ -166,13 +166,13 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
                 </div>
                 <div>
                   <div className="flex items-center space-x-2">
-                    <h4 className="text-base font-black text-slate-900">Writing (Task 2 Insho)</h4>
+                    <h4 className="text-base font-black text-slate-900">Writing</h4>
                     <span className="text-[9px] font-black bg-indigo-100 text-[#7052ff] px-2 py-0.5 rounded-full">
                       4 Band Mezon
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    250+ so'zli akademik insho yozing va TR, CC, LR, GRA mezonlari bo'yicha darhol xolis ball va tahrir tavsiyalarini oling.
+                    Akademik insho yoki diagramma tahlilini yozing va rasmiy mezonlar bo'yicha darhol xolis ball va tahrir tavsiyalarini oling.
                   </p>
                 </div>
               </div>
@@ -185,14 +185,6 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
               <span className="bg-slate-100 px-2 py-0.5 rounded-md">Band 8+ Lug'at</span>
             </div>
           </div>
-        </div>
-
-        {/* Security & Responsibility Guarantee Footer */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-100 flex items-center space-x-3 text-xs text-slate-500">
-          <ShieldCheck size={20} className="text-emerald-500 shrink-0" />
-          <p className="text-[11px] leading-relaxed">
-            Foydalanuvchi ma'lumotlari va muloqot xavfsizligi qonuniy shartnomaga muvofiq kafolatlangan.
-          </p>
         </div>
       </div>
     </div>
