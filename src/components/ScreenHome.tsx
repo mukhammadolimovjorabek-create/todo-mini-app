@@ -29,9 +29,10 @@ const DURATION_PRESETS = [15, 30, 60, 90, 120];
 interface ScreenHomeProps {
   userName: string;
   onTasksChange?: () => void;
+  onOpenEnglish?: () => void;
 }
 
-export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange }) => {
+export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange, onOpenEnglish }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [filterCat, setFilterCat] = useState<TaskCategory | 'all'>('all');
   const [showModal, setShowModal] = useState(false);
@@ -229,6 +230,30 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange 
             </p>
           </div>
         </div>
+
+        {/* 🇬🇧 Ingliz tili (IELTS / Multilevel) Moduliga o'tish */}
+        {onOpenEnglish && (
+          <div
+            onClick={onOpenEnglish}
+            className="mt-3 bg-gradient-to-r from-[#110e28] to-[#1e1552] text-white rounded-2xl p-3.5 shadow-md flex items-center justify-between cursor-pointer border border-white/10 active:scale-[0.98] transition-all"
+          >
+            <div className="flex items-center space-x-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-[#7052ff]/20 text-white flex items-center justify-center text-xl shrink-0">
+                🇬🇧
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center space-x-1.5">
+                  <p className="text-xs font-black text-white truncate">IELTS & Multilevel Practice</p>
+                  <span className="text-[9px] font-black bg-[#c4f82a] text-[#121124] px-1.5 rounded">Yangi</span>
+                </div>
+                <p className="text-[10px] text-purple-200/80 truncate mt-0.5">
+                  Writing insho, AI Speaking va sherik bilan muloqot
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-black text-[#c4f82a] pl-2 shrink-0">Boshlash →</span>
+          </div>
+        )}
       </div>
 
       {/* ── Category Filters ── */}

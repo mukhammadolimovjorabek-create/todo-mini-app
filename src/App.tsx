@@ -7,9 +7,18 @@ import { ScreenAI } from './components/ScreenAI';
 import { ScreenAnalytics } from './components/ScreenAnalytics';
 import { ScreenProfile } from './components/ScreenProfile';
 import { BottomNav } from './components/BottomNav';
+import { EnglishPracticeModule } from './english';
 
 export function App() {
   const [screen, setScreen] = useState<ScreenType>('home');
+  const [isEnglishModule, setIsEnglishModule] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('module') === 'english';
+    } catch {
+      return false;
+    }
+  });
   const [user, setUser] = useState<TelegramUser>({
     id: 1,
     first_name: 'Siz',
@@ -56,21 +65,34 @@ export function App() {
     <div className="min-h-screen w-full bg-slate-300 flex flex-col items-center justify-start py-0 md:py-8">
       {/* Phone frame on desktop */}
       <div className="w-full max-w-md min-h-screen md:min-h-[820px] md:max-h-[900px] bg-[#f6f7fb] md:rounded-[2.8rem] shadow-2xl overflow-y-auto overflow-x-hidden relative flex flex-col border-0 md:border-8 md:border-slate-800">
-        <div className="flex-1">
-          {screen === 'home'      && <ScreenHome userName={currentName} onTasksChange={updateStatsFromStorage} />}
-          {screen === 'ai'        && <ScreenAI onTaskCreated={updateStatsFromStorage} />}
-          {screen === 'analytics' && <ScreenAnalytics />}
-          {screen === 'profile'   && <ScreenProfile user={user} onProfileUpdate={reloadProfile} />}
-        </div>
+        {isEnglishModule ? (
+          <EnglishPracticeModule
+            telegramUser={{
+              id: user.id,
+              first_name: currentName,
+              username: user.username,
+            }}
+            onExit={() => setIsEnglishModule(false)}
+          />
+        ) : (
+          <>
+            <div className="flex-1">
+              {screen === 'home'      && <ScreenHome userName={currentName} onTasksChange={updateStatsFromStorage} onOpenEnglish={() => setIsEnglishModule(true)} />}
+              {screen === 'ai'        && <ScreenAI onTaskCreated={updateStatsFromStorage} />}
+              {screen === 'analytics' && <ScreenAnalytics />}
+              {screen === 'profile'   && <ScreenProfile user={user} onProfileUpdate={reloadProfile} />}
+            </div>
 
-        <BottomNav
-          activeScreen={screen}
-          onChangeScreen={setScreen}
-          pendingCount={taskStats.pending}
-          userInitial={userInitial}
-          userAvatar={customProfile.avatarUrl}
-          progressPct={taskStats.pct}
-        />
+            <BottomNav
+              activeScreen={screen}
+              onChangeScreen={setScreen}
+              pendingCount={taskStats.pending}
+              userInitial={userInitial}
+              userAvatar={customProfile.avatarUrl}
+              progressPct={taskStats.pct}
+            />
+          </>
+        )}
       </div>
     </div>
   );

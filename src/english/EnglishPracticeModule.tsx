@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Sparkles, BookOpen, Mic, Users, Trophy } from 'lucide-react';
+import { ArrowLeft, Sparkles, BookOpen, Mic, Users, Trophy, Settings } from 'lucide-react';
 import { EXAM_REGISTRY } from './exams';
-import type { ExamType } from './types';
+import type { ExamType, EnglishUserProfile } from './types';
+import { getEnglishProfile } from './utils/storage';
+import { RegistrationModal } from './components/RegistrationModal';
+import { SettingsSheet } from './components/SettingsSheet';
 import './tokens.css';
 
 export interface TelegramUserProps {
@@ -20,13 +23,34 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
   telegramUser,
   onExit,
 }) => {
+  const [profile, setProfile] = useState<EnglishUserProfile | null>(() => getEnglishProfile());
+  const [showSettings, setShowSettings] = useState(false);
   const [selectedExam, setSelectedExam] = useState<ExamType | null>(null);
 
-  // Fallback dev user
-  const currentName = telegramUser?.first_name || 'Talaba';
+  // Active display name and gender
+  const currentName = profile?.displayName || telegramUser?.first_name || 'Talaba';
+  const currentGender = profile?.gender;
 
   return (
     <div className="english-root">
+      {/* ── First Open Registration Modal (Phase 1) ── */}
+      {!profile && (
+        <RegistrationModal
+          initialName={telegramUser?.first_name}
+          telegramId={telegramUser?.id}
+          onRegistered={(p) => setProfile(p)}
+        />
+      )}
+
+      {/* ── Settings Sheet (Phase 1) ── */}
+      {showSettings && profile && (
+        <SettingsSheet
+          profile={profile}
+          onClose={() => setShowSettings(false)}
+          onUpdated={(p) => setProfile(p)}
+        />
+      )}
+
       {/* ── Top Scoped Header ── */}
       <div className="px-5 pt-6 pb-4 bg-white/70 backdrop-blur-md border-b border-indigo-100 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center space-x-3">
@@ -50,12 +74,20 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
           </div>
         </div>
 
-        {/* User avatar indicator */}
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-full bg-[#7052ff] text-white flex items-center justify-center text-xs font-black">
-            {currentName[0]?.toUpperCase() || 'U'}
+        {/* Profile info & Settings button */}
+        {profile && (
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowSettings(true)}
+              className="flex items-center space-x-1.5 bg-indigo-50 hover:bg-indigo-100/80 px-2.5 py-1.5 rounded-full transition-all active:scale-95 border border-indigo-100/80"
+              title="Sozlamalar"
+            >
+              <span className="text-sm">{currentGender === 'female' ? '👧' : '👦'}</span>
+              <span className="text-xs font-bold text-slate-800 max-w-[80px] truncate">{currentName}</span>
+              <Settings size={14} className="text-slate-400 ml-0.5" />
+            </button>
           </div>
-        </div>
+        )}
       </div>
 
       {/* ── Main Content Container ── */}
@@ -76,7 +108,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
               Xush kelibsiz, {currentName}! 🎯
             </h3>
             <p className="text-xs text-purple-200/80 mt-1 leading-relaxed">
-              Qat'iy mezonlar asosida Writing insho tahlili, AI Examiner bilan Speaking va boshqa talabalar bilan jonli mashq.
+              Qat'iy mezonlar asosida Writing insho tahlili, AI Examiner bilan Speaking va sherik bilan jonli muloqot.
             </p>
           </div>
         </div>
@@ -173,7 +205,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
               <Trophy size={14} className="text-[#7052ff]" />
               <span>Modul Holati:</span>
             </span>
-            <span className="text-emerald-600 font-black">PHASE 0 Tayyor ✓</span>
+            <span className="text-emerald-600 font-black">PHASE 0 & 1 Tayyor ✓</span>
           </div>
           <p className="text-[11px] text-slate-400 leading-relaxed">
             Mavjud To-Do ilovangizdan to'liq ajratilgan (Zero-conflict). Faqat <code>src/english/</code> va <code>server/english/</code> ichida ishlaydi.
