@@ -62,39 +62,27 @@ export const unlockUser = (userId: number | string): void => {
 };
 
 /**
- * Sends notification directly to Admin via Telegram Bot API
+ * Requests unlock by opening the bot with the unlock trigger
+ * This securely invokes the bot's /start unlock command without exposing secrets in the frontend
  */
-export const notifyAdminForUnlock = async (user: {
+export const notifyAdminForUnlock = async (_user: {
   id: number | string;
   name: string;
   username?: string;
 }): Promise<boolean> => {
-  const BOT_TOKEN = '8922903249:AAEG1T0nM1eDi4Xi7jZ71bfFg0KJPWP1UAU';
-  const ADMIN_ID = 5466728043;
-
-  const usernameText = user.username ? `@${user.username}` : "(username ko'rsatilmagan)";
-  const messageText = 
-    `🚨 <b>BLOKLANGAN FOYDALANUVCHI TO'LOV QILMOQCHI!</b>\n\n` +
-    `👤 <b>Ismi:</b> ${user.name} (${usernameText})\n` +
-    `🆔 <b>ID:</b> <code>${user.id}</code>\n` +
-    `⚠️ <b>Sabab:</b> 10 ta shikoyat/dislike to'plangan\n` +
-    `💰 <b>To'lov summasi:</b> <b>6,700 so'm</b>\n\n` +
-    `👇 <i>Ushbu xabarga <b>Javob (Reply)</b> qilib karta yoki telefon raqamingizni yuboring. Bot uni avtomatik tarzda ushbu foydalanuvchiga yetkazadi.</i>`;
-
+  const botLink = 'https://t.me/aitasklistbot?start=unlock';
   try {
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: ADMIN_ID,
-        text: messageText,
-        parse_mode: 'HTML',
-      }),
-    });
-    const data = await res.json();
-    return data.ok === true;
+    const tg = typeof window !== 'undefined' ? (window as any).Telegram?.WebApp : null;
+    if (tg && typeof tg.openTelegramLink === 'function') {
+      tg.openTelegramLink(botLink);
+      return true;
+    } else {
+      window.open(botLink, '_blank');
+      return true;
+    }
   } catch (err) {
-    console.error('Failed to notify admin via bot API:', err);
+    console.error('Failed to open bot unlock link:', err);
+    window.open(botLink, '_blank');
     return false;
   }
 };

@@ -3,7 +3,13 @@ import type { Task, DayStats, TaskCategory, TaskPriority, TaskScope } from '../t
 const TASKS_KEY = 'todo_tasks_v2';
 const STATS_KEY = 'todo_stats_v2';
 
-export const today = () => new Date().toISOString().slice(0, 10);
+export const today = (): string => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 /**
  * Checks whether a YYYY-MM-DD date falls within the current Monday-to-Sunday week

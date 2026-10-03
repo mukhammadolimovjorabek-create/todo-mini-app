@@ -55,14 +55,18 @@ def save_user(user_id: int, user_info: dict):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     current_data = users.get(user_str_id, {})
-    
-    users[user_str_id] = {
+    new_data = {**current_data}
+    new_data.update({
         "first_name": user_info.get("first_name", current_data.get("first_name", "")),
         "username": user_info.get("username", current_data.get("username", "")),
         "status": "active",  # active yoki left
         "joined_at": current_data.get("joined_at", now_str),
         "last_active": now_str
-    }
+    })
+    if "referred_by" in user_info and user_info["referred_by"]:
+        new_data["referred_by"] = user_info["referred_by"]
+        
+    users[user_str_id] = new_data
     
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump(users, f, ensure_ascii=False, indent=2)
@@ -121,9 +125,39 @@ async def cmd_start(message: types.Message):
         "username": message.from_user.username or ""
     }
     
+    parts = (message.text or "").split()
+
+    # ── Unlock / To'lov so'rovi (masalan: /start unlock) ──
+    if len(parts) > 1 and parts[1].startswith("unlock"):
+        save_user(user_id, user_info)
+        username_txt = f"(@{message.from_user.username})" if message.from_user.username else "(username ko'rsatilmagan)"
+        
+        user_reply = (
+            f"Assalomu alaykum, <b>{message.from_user.first_name}</b>! 👋\n\n"
+            "🔒 <b>Sherik bilan suhbat bo'limi qulfini ochish</b>\n\n"
+            "⚠️ Siz 10 ta shikoyat/dislike olganingiz sababli speaking bo'limi cheklangan.\n"
+            "💰 Qulfni ochish to'lovi: <b>6,700 so'm</b>\n\n"
+            "Admin tez orada sizga karta yoki telefon raqamini yuboradi. "
+            "To'lov qilgach, to'lov chekini (skrinshot) shu yerga <b>rasm ko'rinishida</b> yuboring."
+        )
+        await message.answer(user_reply, parse_mode="HTML")
+
+        admin_alert = (
+            f"🚨 <b>BLOKLANGAN FOYDALANUVCHI TO'LOV QILMOQCHI!</b>\n\n"
+            f"👤 <b>Ismi:</b> {message.from_user.first_name} {username_txt}\n"
+            f"🆔 <b>ID:</b> <code>{user_id}</code>\n"
+            f"⚠️ <b>Sabab:</b> 10 ta shikoyat/dislike to'plangan\n"
+            f"💰 <b>To'lov summasi:</b> <b>6,700 so'm</b>\n\n"
+            f"👇 <i>Ushbu xabarga <b>Javob (Reply)</b> qilib karta yoki telefon raqamingizni yuboring. Bot uni avtomatik tarzda ushbu foydalanuvchiga yetkazadi.</i>"
+        )
+        try:
+            await bot.send_message(chat_id=ADMIN_ID, text=admin_alert, parse_mode="HTML")
+        except Exception as e:
+            logging.error(f"Adminga to'lov so'rovi yuborishda xatolik: {e}")
+        return
+
     # Referral parametrini tekshirish (masalan: /start ref_5466728043)
     referrer_id = None
-    parts = (message.text or "").split()
     if len(parts) > 1 and parts[1].startswith("ref_"):
         referrer_id = parts[1].replace("ref_", "").strip()
         user_info["referred_by"] = referrer_id
@@ -251,10 +285,59 @@ async def show_stats(message: types.Message):
     )
     await message.answer(report_text, parse_mode="HTML")
 
-# 4. Admin qulflangan foydalanuvchi haqidagi xabarga javob (reply) yozganda karta/raqam yuborish
+# 4. Admin buyrug'i: /unblock <user_id>
+@dp.message(F.chat.id == ADMIN_ID, Command("unblock"))
+async def cmd_manual_unblock(message: types.Message):
+    parts = (message.text or "").split()
+    if len(parts) < 2 or not parts[1].isdigit():
+        await message.answer("Format: <code>/unblock 123456789</code>", parse_mode="HTML")
+        return
+
+    target_user_id = int(parts[1])
+    users = load_users()
+    if str(target_user_id) in users:
+        users[str(target_user_id)]["dislikes"] = 0
+        users[str(target_user_id)]["is_unblocked"] = True
+        with open(USERS_FILE, "w", encoding="utf-8") as f:
+            json.dump(users, f, ensure_ascii=False, indent=2)
+
+    app_url = f"{WEB_APP_URL}?unblocked=1"
+    user_kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🚀 Ilovaga kirish", web_app=WebAppInfo(url=app_url))
+            ]
+        ]
+    )
+
+    try:
+        await bot.send_message(
+            chat_id=target_user_id,
+            text=(
+                "🎉 <b>Ajoyib yangilik! Qulfingiz admin tomonidan ochildi!</b>\n\n"
+                "Sherik bilan suhbat bo'limidagi barcha cheklovlar olib tashlandi. "
+                "Endi bemalol speaking mashqlarini davom ettirishingiz mumkin! 🚀"
+            ),
+            parse_mode="HTML",
+            reply_markup=user_kb
+        )
+    except Exception as e:
+        logging.error(f"Foydalanuvchiga ochilish xabarini yuborishda xatolik: {e}")
+
+    await message.answer(f"✅ Foydalanuvchi {target_user_id} muvaffaqiyatli qulfdan chiqarildi!")
+
+# 5. Admin qulflangan foydalanuvchi haqidagi xabarga javob (reply) yozganda karta/raqam yuborish
 @dp.message(F.chat.id == ADMIN_ID, F.reply_to_message)
 async def handle_admin_reply(message: types.Message):
+    # Buyruqlarni e'tiborsiz qoldiramiz
+    if not message.text or message.text.startswith("/"):
+        return
+
     replied_text = message.reply_to_message.text or message.reply_to_message.caption or ""
+    # Faqat bloklangan foydalanuvchi xabarlariga javob berilgandagina ishlaydi
+    if "BLOKLANGAN FOYDALANUVCHI" not in replied_text:
+        return
+
     import re
     match = re.search(r"ID:\s*(?:<code>)?(\d+)(?:</code>)?", replied_text)
     if not match:
@@ -281,7 +364,7 @@ async def handle_admin_reply(message: types.Message):
     except Exception as e:
         await message.reply(f"❌ Foydalanuvchiga xabar yetkazishda xatolik: {e}")
 
-# 5. Foydalanuvchi to'lov chekini (rasm) yuborganida
+# 6. Foydalanuvchi to'lov chekini (rasm) yuborganida
 @dp.message(F.photo, F.chat.id != ADMIN_ID)
 async def handle_user_check_photo(message: types.Message):
     user_id = message.from_user.id
@@ -325,7 +408,7 @@ async def handle_user_check_photo(message: types.Message):
     except Exception as e:
         logging.error(f"Chekni adminga yuborishda xatolik: {e}")
 
-# 6. Admin «✅ Qulfni ochish» tugmasini bosganda
+# 7. Admin «✅ Qulfni ochish» tugmasini bosganda
 @dp.callback_query(F.data.startswith("unblock:"))
 async def handle_unblock_callback(callback: types.CallbackQuery):
     if callback.from_user.id != ADMIN_ID:
@@ -364,41 +447,14 @@ async def handle_unblock_callback(callback: types.CallbackQuery):
     await callback.message.reply(f"✅ <b>Foydalanuvchi (ID: {target_user_id}) qulfdan chiqarildi va dostup berildi!</b>", parse_mode="HTML")
     await callback.answer("Qulf muvaffaqiyatli ochildi!")
 
-# 7. Admin buyrug'i: /unblock <user_id>
-@dp.message(F.chat.id == ADMIN_ID, Command("unblock"))
-async def cmd_manual_unblock(message: types.Message):
-    parts = (message.text or "").split()
-    if len(parts) < 2 or not parts[1].isdigit():
-        await message.answer("Format: <code>/unblock 123456789</code>", parse_mode="HTML")
-        return
-
-    target_user_id = int(parts[1])
-    users = load_users()
-    if str(target_user_id) in users:
-        users[str(target_user_id)]["dislikes"] = 0
-        users[str(target_user_id)]["is_unblocked"] = True
-        with open(USERS_FILE, "w", encoding="utf-8") as f:
-            json.dump(users, f, ensure_ascii=False, indent=2)
-
-    try:
-        await bot.send_message(
-            chat_id=target_user_id,
-            text="🎉 <b>Sizning qulfingiz admin tomonidan ochildi!</b> Ilovaga kirib davom ettirishingiz mumkin.",
-            parse_mode="HTML"
-        )
-    except Exception:
-        pass
-
-    await message.answer(f"✅ Foydalanuvchi {target_user_id} muvaffaqiyatli qulfdan chiqarildi!")
-
 async def main():
     print("=" * 50)
     print("Bot muvaffaqiyatli yangilandi va ishga tushdi!")
     print(f"Admin ID: {ADMIN_ID}")
     print("Admin menyusi: Hisobot")
     print("=" * 50)
-    # my_chat_member hodisalarini qabul qilish uchun allowed_updates
-    await dp.start_polling(bot, allowed_updates=["message", "chat_member", "my_chat_member"])
+    # my_chat_member va callback_query hodisalarini qabul qilish uchun allowed_updates
+    await dp.start_polling(bot, allowed_updates=["message", "chat_member", "my_chat_member", "callback_query"])
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

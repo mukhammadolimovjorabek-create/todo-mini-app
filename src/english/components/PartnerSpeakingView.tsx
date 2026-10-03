@@ -48,6 +48,7 @@ const FEMALE_PARTNERS: MatchedPartner[] = [
 export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGender = 'male' }) => {
   const telegramUser = getTelegramUser();
   const userId = telegramUser?.id || 'me';
+  const isDev = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('dev');
 
   // Reputation & Lock states
   const [dislikes, setDislikes] = useState<number>(() => getDislikesCount(userId));
@@ -222,17 +223,11 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
 
   const handleFinishRating = () => {
     triggerHaptic('heavy');
-    if (selectedSticker === 'dislike') {
-      const updated = recordDislike(userId);
-      setDislikes(updated);
-      if (updated >= 10) {
-        setIsLocked(true);
-      }
-    } else if (selectedSticker === 'like') {
-      const updated = recordLike(userId);
-      setDislikes(updated);
-      if (updated < 10) {
-        setIsLocked(false);
+    if (matchedPartner) {
+      if (selectedSticker === 'dislike') {
+        recordDislike(matchedPartner.id);
+      } else if (selectedSticker === 'like') {
+        recordLike(matchedPartner.id);
       }
     }
 
@@ -352,20 +347,22 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
             </button>
           </div>
 
-          {/* Discreet Testing controls */}
-          <div className="pt-2 text-center space-y-1">
-            <button
-              onClick={() => {
-                unlockUser(userId);
-                setDislikes(0);
-                setIsLocked(false);
-                triggerHaptic('heavy');
-              }}
-              className="text-[10px] text-slate-500 hover:text-slate-300 underline transition-colors"
-            >
-              🛠️ Sinov uchun qulfni ochish (Reset)
-            </button>
-          </div>
+            {/* Discreet Testing controls for developers only */}
+            {isDev && (
+              <div className="pt-2 text-center space-y-1">
+                <button
+                  onClick={() => {
+                    unlockUser(userId);
+                    setDislikes(0);
+                    setIsLocked(false);
+                    triggerHaptic('heavy');
+                  }}
+                  className="text-[10px] text-slate-500 hover:text-slate-300 underline transition-colors"
+                >
+                  🛠️ Dev Test: Qulfni ochish (Reset)
+                </button>
+              </div>
+            )}
         </div>
       </div>
     );
@@ -562,50 +559,52 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
               </button>
             </div>
 
-            {/* Developer / Testing shortcut */}
-            <div className="pt-1 flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-200/60">
-              <span className="text-[10px] text-slate-400">🧪 Sinov:</span>
-              <div className="flex items-center space-x-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const u = recordLike(userId);
-                    setDislikes(u);
-                    triggerHaptic('light');
-                  }}
-                  className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-[10px]"
-                  title="Like berish (jarimani kamaytiradi)"
-                >
-                  +1 👍
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const u = recordDislike(userId);
-                    setDislikes(u);
-                    if (u >= 10) setIsLocked(true);
-                    triggerHaptic('heavy');
-                  }}
-                  className="px-2 py-0.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-[10px]"
-                  title="Dislike berish (+1 jarima)"
-                >
-                  +1 👎 ({dislikes}/10)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDislikesCount(userId, 10);
-                    setDislikes(10);
-                    setIsLocked(true);
-                    triggerHaptic('heavy');
-                  }}
-                  className="px-2 py-0.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-black text-[10px]"
-                  title="10 ta dislike bilan qulflash"
-                >
-                  🔒 Qulflash (10 ta)
-                </button>
+            {/* Developer / Testing shortcut (only visible with ?dev=1 in URL) */}
+            {isDev && (
+              <div className="pt-1 flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-200/60">
+                <span className="text-[10px] text-slate-400">🧪 Dev:</span>
+                <div className="flex items-center space-x-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const u = recordLike(userId);
+                      setDislikes(u);
+                      triggerHaptic('light');
+                    }}
+                    className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-[10px]"
+                    title="Like berish (jarimani kamaytiradi)"
+                  >
+                    +1 👍
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const u = recordDislike(userId);
+                      setDislikes(u);
+                      if (u >= 10) setIsLocked(true);
+                      triggerHaptic('heavy');
+                    }}
+                    className="px-2 py-0.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-[10px]"
+                    title="Dislike berish (+1 jarima)"
+                  >
+                    +1 👎 ({dislikes}/10)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDislikesCount(userId, 10);
+                      setDislikes(10);
+                      setIsLocked(true);
+                      triggerHaptic('heavy');
+                    }}
+                    className="px-2 py-0.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-black text-[10px]"
+                    title="10 ta dislike bilan qulflash"
+                  >
+                    🔒 Qulflash (10 ta)
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
