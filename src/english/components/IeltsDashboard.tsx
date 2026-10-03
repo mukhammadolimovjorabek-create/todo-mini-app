@@ -1,11 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { ArrowLeft, ArrowRight, BookOpen, Edit3, Flame } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Flame } from 'lucide-react';
 import { AISpeakingView } from './AISpeakingView';
 import { PartnerSpeakingView } from './PartnerSpeakingView';
 import { WritingEvaluationView } from './WritingEvaluationView';
 import { IeltsReadingView } from './IeltsReadingView';
 import { triggerHaptic } from '../../utils/telegram';
 import { getTestResults } from '../utils/storage';
+import {
+  SpeakingWaveform,
+  TilePulseRing,
+  ReadingAnimatedBook,
+  WritingAnimatedPencil,
+} from './AnimatedSectionIcons';
 
 interface Props {
   onBack: () => void;
@@ -87,14 +93,8 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
               AI EXAMINER • YANGI
             </span>
 
-            {/* 5-Bar Animated Lime-Green Waveform */}
-            <div className="flex items-center space-x-1 h-6" title="Jonli ovoz to'lqini">
-              <span className="w-1 bg-[#c4f82a] rounded-full eng-eq-1 inline-block" />
-              <span className="w-1 bg-[#c4f82a] rounded-full eng-eq-2 inline-block" />
-              <span className="w-1 bg-[#c4f82a] rounded-full eng-eq-3 inline-block" />
-              <span className="w-1 bg-[#c4f82a] rounded-full eng-eq-4 inline-block" />
-              <span className="w-1 bg-[#c4f82a] rounded-full eng-eq-5 inline-block" />
-            </div>
+            {/* 7-Bar Animated Lime-Green Waveform (SMIL from prompt) */}
+            <SpeakingWaveform width={65} height={44} />
           </div>
 
           <div>
@@ -158,9 +158,13 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
             className="bg-[#181630] border border-white/10 hover:border-blue-500/40 rounded-[2rem] p-4.5 flex flex-col justify-between cursor-pointer active:scale-95 transition-all shadow-md group"
           >
             <div className="flex items-start justify-between">
-              {/* Moving Book Icon */}
-              <div className="w-11 h-11 rounded-2xl bg-blue-500/15 border border-blue-500/25 text-blue-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <BookOpen size={22} className="eng-animate-book" />
+              {/* 52x52 Tile with Pulse Ring & Turning Page Book */}
+              <div
+                className="w-[52px] h-[52px] rounded-[16px] flex items-center justify-center shrink-0 relative"
+                style={{ background: 'rgba(108,199,255,.16)', position: 'relative' }}
+              >
+                <TilePulseRing color="#6CC7FF" />
+                <ReadingAnimatedBook size={32} />
               </div>
 
               <div className="w-7 h-7 rounded-full bg-white/10 text-slate-300 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
@@ -195,9 +199,13 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
             className="bg-[#181630] border border-white/10 hover:border-purple-500/40 rounded-[2rem] p-4.5 flex flex-col justify-between cursor-pointer active:scale-95 transition-all shadow-md group"
           >
             <div className="flex items-start justify-between">
-              {/* Moving Pen / Quill Icon */}
-              <div className="w-11 h-11 rounded-2xl bg-purple-500/15 border border-purple-500/25 text-purple-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Edit3 size={22} className="eng-animate-pen" />
+              {/* 52x52 Tile with Pulse Ring & Drawing Pencil */}
+              <div
+                className="w-[52px] h-[52px] rounded-[16px] flex items-center justify-center shrink-0 relative"
+                style={{ background: 'rgba(169,155,255,.18)', position: 'relative' }}
+              >
+                <TilePulseRing color="#A99BFF" />
+                <WritingAnimatedPencil size={32} />
               </div>
 
               <div className="w-7 h-7 rounded-full bg-white/10 text-slate-300 flex items-center justify-center group-hover:bg-[#7052ff] group-hover:text-white transition-all">
