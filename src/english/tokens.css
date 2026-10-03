@@ -1,0 +1,53 @@
+/* ══════════════════════════════════════════════════════════════════
+   ENGLISH PRACTICE MODULE — SCOPED DESIGN TOKENS
+   All styles scoped strictly under .english-root
+   Namespace: --eng-* (ZERO collision with main app)
+   ══════════════════════════════════════════════════════════════════ */
+
+.english-root {
+  /* Brand Direction */
+  --eng-color-brand-deep: #534AB7;
+  --eng-color-brand-electric: #7052ff;
+  --eng-color-brand-lime: #C5F82A;
+  --eng-color-brand-navy: #1a1a2e;
+  --eng-color-brand-dark: #110e28;
+  
+  /* Exam Accent Colors */
+  --eng-accent-ielts: #7052ff;
+  --eng-accent-ielts-soft: rgba(112, 82, 255, 0.12);
+  --eng-accent-multilevel: #0d9488;
+  --eng-accent-multilevel-soft: rgba(13, 148, 136, 0.12);
+
+  /* Backgrounds & Surfaces */
+  --eng-bg-surface: #ffffff;
+  --eng-bg-soft: #f8f7ff;
+  --eng-bg-subtle: #f1f0fa;
+  --eng-border-subtle: rgba(83, 74, 183, 0.15);
+
+  /* Text colors */
+  --eng-text-primary: #0f172a;
+  --eng-text-secondary: #475569;
+  --eng-text-muted: #94a3b8;
+
+  /* Spacing & Radii */
+  --eng-radius-card: 1.5rem;
+  --eng-radius-button: 1rem;
+  --eng-radius-pill: 9999px;
+
+  /* Shadows */
+  --eng-shadow-card: 0 10px 25px -5px rgba(83, 74, 183, 0.08), 0 8px 10px -6px rgba(83, 74, 183, 0.04);
+  --eng-shadow-elevated: 0 20px 35px -8px rgba(83, 74, 183, 0.15);
+
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  color: var(--eng-text-primary);
+  background-color: var(--eng-bg-soft);
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.english-root * {
+  box-sizing: border-box;
+}
