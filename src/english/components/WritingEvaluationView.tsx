@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Sparkles, CheckCircle2, RotateCcw, Award, AlertCircle, BarChart3, FileText } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Sparkles, CheckCircle2, RotateCcw, Award, AlertCircle, BarChart3, FileText, Clock } from 'lucide-react';
 import { triggerHaptic } from '../../utils/telegram';
 import { saveTestResult } from '../utils/storage';
 import type { TestResultItem } from '../types';
@@ -45,6 +45,38 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
   const [essayText, setEssayText] = useState('');
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [result, setResult] = useState<WritingBandBreakdown | null>(null);
+
+  // Exam Start and Exit Confirmation
+  const [isStarted, setIsStarted] = useState(false);
+  const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
+
+  // Official IELTS Timers: Task 1 = 20 min (1200s), Task 2 = 40 min (2400s)
+  const [timeLeft, setTimeLeft] = useState<number>(() => (activeTab === 'task1' ? 20 * 60 : 40 * 60));
+  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
+
+  // Auto-submit on timer expiry
+  useEffect(() => {
+    let interval: any = null;
+    if (isStarted && isTimerRunning && timeLeft > 0 && !result && !isEvaluating) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            handleEvaluate();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isStarted, isTimerRunning, timeLeft, result, isEvaluating]);
+
+  const formatTimer = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
 
   // Time tracking
   const [startTime] = useState<string>(() => {
@@ -145,12 +177,59 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
   };
 
   return (
-    <div className="english-root min-h-screen bg-slate-50 flex flex-col text-slate-900 pb-12">
+    <div className="english-root min-h-screen bg-slate-50 flex flex-col text-slate-900 pb-12 relative">
+      {/* ── Exit Confirmation Modal ── */}
+      {showExitConfirmModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-5 animate-in fade-in">
+          <div className="bg-white rounded-[2rem] p-6 max-w-sm w-full space-y-4 shadow-2xl border border-slate-100 animate-in zoom-in-95">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-xl font-black">
+              ⚠️
+            </div>
+            <div className="text-center space-y-1.5">
+              <h4 className="text-base font-black text-slate-900">Sinovni to'xtatmoqchimisiz?</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Hozir chiqib ketsangiz, yozgan insho matningiz va sinov natijasi saqlanmaydi.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <button
+                onClick={() => {
+                  triggerHaptic('medium');
+                  setShowExitConfirmModal(false);
+                }}
+                className="py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all active:scale-95"
+              >
+                Yo'q, davom etish
+              </button>
+              <button
+                onClick={() => {
+                  triggerHaptic('heavy');
+                  setShowExitConfirmModal(false);
+                  setIsTimerRunning(false);
+                  onBack();
+                }}
+                className="py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-all active:scale-95"
+              >
+                Ha, chiqish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Top Header ── */}
       <div className="px-5 pt-6 pb-4 bg-white/80 backdrop-blur-md border-b border-indigo-100 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center space-x-3">
           <button
-            onClick={onBack}
+            onClick={() => {
+              if (isStarted && !result) {
+                triggerHaptic('medium');
+                setShowExitConfirmModal(true);
+              } else {
+                onBack();
+              }
+            }}
             className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center hover:bg-slate-200 transition-all active:scale-95"
             title="Orqaga"
           >
@@ -161,11 +240,22 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
               <span className="text-[10px] font-black uppercase tracking-wider text-[#7052ff] bg-indigo-50 px-2 py-0.5 rounded-full">
                 IELTS Academic Writing
               </span>
+              <span className="text-xs font-mono font-bold text-slate-400">
+                {startTime}
+              </span>
             </div>
             <h2 className="text-lg font-black text-slate-900 tracking-tight leading-tight">
               Writing Tahlil Markazi ✍️
             </h2>
           </div>
+        </div>
+
+        {/* Real-time Countdown Timer (20 min for Task 1, 40 min for Task 2) */}
+        <div className="flex items-center space-x-1.5 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl font-mono text-xs font-black text-slate-700">
+          <Clock size={14} className={timeLeft < 300 ? 'text-rose-500 animate-pulse' : 'text-[#7052ff]'} />
+          <span className={timeLeft < 300 ? 'text-rose-600 font-bold' : ''}>
+            {formatTimer(timeLeft)}
+          </span>
         </div>
       </div>
 
@@ -174,9 +264,17 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
         <div className="grid grid-cols-2 gap-2 bg-slate-200/60 p-1.5 rounded-2xl">
           <button
             onClick={() => {
+              if (isStarted && !result && essayText.trim().length > 30) {
+                triggerHaptic('medium');
+                setShowExitConfirmModal(true);
+                return;
+              }
               triggerHaptic('light');
               setActiveTab('task1');
               setResult(null);
+              setIsStarted(false);
+              setIsTimerRunning(false);
+              setTimeLeft(20 * 60);
             }}
             className={`py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 ${
               activeTab === 'task1'
@@ -185,14 +283,22 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
             }`}
           >
             <BarChart3 size={15} className="text-[#7052ff]" />
-            <span>Task 1: Diagramma</span>
+            <span>Task 1: Diagramma (20m)</span>
           </button>
 
           <button
             onClick={() => {
+              if (isStarted && !result && essayText.trim().length > 30) {
+                triggerHaptic('medium');
+                setShowExitConfirmModal(true);
+                return;
+              }
               triggerHaptic('light');
               setActiveTab('task2');
               setResult(null);
+              setIsStarted(false);
+              setIsTimerRunning(false);
+              setTimeLeft(40 * 60);
             }}
             className={`py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 ${
               activeTab === 'task2'
@@ -201,9 +307,61 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
             }`}
           >
             <FileText size={15} className="text-[#7052ff]" />
-            <span>Task 2: Insho (Essay)</span>
+            <span>Task 2: Insho (40m)</span>
           </button>
         </div>
+
+        {/* ── BEFORE STARTING: SHOW START CARD (Savolni ko'rsatmaslik) ── */}
+        {!isStarted && !result ? (
+          <div className="bg-white rounded-[2.2rem] p-6 border border-slate-100 shadow-md space-y-5 text-center animate-in fade-in">
+            <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-[#7052ff] flex items-center justify-center mx-auto text-2xl font-black shadow-inner">
+              ✍️
+            </div>
+
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-black uppercase text-[#7052ff] bg-indigo-50 px-2.5 py-1 rounded-md">
+                {activeTab === 'task1' ? 'IELTS Academic Task 1 · Report' : 'IELTS Academic Task 2 · Essay'}
+              </span>
+              <h3 className="text-xl font-black text-slate-900 leading-snug">
+                {activeTab === 'task1' ? 'Diagramma va Grafik Tahlili' : 'Muammoli Mavzu Bo\'yicha Insho'}
+              </h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                Sinov boshlanmaguncha topshiriq matni va {activeTab === 'task1' ? 'grafik' : 'insho savoli'} yashirin holatda turadi. "Sinovni boshlash" tugmasini bosganingizdan so'ng rasmiy {activeTab === 'task1' ? '20' : '40'} daqiqalik taymer ishga tushadi.
+              </p>
+            </div>
+
+            {/* Benchmarks Badges */}
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+              <span className="text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center space-x-1.5">
+                <Clock size={14} className="text-amber-600" />
+                <span>{activeTab === 'task1' ? '20 daqiqa' : '40 daqiqa'} (Rasmiy me'yor)</span>
+              </span>
+              <span className="text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200 px-3 py-1.5 rounded-xl">
+                📝 {activeTab === 'task1' ? 'Kamida 150 ta so\'z' : 'Kamida 250 ta so\'z'}
+              </span>
+              <span className="text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-xl">
+                📊 4 ta rasmiy mezon
+              </span>
+            </div>
+
+            {/* Start Button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('heavy');
+                  setIsStarted(true);
+                  setIsTimerRunning(true);
+                  setTimeLeft(activeTab === 'task1' ? 20 * 60 : 40 * 60);
+                }}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#7052ff] to-[#5938ea] text-white font-black text-sm shadow-lg hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
+              >
+                <span>🚀 Sinovni boshlash ({activeTab === 'task1' ? '20:00' : '40:00'})</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
 
         {/* ── TASK 1: MURAKKAB DIAGRAMMA VA GRAFIK (Foydalanuvchi talabi) ── */}
         {activeTab === 'task1' && (
@@ -468,7 +626,25 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
                 ))}
               </div>
             </div>
+
+            {/* Reset Button */}
+            <button
+              onClick={() => {
+                triggerHaptic('medium');
+                setResult(null);
+                setEssayText('');
+                setIsStarted(false);
+                setIsTimerRunning(false);
+                setTimeLeft(activeTab === 'task1' ? 20 * 60 : 40 * 60);
+              }}
+              className="w-full py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-all flex items-center justify-center space-x-2 active:scale-95"
+            >
+              <RotateCcw size={15} />
+              <span>Yangi insho yozish / Qaytadan topshirish</span>
+            </button>
           </div>
+        )}
+        </>
         )}
       </div>
     </div>

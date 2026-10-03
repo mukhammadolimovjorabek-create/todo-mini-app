@@ -347,9 +347,13 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
   // Typography settings: clean readable text
   const [fontSize, setFontSize] = useState<'normal' | 'large'>('normal');
 
-  // 20 minute timer
+  // Start exam state (Savolni boshlashni bosmaguncha ko'rsatmaslik)
+  const [isStarted, setIsStarted] = useState(false);
+  const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
+
+  // Official IELTS Academic Reading: 20 minutes per passage
   const [timeLeft, setTimeLeft] = useState(20 * 60);
-  const [isTimerRunning, setIsTimerRunning] = useState(true);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
 
   // Time tracking
   const [startTime] = useState<string>(() => {
@@ -360,15 +364,23 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
   const questionsSectionRef = useRef<HTMLDivElement>(null);
   const currentPassage = READING_PASSAGES[selectedPassageIdx];
 
+  // Auto-submit when 20 minutes expire
   useEffect(() => {
     let interval: any = null;
-    if (isTimerRunning && timeLeft > 0 && !isSubmitted) {
+    if (isStarted && isTimerRunning && timeLeft > 0 && !isSubmitted) {
       interval = setInterval(() => {
-        setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            handleSubmit();
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isTimerRunning, timeLeft, isSubmitted]);
+  }, [isStarted, isTimerRunning, timeLeft, isSubmitted]);
 
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -473,10 +485,11 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
     triggerHaptic('medium');
     setAnswers({});
     setIsSubmitted(false);
+    setIsStarted(false);
     setShowOnlyErrors(false);
     setExpandedAnalysisIds({});
     setTimeLeft(20 * 60);
-    setIsTimerRunning(true);
+    setIsTimerRunning(false);
   };
 
   const handleViewErrors = () => {
@@ -510,12 +523,59 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
     : currentPassage.questions;
 
   return (
-    <div className="english-root min-h-screen bg-slate-50 flex flex-col text-slate-900 pb-16">
+    <div className="english-root min-h-screen bg-slate-50 flex flex-col text-slate-900 pb-16 relative">
+      {/* ── Exit Confirmation Modal ── */}
+      {showExitConfirmModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-5 animate-in fade-in">
+          <div className="bg-white rounded-[2rem] p-6 max-w-sm w-full space-y-4 shadow-2xl border border-slate-100 animate-in zoom-in-95">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-xl font-black">
+              ⚠️
+            </div>
+            <div className="text-center space-y-1.5">
+              <h4 className="text-base font-black text-slate-900">Sinovni to'xtatmoqchimisiz?</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Hozir chiqib ketsangiz, belgilangan javoblaringiz va 20 daqiqalik sinov natijasi saqlanmaydi.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <button
+                onClick={() => {
+                  triggerHaptic('medium');
+                  setShowExitConfirmModal(false);
+                }}
+                className="py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all active:scale-95"
+              >
+                Yo'q, davom etish
+              </button>
+              <button
+                onClick={() => {
+                  triggerHaptic('heavy');
+                  setShowExitConfirmModal(false);
+                  setIsTimerRunning(false);
+                  onBack();
+                }}
+                className="py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-all active:scale-95"
+              >
+                Ha, chiqish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Top Header ── */}
       <div className="px-5 pt-6 pb-4 bg-white/90 backdrop-blur-md border-b border-indigo-100 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center space-x-3">
           <button
-            onClick={onBack}
+            onClick={() => {
+              if (isStarted && !isSubmitted) {
+                triggerHaptic('medium');
+                setShowExitConfirmModal(true);
+              } else {
+                onBack();
+              }
+            }}
             className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center hover:bg-slate-200 transition-all active:scale-95"
             title="Orqaga"
           >
@@ -570,36 +630,87 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
           ))}
         </div>
 
-        {/* Passage Header & Font Size Controls */}
-        <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm space-y-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase text-[#7052ff] bg-indigo-50 px-2.5 py-1 rounded-md">
-              {currentPassage.subtitle}
-            </span>
+        {/* ── BEFORE STARTING: SHOW START CARD (Savollarni ko'rsatmaslik) ── */}
+        {!isStarted ? (
+          <div className="bg-white rounded-[2.2rem] p-6 border border-slate-100 shadow-md space-y-5 text-center animate-in fade-in">
+            <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-[#7052ff] flex items-center justify-center mx-auto text-2xl font-black shadow-inner">
+              📖
+            </div>
 
-            {/* Typography Size Toggle */}
-            <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg text-xs font-bold text-slate-600">
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-black uppercase text-[#7052ff] bg-indigo-50 px-2.5 py-1 rounded-md">
+                {currentPassage.subtitle}
+              </span>
+              <h3 className="text-xl font-black text-slate-900 leading-snug">
+                {currentPassage.title}
+              </h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                Sinov boshlanmaguncha matn va savollar yashirin holatda turadi. "Sinovni boshlash" tugmasini bosishingiz bilan 20 daqiqalik taymer ishga tushadi.
+              </p>
+            </div>
+
+            {/* Exam Benchmarks Badges */}
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+              <span className="text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center space-x-1.5">
+                <Clock size={14} className="text-amber-600" />
+                <span>20 daqiqa (Rasmiy me'yor)</span>
+              </span>
+              <span className="text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200 px-3 py-1.5 rounded-xl">
+                📝 {currentPassage.questions.length} ta savol
+              </span>
+              <span className="text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-xl">
+                🎯 Band 9.0 aniqlik
+              </span>
+            </div>
+
+            {/* Prominent Start Button */}
+            <div className="pt-2">
               <button
-                onClick={() => setFontSize('normal')}
-                className={`px-2 py-0.5 rounded transition-all ${fontSize === 'normal' ? 'bg-white text-[#7052ff] shadow-xs' : 'hover:text-slate-900'}`}
-                title="Standart shrift"
+                type="button"
+                onClick={() => {
+                  triggerHaptic('heavy');
+                  setIsStarted(true);
+                  setIsTimerRunning(true);
+                  setTimeLeft(20 * 60);
+                }}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#7052ff] to-[#5938ea] text-white font-black text-sm shadow-lg hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
               >
-                A
-              </button>
-              <button
-                onClick={() => setFontSize('large')}
-                className={`px-2 py-0.5 rounded text-sm transition-all ${fontSize === 'large' ? 'bg-white text-[#7052ff] shadow-xs' : 'hover:text-slate-900'}`}
-                title="Kattaroq shrift"
-              >
-                A+
+                <span>🚀 Sinovni boshlash (20:00)</span>
               </button>
             </div>
           </div>
+        ) : (
+          <>
+            {/* Passage Header & Font Size Controls */}
+            <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-[#7052ff] bg-indigo-50 px-2.5 py-1 rounded-md">
+                  {currentPassage.subtitle}
+                </span>
 
-          <h3 className="text-base sm:text-lg font-black text-slate-900 leading-snug">
-            {currentPassage.title}
-          </h3>
-        </div>
+                {/* Typography Size Toggle */}
+                <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg text-xs font-bold text-slate-600">
+                  <button
+                    onClick={() => setFontSize('normal')}
+                    className={`px-2 py-0.5 rounded transition-all ${fontSize === 'normal' ? 'bg-white text-[#7052ff] shadow-xs' : 'hover:text-slate-900'}`}
+                    title="Standart shrift"
+                  >
+                    A
+                  </button>
+                  <button
+                    onClick={() => setFontSize('large')}
+                    className={`px-2 py-0.5 rounded text-sm transition-all ${fontSize === 'large' ? 'bg-white text-[#7052ff] shadow-xs' : 'hover:text-slate-900'}`}
+                    title="Kattaroq shrift"
+                  >
+                    A+
+                  </button>
+                </div>
+              </div>
+
+              <h3 className="text-base sm:text-lg font-black text-slate-900 leading-snug">
+                {currentPassage.title}
+              </h3>
+            </div>
 
         {/* Passage Text Container - Clean, Readable Typography */}
         <div className="bg-[#fbfbfd] rounded-[2rem] p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4 max-h-[420px] overflow-y-auto reading-custom-scroll">
@@ -924,6 +1035,8 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
             </button>
           )}
         </div>
+        </>
+        )}
       </div>
     </div>
   );

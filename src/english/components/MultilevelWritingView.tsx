@@ -46,8 +46,12 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [result, setResult] = useState<WritingBandBreakdown | null>(null);
 
-  // Timer: 60 minutes default
-  const [timeLeft, setTimeLeft] = useState<number>(60 * 60);
+  // Exam Start and Exit Confirmation
+  const [isStarted, setIsStarted] = useState(false);
+  const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
+
+  // Official Multilevel Timers: Task 1 = 20 min (1200s), Task 2 = 40 min (2400s)
+  const [timeLeft, setTimeLeft] = useState<number>(() => (activeTab === 'task1' ? 20 * 60 : 40 * 60));
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
   // Time tracking
@@ -78,13 +82,20 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
 
   React.useEffect(() => {
     let interval: any = null;
-    if (isTimerRunning && timeLeft > 0) {
+    if (isStarted && isTimerRunning && timeLeft > 0 && !result && !isEvaluating) {
       interval = setInterval(() => {
-        setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            handleEvaluate();
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isTimerRunning, timeLeft]);
+  }, [isStarted, isTimerRunning, timeLeft, result, isEvaluating]);
 
   const handleEvaluate = () => {
     if (wordCount < 30) {
@@ -201,12 +212,59 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
   const categories = ['ALL', 'EDUCATION', 'TECHNOLOGY', 'HEALTH & LIFESTYLE', 'ENVIRONMENT', 'SOCIETY & COMMUNITY', 'CRIME & SAFETY', 'BUSINESS & WORK', 'CULTURE & GLOBAL SOCIETY'];
 
   return (
-    <div className="english-root min-h-screen bg-slate-50 flex flex-col text-slate-900 pb-12">
+    <div className="english-root min-h-screen bg-slate-50 flex flex-col text-slate-900 pb-12 relative">
+      {/* ── Exit Confirmation Modal ── */}
+      {showExitConfirmModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-5 animate-in fade-in">
+          <div className="bg-white rounded-[2rem] p-6 max-w-sm w-full space-y-4 shadow-2xl border border-slate-100 animate-in zoom-in-95">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-xl font-black">
+              ⚠️
+            </div>
+            <div className="text-center space-y-1.5">
+              <h4 className="text-base font-black text-slate-900">Sinovni to'xtatmoqchimisiz?</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Hozir chiqib ketsangiz, yozgan matningiz va sinov natijasi saqlanmaydi.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <button
+                onClick={() => {
+                  triggerHaptic('medium');
+                  setShowExitConfirmModal(false);
+                }}
+                className="py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all active:scale-95"
+              >
+                Yo'q, davom etish
+              </button>
+              <button
+                onClick={() => {
+                  triggerHaptic('heavy');
+                  setShowExitConfirmModal(false);
+                  setIsTimerRunning(false);
+                  onBack();
+                }}
+                className="py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-all active:scale-95"
+              >
+                Ha, chiqish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Top Header ── */}
       <div className="px-5 pt-6 pb-4 bg-white/80 backdrop-blur-md border-b border-teal-100 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center space-x-3">
           <button
-            onClick={onBack}
+            onClick={() => {
+              if (isStarted && !result) {
+                triggerHaptic('medium');
+                setShowExitConfirmModal(true);
+              } else {
+                onBack();
+              }
+            }}
             className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center hover:bg-slate-200 transition-all active:scale-95"
             title="Orqaga"
           >
@@ -223,19 +281,11 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
           </div>
         </div>
 
-        {/* Timer Control */}
-        <button
-          onClick={() => setIsTimerRunning(!isTimerRunning)}
-          className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center space-x-1.5 transition-all ${
-            isTimerRunning
-              ? 'bg-rose-50 border-rose-200 text-rose-700 animate-pulse'
-              : 'bg-slate-50 border-slate-200 text-slate-600'
-          }`}
-          title={isTimerRunning ? "Taymerni to'xtatish" : "Taymerni boshlash"}
-        >
-          <Clock size={13} />
-          <span>{formatTimer(timeLeft)}</span>
-        </button>
+        {/* Real-time Countdown Timer (20 min for Task 1, 40 min for Task 2) */}
+        <div className="flex items-center space-x-1.5 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl font-mono text-xs font-black text-slate-700">
+          <Clock size={13} className={timeLeft < 300 ? 'text-rose-500 animate-pulse' : 'text-teal-600'} />
+          <span className={timeLeft < 300 ? 'text-rose-600 font-bold' : ''}>{formatTimer(timeLeft)}</span>
+        </div>
       </div>
 
       {/* ── Main Content Container ── */}
@@ -245,10 +295,18 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
         <div className="flex p-1 bg-slate-200/70 rounded-2xl">
           <button
             onClick={() => {
+              if (isStarted && !result && essayText.trim().length > 20) {
+                triggerHaptic('medium');
+                setShowExitConfirmModal(true);
+                return;
+              }
               triggerHaptic('light');
               setActiveTab('task1');
               setEssayText('');
               setResult(null);
+              setIsStarted(false);
+              setIsTimerRunning(false);
+              setTimeLeft(20 * 60);
               setShowModelAnswer(false);
             }}
             className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all ${
@@ -257,14 +315,22 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Task 1: Xatlar (19 ta)
+            Task 1: Xatlar (20m)
           </button>
           <button
             onClick={() => {
+              if (isStarted && !result && essayText.trim().length > 20) {
+                triggerHaptic('medium');
+                setShowExitConfirmModal(true);
+                return;
+              }
               triggerHaptic('light');
               setActiveTab('task2');
               setEssayText('');
               setResult(null);
+              setIsStarted(false);
+              setIsTimerRunning(false);
+              setTimeLeft(40 * 60);
               setShowModelAnswer(false);
             }}
             className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all ${
@@ -273,12 +339,63 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Task 2: Insho (25 ta B2/C1)
+            Task 2: Insho (40m)
           </button>
         </div>
 
-        {/* ── TASK 1 SECTION ── */}
-        {activeTab === 'task1' && currentTask1 && (
+        {/* ── BEFORE STARTING: SHOW START CARD (Savolni ko'rsatmaslik) ── */}
+        {!isStarted && !result ? (
+          <div className="bg-white rounded-[2.2rem] p-6 border border-slate-100 shadow-md space-y-5 text-center animate-in fade-in">
+            <div className="w-16 h-16 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto text-2xl font-black shadow-inner">
+              ✍️
+            </div>
+
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-black uppercase text-teal-700 bg-teal-50 px-2.5 py-1 rounded-md">
+                {activeTab === 'task1' ? 'Milliy Multilevel Task 1 · Xat yozish' : 'Milliy Multilevel Task 2 · Akademik Insho'}
+              </span>
+              <h3 className="text-xl font-black text-slate-900 leading-snug">
+                {activeTab === 'task1' ? "Do'stga yoki Rasmiy Xat Yozish" : "Muammoli Mavzu Bo'yicha B2/C1 Insho"}
+              </h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                Sinov boshlanmaguncha topshiriq matni va {activeTab === 'task1' ? 'vaziyat/email mavzusi' : 'insho savoli'} yashirin holatda turadi. "Sinovni boshlash" tugmasini bosganingizdan so'ng rasmiy {activeTab === 'task1' ? '20' : '40'} daqiqalik taymer ishga tushadi.
+              </p>
+            </div>
+
+            {/* Benchmarks Badges */}
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+              <span className="text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center space-x-1.5">
+                <Clock size={14} className="text-amber-600" />
+                <span>{activeTab === 'task1' ? '20 daqiqa' : '40 daqiqa'} (Rasmiy me'yor)</span>
+              </span>
+              <span className="text-xs font-bold bg-teal-50 text-teal-800 border border-teal-200 px-3 py-1.5 rounded-xl">
+                📝 {activeTab === 'task1' ? "Task 1.1: ~50 so'z | Task 1.2: 120-150 so'z" : "Kamida 180-250 so'z"}
+              </span>
+              <span className="text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-xl">
+                📊 CEFR B1 - C1 Mezonlari
+              </span>
+            </div>
+
+            {/* Start Button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('heavy');
+                  setIsStarted(true);
+                  setIsTimerRunning(true);
+                  setTimeLeft(activeTab === 'task1' ? 20 * 60 : 40 * 60);
+                }}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-black text-sm shadow-lg hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
+              >
+                <span>🚀 Sinovni boshlash ({activeTab === 'task1' ? '20:00' : '40:00'})</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* ── TASK 1 SECTION ── */}
+            {activeTab === 'task1' && currentTask1 && (
           <div className="space-y-4 animate-in fade-in duration-200">
             {/* Task 1 Exercise Selector */}
             <div className="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-100 shadow-xs">
@@ -543,7 +660,24 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
                 ))}
               </div>
             </div>
+
+            {/* Reset Button */}
+            <button
+              onClick={() => {
+                triggerHaptic('medium');
+                setResult(null);
+                setEssayText('');
+                setIsStarted(false);
+                setIsTimerRunning(false);
+                setTimeLeft(activeTab === 'task1' ? 20 * 60 : 40 * 60);
+              }}
+              className="w-full py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-all flex items-center justify-center space-x-2 active:scale-95"
+            >
+              <span>Yangi topshiriq / Qaytadan topshirish</span>
+            </button>
           </div>
+        )}
+        </>
         )}
 
       </div>
