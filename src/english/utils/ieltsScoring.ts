@@ -73,10 +73,36 @@ export function evaluateCandidateSpeech(
   answers: { question: string; answer: string }[],
   testType: 'part1' | 'part2' | 'part3' | 'full_mock'
 ): SpeechEvaluationResult {
-  const combinedText = answers.map((a) => a.answer).join(' ');
+  // Filter out system placeholders like "(Nomzod belgilangan vaqtda javob bermadi)" or "(Javob berilmadi)"
+  const validAnswers = answers.filter((a) => {
+    const t = a.answer.trim();
+    return t.length > 0 && !t.startsWith('(') && !t.includes('javob bermadi') && !t.includes('javobi berilmadi') && !t.includes('nutqi berilmadi');
+  });
+
+  const combinedText = validAnswers.map((a) => a.answer).join(' ');
   const cleanText = combinedText.toLowerCase().replace(/[^a-z0-9'\s-]/g, ' ');
   const words = cleanText.split(/\s+/).filter((w) => w.length > 0);
   const totalWords = words.length;
+
+  // AGAR NOMZOD UMUMAN GAPIRMAGAN BO'LSA (0 TA SO'Z):
+  if (totalWords === 0) {
+    return {
+      overallBand: 0.0,
+      fluencyScore: 0.0,
+      lexicalScore: 0.0,
+      grammarScore: 0.0,
+      pronunciationScore: 0.0,
+      strengths: [],
+      improvements: [
+        "Siz belgilangan vaqtda hech qanday ovozli javob bermadingiz.",
+        "Imtihon topshirish uchun savol o'qib bo'lingach, mikrofon yonganida ingliz tilida ovoz chiqarib gapiring.",
+        "Mikrofon sozlamalarini va qurilmangizning ovoz yozish ruxsatini tekshiring."
+      ],
+      quotes: [],
+      vocabularyHighlights: [],
+      grammaticalFeaturesDetected: [],
+    };
+  }
 
   // Extract candidate evidence quotes (sentences candidate actually said)
   const quotes: string[] = [];
@@ -118,6 +144,7 @@ export function evaluateCandidateSpeech(
   if (discourseFound.length >= 4) fcRaw += 0.5;
   if (fillersFound.length >= 1) fcRaw += 0.5;
   if (totalWords < targetWords * 0.4) fcRaw -= 1.5;
+  if (totalWords < 15) fcRaw = 3.0;
 
   // ── 2. Calculate Lexical Resource (LR) ──
   let lrRaw = 6.0;
@@ -127,6 +154,7 @@ export function evaluateCandidateSpeech(
   if (idiomsFound.length >= 1) lrRaw += 0.5;
   if (basicCount > 6 && vocabFound.length === 0) lrRaw -= 0.5;
   if (totalWords < 30) lrRaw -= 1.0;
+  if (totalWords < 15) lrRaw = 3.0;
 
   // ── 3. Calculate Grammatical Range and Accuracy (GRA) ──
   let graRaw = 6.0;
@@ -135,13 +163,13 @@ export function evaluateCandidateSpeech(
   if (grammarFound.length >= 6) graRaw += 0.5;
   if (totalWords >= targetWords) graRaw += 0.5;
   if (totalWords < 40) graRaw -= 1.0;
+  if (totalWords < 15) graRaw = 3.0;
 
   // ── 4. Calculate Pronunciation (PR) ──
-  // PR correlates with natural flow, discourse rhythm and sentence length
   let prRaw = Math.round(((fcRaw + lrRaw + graRaw) / 3) * 2) / 2;
 
-  // Bound each criterion between 5.0 and 9.0
-  const clamp = (val: number) => Math.min(9.0, Math.max(5.0, Math.round(val * 2) / 2));
+  // Bound each criterion between 2.0 and 9.0
+  const clamp = (val: number) => Math.min(9.0, Math.max(2.0, Math.round(val * 2) / 2));
   const fc = clamp(fcRaw);
   const lr = clamp(lrRaw);
   const gra = clamp(graRaw);

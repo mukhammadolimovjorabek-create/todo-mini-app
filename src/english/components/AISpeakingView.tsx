@@ -1199,7 +1199,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
           <span>Boshqa partni tanlash</span>
         </button>
 
-        {/* Examiner Band Score Card (Part 1 • Band 7.5) */}
+        {/* Examiner Band Score Card */}
         <div
           className="rounded-[2.2rem] p-6 text-white text-center shadow-xl relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #110e28 0%, #1e1552 50%, #351e8c 100%)' }}
@@ -1210,10 +1210,12 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
           </div>
 
           <h3 className="text-3xl font-black text-white my-1 tracking-tight">
-            {partLabel} • Band {feedback.overallBand.toFixed(1)}
+            {feedback.overallBand === 0 ? "Javob qayd etilmadi (Band 0.0)" : `${partLabel} • Band ${feedback.overallBand.toFixed(1)}`}
           </h3>
           <p className="text-[11px] text-purple-200/80">
-            Dr. Alistair Vance (10x Band 9.0 Cambridge Expert) tahlili
+            {feedback.overallBand === 0
+              ? "Nomzod tomonidan savollarga ovozli nutq bildirilmagan"
+              : "Dr. Alistair Vance (10x Band 9.0 Cambridge Expert) tahlili"}
           </p>
 
           <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-4 gap-1 text-center">
@@ -1239,7 +1241,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
         {/* Examiner Tavsiyalari */}
         <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-3">
           <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
-            Examiner Tavsiyalari (Keyingi Band uchun)
+            {feedback.overallBand === 0 ? "Ekspert eslatmasi va yo'riqnoma:" : "Examiner Tavsiyalari (Keyingi Band uchun)"}
           </h4>
           <div className="space-y-2">
             {feedback.improvements.map((imp, idx) => (

@@ -572,6 +572,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
   };
 
   const getCefrGrade = (band: number) => {
+    if (band === 0) return 'Baholanmadi (Javob yo\'q)';
     if (band >= 7.5) return 'C1 (Advanced)';
     if (band >= 6.0) return 'B2 (Vantage)';
     if (band >= 4.5) return 'B1 (Threshold)';
@@ -1176,7 +1177,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
             {cefrGrade}
           </h3>
           <p className="text-[11px] text-teal-100">
-            Ekvivalent IELTS Ball: {feedback.overallBand.toFixed(1)}
+            {feedback.overallBand === 0 ? "Ovozli nutq qayd etilmadi" : `Ekvivalent IELTS Ball: ${feedback.overallBand.toFixed(1)}`}
           </p>
 
           <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-4 gap-1 text-center">
