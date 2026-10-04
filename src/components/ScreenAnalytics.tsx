@@ -95,7 +95,7 @@ export const ScreenAnalytics: React.FC = () => {
         if (!userId) return;
         
         // Localhostdagi Python bot API dan do'stlarni olish
-        const res = await fetch(`https://todo-mini-app.onrender.com/api/friends?user_id=${userId}`);
+        const res = await fetch(`https://todo-mini-app-cwkd.onrender.com/api/friends?user_id=${userId}`);
         const data = await res.json();
         
         if (data.friends && Array.isArray(data.friends)) {
