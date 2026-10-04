@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Volume2, VolumeX, Clock, Award, ChevronRight, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Volume2, VolumeX, Clock, Award, ChevronRight, RotateCcw, Mic, MicOff } from 'lucide-react';
 import {
   getRandomMultilevelPart1_1,
   getRandomMultilevelPart1_2,
@@ -86,10 +86,26 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
   };
 
   const isListeningWantedRef = useRef<boolean>(false);
-  const accumulatedTextRef = useRef<string>('');
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   const [isManualInput, setIsManualInput] = useState<boolean>(false);
 
-  const startListening = async () => {
+  // Pre-request microphone permission once during direct user tap
+  const requestMicPermission = async (): Promise<boolean> => {
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        if (!mediaStreamRef.current) {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaStreamRef.current = stream;
+        }
+        return true;
+      }
+    } catch (e) {
+      console.warn("Microphone permission prompt:", e);
+    }
+    return false;
+  };
+
+  const startListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setIsManualInput(true);
@@ -114,18 +130,20 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       };
 
       recognition.onresult = (event: any) => {
-        let interim = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          const piece = event.results[i][0].transcript;
+        // Build transcript fresh from all results to avoid repetition bug
+        let finalTranscript = '';
+        let interimTranscript = '';
+        for (let i = 0; i < event.results.length; ++i) {
+          const transcriptPiece = event.results[i][0]?.transcript || '';
           if (event.results[i].isFinal) {
-            accumulatedTextRef.current += piece + ' ';
+            finalTranscript += transcriptPiece + ' ';
           } else {
-            interim += piece;
+            interimTranscript += transcriptPiece;
           }
         }
-        const combined = (accumulatedTextRef.current + interim).trim();
-        if (combined) {
-          setLiveTranscript(combined);
+        const fullText = (finalTranscript + interimTranscript).trim();
+        if (fullText) {
+          setLiveTranscript(fullText);
         }
       };
 
@@ -147,7 +165,15 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       };
 
       recognition.onend = () => {
-        setIsRecording(false);
+        if (isListeningWantedRef.current) {
+          try {
+            recognition.start();
+          } catch {
+            setIsRecording(false);
+          }
+        } else {
+          setIsRecording(false);
+        }
       };
 
       recognition.start();
@@ -169,13 +195,24 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     setIsRecording(false);
   };
 
+  const toggleListening = () => {
+    triggerHaptic('medium');
+    if (isRecording) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
+
   // Start selected Part
-  const handleStartExam = (part: PartSelection) => {
+  const handleStartExam = async (part: PartSelection) => {
     triggerHaptic('heavy');
+    // Pre-request mic permission once directly on user tap
+    await requestMicPermission();
+
     setSelectedPart(part);
     setTranscriptHistory([]);
     setLiveTranscript('');
-    accumulatedTextRef.current = '';
     setFeedback(null);
     setTestStartTime(getFormattedTime());
     setPrepNotes('');
@@ -336,7 +373,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     ];
     setTranscriptHistory(newHistory);
     setLiveTranscript('');
-    accumulatedTextRef.current = '';
     setIsManualInput(false);
 
     if (selectedPart === 'part1_1') {
@@ -919,10 +955,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
                   </div>
                   <textarea
                     value={liveTranscript}
-                    onChange={(e) => {
-                      setLiveTranscript(e.target.value);
-                      accumulatedTextRef.current = e.target.value;
-                    }}
+                    onChange={(e) => setLiveTranscript(e.target.value)}
                     placeholder="Javobingizni shu yerda yozishingiz yoki tahrirlashingiz mumkin..."
                     rows={3}
                     className="w-full p-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 outline-none focus:border-teal-500 resize-none"
@@ -970,6 +1003,25 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
                   <span className="w-1 h-3 bg-teal-500 rounded-full animate-bounce" />
                 </div>
               )}
+            </div>
+
+            {/* Interactive Microphone Button (Foydalanuvchi ko'rib turishi va xohlasa qo'lda boshqarishi uchun) */}
+            <div className="flex flex-col items-center justify-center py-1">
+              <button
+                type="button"
+                onClick={toggleListening}
+                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl ${
+                  isRecording
+                    ? 'bg-gradient-to-r from-rose-500 to-red-600 text-white animate-pulse shadow-rose-500/40 ring-4 ring-rose-200 scale-105'
+                    : 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-teal-500/30 hover:scale-105 active:scale-95'
+                }`}
+                title={isRecording ? "Mikrofonni to'xtatish" : "Mikrofonni yoqish"}
+              >
+                {isRecording ? <Mic size={28} className="animate-bounce" /> : <MicOff size={26} />}
+              </button>
+              <span className={`text-[11px] font-bold mt-2 ${isRecording ? 'text-rose-600 font-black' : 'text-slate-500'}`}>
+                {isRecording ? "🎙️ Tinglanmoqda (To'xtatish uchun bosing)" : "🎙️ Gapirish uchun bosing (Yoki avtomatik tinglaydi)"}
+              </span>
             </div>
 
             {/* Automatic Voice Controls */}

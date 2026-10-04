@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Volume2, VolumeX, Clock, CheckCircle2, RotateCcw, Award, ChevronRight, Sparkles, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Volume2, VolumeX, Clock, CheckCircle2, RotateCcw, Award, ChevronRight, Sparkles, AlertTriangle, Mic, MicOff } from 'lucide-react';
 import { speakingBank, getRandomPart2Topic, getRandomPart3Topic, type Part1Topic, type Part2CueCard, type Part3Topic } from '../data/speakingBank';
 import { getSeenQuestions, markQuestionSeen, saveTestResult } from '../utils/storage';
 import { evaluateCandidateSpeech, type SpeechEvaluationResult } from '../utils/ieltsScoring';
@@ -105,11 +105,27 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
   };
 
   const isListeningWantedRef = useRef<boolean>(false);
-  const accumulatedTextRef = useRef<string>('');
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   const [isManualInput, setIsManualInput] = useState<boolean>(false);
 
+  // Pre-request microphone permission once during direct user tap
+  const requestMicPermission = async (): Promise<boolean> => {
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        if (!mediaStreamRef.current) {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaStreamRef.current = stream;
+        }
+        return true;
+      }
+    } catch (e) {
+      console.warn("Microphone permission prompt:", e);
+    }
+    return false;
+  };
+
   // Start Recognition directly using native SpeechRecognition
-  const startListening = async () => {
+  const startListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setIsManualInput(true);
@@ -134,25 +150,27 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       };
 
       recognition.onresult = (event: any) => {
-        let interim = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          const piece = event.results[i][0].transcript;
+        // Build transcript fresh from all results to avoid repetition bug
+        let finalTranscript = '';
+        let interimTranscript = '';
+        for (let i = 0; i < event.results.length; ++i) {
+          const transcriptPiece = event.results[i][0]?.transcript || '';
           if (event.results[i].isFinal) {
-            accumulatedTextRef.current += piece + ' ';
+            finalTranscript += transcriptPiece + ' ';
           } else {
-            interim += piece;
+            interimTranscript += transcriptPiece;
           }
         }
-        const combined = (accumulatedTextRef.current + interim).trim();
-        if (combined) {
-          setLiveTranscript(combined);
+        const fullText = (finalTranscript + interimTranscript).trim();
+        if (fullText) {
+          setLiveTranscript(fullText);
         }
       };
 
       recognition.onerror = (event: any) => {
         console.warn("Speech recognition error:", event.error);
         if (event.error === 'no-speech') {
-          // Normal brief pause, do NOT turn off microphone!
+          // Normal brief pause while user is thinking, do NOT turn off mic
           return;
         }
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
@@ -167,7 +185,15 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       };
 
       recognition.onend = () => {
-        setIsRecording(false);
+        if (isListeningWantedRef.current) {
+          try {
+            recognition.start();
+          } catch {
+            setIsRecording(false);
+          }
+        } else {
+          setIsRecording(false);
+        }
       };
 
       recognition.start();
@@ -187,6 +213,15 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       } catch {}
     }
     setIsRecording(false);
+  };
+
+  const toggleListening = () => {
+    triggerHaptic('medium');
+    if (isRecording) {
+      stopListening();
+    } else {
+      startListening();
+    }
   };
 
   // Filter topics by domain
@@ -217,11 +252,13 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
   };
 
   // Step 2: Confirm Topic -> Start Locked Exam
-  const handleStartExam = () => {
+  const handleStartExam = async () => {
     triggerHaptic('heavy');
+    // Pre-request mic permission once directly on user gesture so mobile WebView doesn't prompt on every question!
+    await requestMicPermission();
+
     setTranscriptHistory([]);
     setLiveTranscript('');
-    accumulatedTextRef.current = '';
     setFeedback(null);
     setTestStartTime(getFormattedTime());
     setStep('active_test');
@@ -370,7 +407,6 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     ];
     setTranscriptHistory(newHistory);
     setLiveTranscript('');
-    accumulatedTextRef.current = '';
 
     if (selectedPart === 'part1') {
       if (p1Topic && p1Index + 1 < Math.min(p1Topic.questions.length, 4)) {
@@ -411,7 +447,6 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       ];
       setTranscriptHistory(newHistory);
       setLiveTranscript('');
-      accumulatedTextRef.current = '';
 
       if (p1Topic && mockP1Idx + 1 < 3) {
         const nextIdx = mockP1Idx + 1;
@@ -998,10 +1033,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
                   </div>
                   <textarea
                     value={liveTranscript}
-                    onChange={(e) => {
-                      setLiveTranscript(e.target.value);
-                      accumulatedTextRef.current = e.target.value;
-                    }}
+                    onChange={(e) => setLiveTranscript(e.target.value)}
                     placeholder="Javobingizni shu yerda yozishingiz yoki tahrirlashingiz mumkin..."
                     rows={3}
                     className="w-full p-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 outline-none focus:border-[#7052ff] resize-none"
@@ -1049,6 +1081,25 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
                   <span className="w-1 h-3 bg-emerald-500 rounded-full animate-bounce" />
                 </div>
               )}
+            </div>
+
+            {/* Interactive Microphone Button (Foydalanuvchi ko'rib turishi va xohlasa qo'lda boshqarishi uchun) */}
+            <div className="flex flex-col items-center justify-center py-1">
+              <button
+                type="button"
+                onClick={toggleListening}
+                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl ${
+                  isRecording
+                    ? 'bg-gradient-to-r from-rose-500 to-red-600 text-white animate-pulse shadow-rose-500/40 ring-4 ring-rose-200 scale-105'
+                    : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-emerald-500/30 hover:scale-105 active:scale-95'
+                }`}
+                title={isRecording ? "Mikrofonni to'xtatish" : "Mikrofonni yoqish"}
+              >
+                {isRecording ? <Mic size={28} className="animate-bounce" /> : <MicOff size={26} />}
+              </button>
+              <span className={`text-[11px] font-bold mt-2 ${isRecording ? 'text-rose-600 font-black' : 'text-slate-500'}`}>
+                {isRecording ? "🎙️ Tinglanmoqda (To'xtatish uchun bosing)" : "🎙️ Gapirish uchun bosing (Yoki avtomatik tinglaydi)"}
+              </span>
             </div>
 
             {/* Voice Controls: Automated exam flow button */}
