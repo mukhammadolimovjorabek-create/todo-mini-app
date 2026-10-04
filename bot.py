@@ -430,34 +430,58 @@ async def ws_matchmake(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
     
-    user_id = request.query.get("user_id")
-    if not user_id or not db_pool:
-        await ws.close()
-        return ws
-        
-    async with db_pool.acquire() as conn:
-        row = await conn.fetchrow("SELECT first_name, username, likes, dislikes FROM users WHERE user_id = $1", int(user_id))
-        user_data = {"name": row['first_name'] if row else "Foydalanuvchi", "username": row['username'] if row else "", "likes": row['likes'] if row else 0, "dislikes": row['dislikes'] if row else 0}
+    user_id = request.query.get("user_id") or "guest"
+    user_data = {"name": "Foydalanuvchi", "username": "", "likes": 0, "dislikes": 0}
+    
+    if db_pool:
+        try:
+            user_id_int = int(user_id)
+            async with db_pool.acquire() as conn:
+                row = await conn.fetchrow("SELECT first_name, username, likes, dislikes FROM users WHERE user_id = $1", user_id_int)
+                if row:
+                    user_data = {
+                        "name": row['first_name'] or "Foydalanuvchi",
+                        "username": row['username'] or "",
+                        "likes": row['likes'] or 0,
+                        "dislikes": row['dislikes'] or 0
+                    }
+        except Exception as e:
+            logging.error(f"Error fetching user info for WS: {e}")
             
     me = {'ws': ws, 'user_id': user_id, 'data': user_data, 'room_id': None}
     
+    # Filter out dead/closed sockets
+    clean_pool = [p for p in waiting_pool if not p['ws'].closed and p['ws'] != ws]
+    waiting_pool.clear()
+    waiting_pool.extend(clean_pool)
+    
     matched = False
     for p in waiting_pool:
-        if p['user_id'] != user_id:
+        if not p['ws'].closed and p['ws'] != ws:
             waiting_pool.remove(p)
             room_id = str(uuid.uuid4())
             me['room_id'] = room_id
             p['room_id'] = room_id
             active_rooms[room_id] = [me, p]
             
-            await me['ws'].send_json({"type": "match_found", "partner": {"id": p['user_id'], "name": p['data']['name'], "username": p['data']['username'], "likes": p['data']['likes'], "dislikes": p['data']['dislikes']}})
-            await p['ws'].send_json({"type": "match_found", "partner": {"id": me['user_id'], "name": me['data']['name'], "username": me['data']['username'], "likes": me['data']['likes'], "dislikes": me['data']['dislikes']}})
-            matched = True
-            break
+            p_partner = {"id": p['user_id'], "name": p['data']['name'], "username": p['data']['username'], "likes": p['data']['likes'], "dislikes": p['data']['dislikes']}
+            me_partner = {"id": me['user_id'], "name": me['data']['name'], "username": me['data']['username'], "likes": me['data']['likes'], "dislikes": me['data']['dislikes']}
+            
+            try:
+                await me['ws'].send_json({"type": "match_found", "partner": p_partner})
+                await p['ws'].send_json({"type": "match_found", "partner": me_partner})
+                matched = True
+                logging.info(f"Matched users: {me['user_id']} with {p['user_id']}")
+                break
+            except Exception as e:
+                logging.error(f"Error sending match notifications: {e}")
             
     if not matched:
         waiting_pool.append(me)
-        await ws.send_json({"type": "waiting"})
+        try:
+            await ws.send_json({"type": "waiting"})
+        except Exception:
+            pass
         
     try:
         async for msg in ws:
@@ -466,7 +490,7 @@ async def ws_matchmake(request):
                 room_id = me['room_id']
                 if room_id and room_id in active_rooms:
                     for p in active_rooms[room_id]:
-                        if p['ws'] != ws:
+                        if p['ws'] != ws and not p['ws'].closed:
                             try:
                                 await p['ws'].send_json(data)
                             except Exception:
@@ -480,12 +504,13 @@ async def ws_matchmake(request):
         if room_id and room_id in active_rooms:
             partners = active_rooms[room_id]
             for p in partners:
-                if p['ws'] != ws:
+                if p['ws'] != ws and not p['ws'].closed:
                     try:
                         await p['ws'].send_json({"type": "partner_left"})
-                    except:
+                    except Exception:
                         pass
-            del active_rooms[room_id]
+            if room_id in active_rooms:
+                del active_rooms[room_id]
             
     return ws
 
@@ -507,8 +532,21 @@ async def api_get_friends(request):
                 "joinedAt": str(udata.get("joined_at", ""))[:10]
             })
     
-    resp = web.json_response({"friends": friends})
+    return web.json_response({"friends": friends})
+
+@web.middleware
+async def cors_middleware(request, handler):
+    if request.method == "OPTIONS":
+        resp = web.Response()
+    else:
+        try:
+            resp = await handler(request)
+        except Exception as e:
+            logging.error(f"Error handling request {request.path}: {e}")
+            resp = web.json_response({"error": str(e)}, status=500)
     resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS, PUT, DELETE"
+    resp.headers["Access-Control-Allow-Headers"] = "*"
     return resp
 
 async def on_startup(bot: Bot):
@@ -527,19 +565,12 @@ async def start_bot():
 def main():
     logging.basicConfig(level=logging.INFO)
     
-    import aiohttp_cors
-    app = web.Application()
-    cors = aiohttp_cors.setup(app, defaults={
-        "*": aiohttp_cors.ResourceOptions(
-            allow_credentials=True,
-            expose_headers="*",
-            allow_headers="*",
-        )
-    })
-    cors.add(app.router.add_get("/api/friends", api_get_friends))
-    cors.add(app.router.add_post("/api/unfriend", api_unfriend))
-    cors.add(app.router.add_post("/api/rate_partner", api_rate_partner))
-    cors.add(app.router.add_options("/api/rate_partner", api_rate_partner))
+    app = web.Application(middlewares=[cors_middleware])
+    app.router.add_get("/api/friends", api_get_friends)
+    app.router.add_post("/api/unfriend", api_unfriend)
+    app.router.add_options("/api/unfriend", api_unfriend)
+    app.router.add_post("/api/rate_partner", api_rate_partner)
+    app.router.add_options("/api/rate_partner", api_rate_partner)
     app.router.add_get("/ws/matchmake", ws_matchmake)
     
     if WEBHOOK_URL:
