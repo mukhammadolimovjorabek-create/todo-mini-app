@@ -60,24 +60,11 @@ export const ScreenAnalytics: React.FC = () => {
     setCatBreakdown(breakdown);
 
     // Aniq ballar tizimi (Yuqori=3, O'rta=2, Past=1, Streak=kuniga +2)
-      const handleUnfriend = async (friendId: string) => {
+            // @ts-ignore
+  const handleUnfriend = async (friendId: string) => {
     try {
       const user = getTelegramUser();
-      await fetch(`https://todo-mini-app-cwkd.onrender.com/api/unfriend`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user?.id, friend_id: friendId })
-      });
-      setFriendsList(prev => prev.filter(f => f.id !== friendId));
-    } catch(e) {
-      console.error(e);
-    }
-  };
-
-    const handleUnfriend = async (friendId: string) => {
-    try {
-      const user = getTelegramUser();
-      await fetch(`https://todo-mini-app-cwkd.onrender.com/api/unfriend`, {
+      await fetch('https://todo-mini-app-cwkd.onrender.com/api/unfriend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: user?.id, friend_id: friendId })
@@ -140,35 +127,7 @@ export const ScreenAnalytics: React.FC = () => {
   }, []);
 
   // Foydalanuvchining real balli (Agar 0 bo'lsa qat'iy 0!)
-    const handleUnfriend = async (friendId: string) => {
-    try {
-      const user = getTelegramUser();
-      await fetch(`https://todo-mini-app-cwkd.onrender.com/api/unfriend`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user?.id, friend_id: friendId })
-      });
-      setFriendsList(prev => prev.filter(f => f.id !== friendId));
-    } catch(e) {
-      console.error(e);
-    }
-  };
-
-    const handleUnfriend = async (friendId: string) => {
-    try {
-      const user = getTelegramUser();
-      await fetch(`https://todo-mini-app-cwkd.onrender.com/api/unfriend`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user?.id, friend_id: friendId })
-      });
-      setFriendsList(prev => prev.filter(f => f.id !== friendId));
-    } catch(e) {
-      console.error(e);
-    }
-  };
-
-  const scoreData = calculateUserPoints();
+      const scoreData = calculateUserPoints();
   const myPoints = scoreData.totalPoints;
   const globalInfo = getGlobalRank(myPoints);
 

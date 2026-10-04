@@ -21,29 +21,10 @@ interface Props {
 type GenderFilter = 'any' | 'female' | 'male';
 type RoomPart = 'part1' | 'part2' | 'part3';
 
-interface MatchedPartner {
-  id: string;
-  name: string;
-  gender: 'male' | 'female';
-  targetBand: string;
-  username: string;
-  city: string;
-}
-
 // Sample partner pool for realistic matching simulation based on gender preference
-const MALE_PARTNERS: MatchedPartner[] = [
-  { id: 'p1', name: 'Jasur Bekmirzayev', gender: 'male', targetBand: '7.5', username: 'jasur_ielts7', city: 'Toshkent' },
-  { id: 'p2', name: 'Shoxrux Aliyev', gender: 'male', targetBand: '7.0', username: 'shoxrux_eng', city: 'Samarqand' },
-  { id: 'p3', name: 'Diyorbek Qodirov', gender: 'male', targetBand: '8.0', username: 'diyor_speaking', city: 'Buxoro' },
-  { id: 'p4', name: 'Bobur Mirzayev', gender: 'male', targetBand: '7.5', username: 'bobur_english', city: 'Farg\'ona' },
-];
 
-const FEMALE_PARTNERS: MatchedPartner[] = [
-  { id: 'p5', name: 'Malika Karimova', gender: 'female', targetBand: '7.5', username: 'malika_ielts', city: 'Toshkent' },
-  { id: 'p6', name: 'Laylo Odilova', gender: 'female', targetBand: '8.0', username: 'laylo_speaking', city: 'Samarqand' },
-  { id: 'p7', name: 'Zilola Rahimova', gender: 'female', targetBand: '7.0', username: 'zilola_english', city: 'Namangan' },
-  { id: 'p8', name: 'Madina Usmonova', gender: 'female', targetBand: '7.5', username: 'madina_ielts9', city: 'Andijon' },
-];
+
+
 
 export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGender = 'male' }) => {
   const telegramUser = getTelegramUser();
@@ -132,6 +113,13 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     }
   };
 
+  const handleEndSession = () => {
+    triggerHaptic('medium');
+    if (ws) ws.close();
+    setMatchStatus('idle');
+    setShowRatingModal(true);
+  };
+
   // WebSocket Search logic
   useEffect(() => {
     let interval: any;
@@ -156,7 +144,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
         } else if (data.type === 'chat_message') {
           if (data.text === 'CONSENT') {
             setPartnerConsented(true);
-            triggerHaptic('success');
+            triggerHaptic('heavy');
           } else if (data.text === 'TURN_SWITCH') {
             setSpeakerTurn(prev => prev === 'me' ? 'partner' : 'me');
             triggerHaptic('light');

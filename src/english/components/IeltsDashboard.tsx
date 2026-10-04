@@ -24,6 +24,7 @@ type ActiveView = 'menu' | 'reading' | 'writing' | 'speaking' | 'ai_speaking' | 
 
 export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, initialView = 'menu' }) => {
   const [activeView, setActiveView] = useState<ActiveView>(initialView);
+  const [showSpeakingModal, setShowSpeakingModal] = useState(false);
 
   // Compute last scores from test history (only if test has actually been taken)
   const { readingScore, writingScore } = useMemo(() => {
@@ -254,7 +255,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
                 {/* 1. AI Examiner */}
                 <button
                   onClick={() => {
-                    triggerHaptic('success');
+                    triggerHaptic('heavy');
                     setShowSpeakingModal(false);
                     setActiveView('ai_speaking');
                   }}
@@ -275,7 +276,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
                 {/* 2. Sherik qidirish */}
                 <button
                   onClick={() => {
-                    triggerHaptic('success');
+                    triggerHaptic('heavy');
                     setShowSpeakingModal(false);
                     setActiveView('partner_speaking');
                   }}
