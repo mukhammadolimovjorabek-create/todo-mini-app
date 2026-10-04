@@ -1008,6 +1008,63 @@ async def api_user_status(request):
     resp.headers["Access-Control-Allow-Origin"] = "*"
     return resp
 
+import edge_tts
+import urllib.parse
+import urllib.request
+
+tts_cache = {}
+
+async def api_tts(request):
+    if request.method == "OPTIONS":
+        resp = web.Response()
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        resp.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        resp.headers["Access-Control-Allow-Headers"] = "*"
+        return resp
+
+    text = request.query.get("text", "").strip()
+    voice = request.query.get("voice", "en-GB-RyanNeural").strip()
+    if not text:
+        return web.json_response({"error": "text required"}, status=400)
+
+    cache_key = f"{voice}:{text}"
+    if cache_key in tts_cache:
+        resp = web.Response(body=tts_cache[cache_key], content_type="audio/mpeg")
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        resp.headers["Cache-Control"] = "public, max-age=86400"
+        return resp
+
+    # 1. Official British Council examiner neural voice (Band 9.0)
+    try:
+        comm = edge_tts.Communicate(text, voice)
+        chunks = []
+        async for chunk in comm.stream():
+            if chunk["type"] == "audio":
+                chunks.append(chunk["data"])
+        audio_bytes = b"".join(chunks)
+        if audio_bytes:
+            if len(tts_cache) < 250:
+                tts_cache[cache_key] = audio_bytes
+            resp = web.Response(body=audio_bytes, content_type="audio/mpeg")
+            resp.headers["Access-Control-Allow-Origin"] = "*"
+            resp.headers["Cache-Control"] = "public, max-age=86400"
+            return resp
+    except Exception as e:
+        logging.warning(f"edge_tts failed: {e}")
+
+    # 2. Server-side Google TTS fallback (no referer header blocking)
+    try:
+        url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl=en-GB&client=tw-ob&q={urllib.parse.quote(text[:200])}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=8) as r:
+            audio_bytes = r.read()
+            resp = web.Response(body=audio_bytes, content_type="audio/mpeg")
+            resp.headers["Access-Control-Allow-Origin"] = "*"
+            return resp
+    except Exception as e:
+        logging.error(f"TTS fallback failed: {e}")
+        return web.json_response({"error": "TTS failed"}, status=500)
+
 @web.middleware
 async def cors_middleware(request, handler):
     if request.method == "OPTIONS":
@@ -1046,9 +1103,10 @@ def main():
     app.router.add_post("/api/rate_partner", api_rate_partner)
     app.router.add_options("/api/rate_partner", api_rate_partner)
     app.router.add_post("/api/ai_analyze", api_ai_analyze)
-    app.router.add_options("/api/ai_analyze", api_ai_analyze)
     app.router.add_get("/api/user_status", api_user_status)
     app.router.add_options("/api/user_status", api_user_status)
+    app.router.add_get("/api/tts", api_tts)
+    app.router.add_options("/api/tts", api_tts)
     app.router.add_get("/ws/matchmake", ws_matchmake)
     
     if WEBHOOK_URL:
