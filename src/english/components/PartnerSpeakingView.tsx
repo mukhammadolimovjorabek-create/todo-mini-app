@@ -1022,9 +1022,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
                     Odobli, faol va foydali
                   </span>
                 </div>
-                <span className="mt-2 text-[9px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">
-                  -1 jarima kamayadi
-                </span>
+
               </button>
 
               {/* DISLIKE STICKER */}
@@ -1052,9 +1050,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
                     Noo'rin harakat / bezovtalik
                   </span>
                 </div>
-                <span className="mt-2 text-[9px] font-bold text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded-full">
-                  +1 ta shikoyat
-                </span>
+
               </button>
             </div>
 
@@ -1089,12 +1085,19 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
             )}
 
             {/* Explanatory rule pill */}
-            <div className="text-[10.5px] text-slate-400 bg-slate-50 p-2.5 rounded-xl text-left border border-slate-100">
-              💡 <b>Qoida:</b> 10 ta dislike olgan foydalanuvchi hisobi qulflanadi (qulfni ochish: 6,700 so'm). Har bir Like 1 ta dislike'ni kamaytiradi.
-            </div>
+            
 
             <button
-              onClick={handleFinishRating}
+              onClick={async () => {
+                  if (matchedPartner && selectedSticker) {
+                      await fetch(`https://todo-mini-app-cwkd.onrender.com/api/rate_partner`, {
+                          method: 'POST',
+                          headers: {'Content-Type': 'application/json'},
+                          body: JSON.stringify({ partner_id: matchedPartner.id, action: selectedSticker })
+                      });
+                  }
+                  handleFinishRating();
+              }}
               disabled={!selectedSticker}
               className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#7052ff] to-[#5b3ce0] hover:from-[#5b3ce0] hover:to-[#4a2fd0] text-white font-black text-xs shadow-md shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-40"
             >

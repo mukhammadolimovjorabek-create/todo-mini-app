@@ -79,7 +79,7 @@ async def load_users():
         async with db_pool.acquire() as conn:
             rows = await conn.fetch("SELECT * FROM users")
             for row in rows:
-                users_dict[str(row['user_id'])] = {
+                users_dict[str(row['user_id'])] = { 'is_accepted': row.get('is_accepted', False),
                     "first_name": row['first_name'],
                     "username": row['username'],
                     "status": row['status'],
@@ -229,9 +229,20 @@ async def cmd_start(message: types.Message):
     referrer_id = None
     if len(parts) > 1 and parts[1].startswith("ref_"):
         referrer_id = parts[1].replace("ref_", "").strip()
-        user_info["referred_by"] = referrer_id
-
+        
     is_new, total_visitors = await save_user(user_id, user_info)
+    
+    if referrer_id and db_pool:
+        async with db_pool.acquire() as conn:
+            inviter = await conn.fetchrow("SELECT first_name FROM users WHERE user_id = $1", int(referrer_id))
+            inviter_name = inviter['first_name'] if inviter else "Do'stingiz"
+        
+        kb = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="✅ Ha, qabul qilaman", callback_data=f"accept_ref:{referrer_id}")],
+            [InlineKeyboardButton(text="❌ Yo'q", callback_data="decline_ref")]
+        ])
+        await message.answer(f"{inviter_name} sizni do'stlar qatoriga va musobaqalashishga chaqiryapti. Qabul qilasizmi?", reply_markup=kb)
+
     app_url = f"{WEB_APP_URL}?ref={referrer_id}" if referrer_id else WEB_APP_URL
 
     inline_kb = InlineKeyboardMarkup(
@@ -370,6 +381,112 @@ async def handle_unblock_callback(callback: types.CallbackQuery):
 
 # ----------------- MAIN RUNNER -----------------
 
+
+async def api_unfriend(request):
+    data = await request.json()
+    user_id = data.get("user_id")
+    friend_id = data.get("friend_id")
+    if db_pool:
+        async with db_pool.acquire() as conn:
+            await conn.execute("UPDATE users SET referred_by = NULL, is_accepted = FALSE WHERE (user_id = $1 AND referred_by = $2) OR (user_id = $3 AND referred_by = $4)", int(user_id), str(friend_id), int(friend_id), str(user_id))
+    resp = web.json_response({"success": True})
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp
+
+async def api_rate_partner(request):
+    # Enable CORS for preflight options
+    if request.method == 'OPTIONS':
+        resp = web.Response()
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return resp
+        
+    data = await request.json()
+    target_id = data.get("partner_id")
+    action = data.get("action")
+    if db_pool:
+        async with db_pool.acquire() as conn:
+            if action == "like":
+                await conn.execute("UPDATE users SET likes = likes + 1 WHERE user_id = $1", int(target_id))
+            elif action == "dislike":
+                await conn.execute("UPDATE users SET dislikes = dislikes + 1 WHERE user_id = $1", int(target_id))
+                row = await conn.fetchrow("SELECT dislikes FROM users WHERE user_id = $1", int(target_id))
+                if row and row['dislikes'] >= 10:
+                    await conn.execute("UPDATE users SET is_unblocked = FALSE WHERE user_id = $1", int(target_id))
+                    try:
+                        await bot.send_message(chat_id=int(target_id), text="⚠️ Siz juda ko'p 'dislike' oldingiz. Ilova siz uchun pullik bo'ldi. Qulfni ochish uchun adminga murojaat qiling.")
+                    except:
+                        pass
+    resp = web.json_response({"success": True})
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp
+
+import uuid
+waiting_pool = []
+active_rooms = {}
+
+async def ws_matchmake(request):
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+    
+    user_id = request.query.get("user_id")
+    if not user_id or not db_pool:
+        await ws.close()
+        return ws
+        
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow("SELECT first_name, likes, dislikes FROM users WHERE user_id = $1", int(user_id))
+        user_data = {"name": row['first_name'] if row else "Foydalanuvchi", "likes": row['likes'] if row else 0, "dislikes": row['dislikes'] if row else 0}
+            
+    me = {'ws': ws, 'user_id': user_id, 'data': user_data, 'room_id': None}
+    
+    matched = False
+    for p in waiting_pool:
+        if p['user_id'] != user_id:
+            waiting_pool.remove(p)
+            room_id = str(uuid.uuid4())
+            me['room_id'] = room_id
+            p['room_id'] = room_id
+            active_rooms[room_id] = [me, p]
+            
+            await me['ws'].send_json({"type": "match_found", "partner": {"id": p['user_id'], "name": p['data']['name'], "likes": p['data']['likes'], "dislikes": p['data']['dislikes']}})
+            await p['ws'].send_json({"type": "match_found", "partner": {"id": me['user_id'], "name": me['data']['name'], "likes": me['data']['likes'], "dislikes": me['data']['dislikes']}})
+            matched = True
+            break
+            
+    if not matched:
+        waiting_pool.append(me)
+        await ws.send_json({"type": "waiting"})
+        
+    try:
+        async for msg in ws:
+            if msg.type == web.WSMsgType.TEXT:
+                data = msg.json()
+                if data.get("type") == "chat_message":
+                    room_id = me['room_id']
+                    if room_id and room_id in active_rooms:
+                        for p in active_rooms[room_id]:
+                            if p['ws'] != ws:
+                                await p['ws'].send_json({"type": "chat_message", "text": data.get("text")})
+    except Exception:
+        pass
+    finally:
+        if me in waiting_pool:
+            waiting_pool.remove(me)
+        room_id = me['room_id']
+        if room_id and room_id in active_rooms:
+            partners = active_rooms[room_id]
+            for p in partners:
+                if p['ws'] != ws:
+                    try:
+                        await p['ws'].send_json({"type": "partner_left"})
+                    except:
+                        pass
+            del active_rooms[room_id]
+            
+    return ws
+
 async def api_get_friends(request):
     user_id = request.query.get("user_id")
     if not user_id:
@@ -378,7 +495,7 @@ async def api_get_friends(request):
     users = await load_users()
     friends = []
     for uid, udata in users.items():
-        if str(udata.get("referred_by")) == str(user_id):
+        if str(udata.get("referred_by")) == str(user_id) and udata.get("is_accepted"):
             friends.append({
                 "id": str(uid),
                 "name": udata.get("first_name", "Foydalanuvchi"),
@@ -408,8 +525,20 @@ async def start_bot():
 def main():
     logging.basicConfig(level=logging.INFO)
     
+    import aiohttp_cors
     app = web.Application()
-    app.router.add_get("/api/friends", api_get_friends)
+    cors = aiohttp_cors.setup(app, defaults={
+        "*": aiohttp_cors.ResourceOptions(
+            allow_credentials=True,
+            expose_headers="*",
+            allow_headers="*",
+        )
+    })
+    cors.add(app.router.add_get("/api/friends", api_get_friends))
+    cors.add(app.router.add_post("/api/unfriend", api_unfriend))
+    cors.add(app.router.add_post("/api/rate_partner", api_rate_partner))
+    cors.add(app.router.add_options("/api/rate_partner", api_rate_partner))
+    app.router.add_get("/ws/matchmake", ws_matchmake)
     
     if WEBHOOK_URL:
         dp.startup.register(on_startup)
