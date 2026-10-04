@@ -121,7 +121,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
               </button>
               <div className="text-[11px] font-extrabold text-indigo-100 bg-gradient-to-r from-indigo-500/30 to-purple-500/25 px-3 py-1.5 rounded-xl border border-indigo-400/40 shadow-xs flex items-center space-x-1.5">
                   <Users size={12} className="text-indigo-300 shrink-0" />
-                  <span>Global Match</span>
+                  <span>Sherik qidirish</span>
                 </div>
             </div>
 
@@ -272,7 +272,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
                   </div>
                 </button>
 
-                {/* 2. Global Match */}
+                {/* 2. Sherik qidirish */}
                 <button
                   onClick={() => {
                     triggerHaptic('success');
@@ -285,7 +285,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
                     <Users size={24} />
                   </div>
                   <div>
-                    <h4 className="text-sm font-black text-white group-hover:text-indigo-400 transition-colors">Global Match (Jonli)</h4>
+                    <h4 className="text-sm font-black text-white group-hover:text-indigo-400 transition-colors">Sherik qidirish (Jonli)</h4>
                     <p className="text-[10px] text-slate-400 font-medium mt-0.5">Haqiqiy insonlar bilan jonli suhbat</p>
                   </div>
                   <div className="ml-auto w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50 group-hover:bg-indigo-500 group-hover:text-white transition-all">
