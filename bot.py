@@ -84,6 +84,26 @@ async def init_db():
     else:
         logging.info("No DATABASE_URL found. Falling back to users.json.")
 
+users_file_lock = asyncio.Lock()
+
+async def read_users_file():
+    async with users_file_lock:
+        if os.path.exists(USERS_FILE):
+            try:
+                with open(USERS_FILE, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                return {}
+        return {}
+
+async def write_users_file(users: dict):
+    async with users_file_lock:
+        try:
+            with open(USERS_FILE, "w", encoding="utf-8") as f:
+                json.dump(users, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logging.error(f"Faylga yozishda xatolik: {e}")
+
 async def load_users():
     if db_pool:
         users_dict = {}
@@ -103,13 +123,7 @@ async def load_users():
                 }
         return users_dict
     else:
-        if os.path.exists(USERS_FILE):
-            try:
-                with open(USERS_FILE, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except Exception:
-                return {}
-        return {}
+        return await read_users_file()
 
 async def save_user(user_id: int, user_info: dict):
     user_str_id = str(user_id)
@@ -150,8 +164,7 @@ async def save_user(user_id: int, user_info: dict):
             
         users[user_str_id] = new_data
         
-        with open(USERS_FILE, "w", encoding="utf-8") as f:
-            json.dump(users, f, ensure_ascii=False, indent=2)
+        await write_users_file(users)
             
         return is_new, len(users)
 
@@ -164,8 +177,7 @@ async def set_user_status(user_id: int, status: str):
         user_str_id = str(user_id)
         if user_str_id in users:
             users[user_str_id]["status"] = status
-            with open(USERS_FILE, "w", encoding="utf-8") as f:
-                json.dump(users, f, ensure_ascii=False, indent=2)
+            await write_users_file(users)
 
 async def unblock_user_db(user_id: int):
     if db_pool:
@@ -177,8 +189,7 @@ async def unblock_user_db(user_id: int):
         if user_str_id in users:
             users[user_str_id]["dislikes"] = 0
             users[user_str_id]["is_unblocked"] = True
-            with open(USERS_FILE, "w", encoding="utf-8") as f:
-                json.dump(users, f, ensure_ascii=False, indent=2)
+            await write_users_file(users)
 
 # ----------------- HANDLERS -----------------
 @dp.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=KICKED))
@@ -544,8 +555,7 @@ async def handle_accept_ref(callback: types.CallbackQuery):
         if user_str in users:
             users[user_str]["referred_by"] = str(inviter_id)
             users[user_str]["is_accepted"] = True
-            with open(USERS_FILE, "w", encoding="utf-8") as f:
-                json.dump(users, f, ensure_ascii=False, indent=2)
+            await write_users_file(users)
                 
     # 2. Xabar berish: taklif qilganga
     try:
@@ -601,8 +611,7 @@ async def api_unfriend(request):
             users[u2]["is_accepted"] = False
             changed = True
         if changed:
-            with open(USERS_FILE, "w", encoding="utf-8") as f:
-                json.dump(users, f, ensure_ascii=False, indent=2)
+            await write_users_file(users)
 
     resp = web.json_response({"success": True})
     resp.headers["Access-Control-Allow-Origin"] = "*"
@@ -699,8 +708,7 @@ async def api_rate_partner(request):
                         )
                     except Exception:
                         pass
-            with open(USERS_FILE, "w", encoding="utf-8") as f:
-                json.dump(users, f, ensure_ascii=False, indent=2)
+            await write_users_file(users)
                         
     resp = web.json_response({"success": True})
     resp.headers["Access-Control-Allow-Origin"] = "*"
@@ -779,21 +787,46 @@ async def ws_matchmake(request):
     room_id = request.query.get("room_id") or ""
     
     user_data = {"name": user_name, "username": "", "likes": 0, "dislikes": 0, "gender": gender}
+    is_unblocked = True
     
     if db_pool:
         try:
             user_id_int = int(user_id)
             async with db_pool.acquire() as conn:
-                row = await conn.fetchrow("SELECT first_name, username, likes, dislikes FROM users WHERE user_id = $1", user_id_int)
+                row = await conn.fetchrow("SELECT first_name, username, likes, dislikes, is_unblocked FROM users WHERE user_id = $1", user_id_int)
                 if row:
                     raw_likes = row['likes'] or 0
                     raw_dislikes = row['dislikes'] or 0
                     user_data["likes"] = max(0, raw_likes - raw_dislikes)
                     user_data["dislikes"] = max(0, raw_dislikes - raw_likes)
+                    if row['is_unblocked'] is not None:
+                        is_unblocked = row['is_unblocked']
                     if not user_name or user_name == "Foydalanuvchi" or user_name == "Siz":
                         user_data["name"] = row['first_name'] or user_name
         except Exception as e:
             logging.error(f"Error fetching user info for WS: {e}")
+    else:
+        try:
+            users = await load_users()
+            udata = users.get(str(user_id), {})
+            raw_likes = udata.get('likes', 0) or 0
+            raw_dislikes = udata.get('dislikes', 0) or 0
+            user_data["likes"] = max(0, raw_likes - raw_dislikes)
+            user_data["dislikes"] = max(0, raw_dislikes - raw_likes)
+            is_unblocked = udata.get('is_unblocked', True)
+            if not user_name or user_name == "Foydalanuvchi" or user_name == "Siz":
+                user_data["name"] = udata.get('first_name') or user_name
+        except Exception as e:
+            logging.error(f"Error fetching user info from JSON for WS: {e}")
+
+    # Agar 10 ta net dislike to'plangan bo'lsa va unblock qilinmagan bo'lsa - WS ulanishni to'xtatish
+    if user_data["dislikes"] >= 10 and not is_unblocked:
+        try:
+            await ws.send_json({"type": "locked", "message": "User is locked due to reports"})
+            await ws.close()
+        except Exception:
+            pass
+        return ws
             
     me = {
         'ws': ws,
@@ -899,8 +932,13 @@ async def api_get_friends(request):
     
     users = await load_users()
     friends = []
+    added_ids = set()
+    user_id_str = str(user_id)
+
+    # 1. user_id taklif qilgan va taklifni qabul qilgan do'stlar
     for uid, udata in users.items():
-        if str(udata.get("referred_by")) == str(user_id) and udata.get("is_accepted"):
+        if str(uid) != user_id_str and str(udata.get("referred_by")) == user_id_str and udata.get("is_accepted"):
+            added_ids.add(str(uid))
             friends.append({
                 "id": str(uid),
                 "name": udata.get("first_name", "Foydalanuvchi"),
@@ -909,8 +947,61 @@ async def api_get_friends(request):
                 "streak": 1,
                 "joinedAt": str(udata.get("joined_at", ""))[:10]
             })
+
+    # 2. user_id ni taklif qilgan shaxs (o'zaro do'stlik)
+    my_data = users.get(user_id_str)
+    if my_data and my_data.get("is_accepted"):
+        inviter_id = str(my_data.get("referred_by") or "")
+        if inviter_id and inviter_id in users and inviter_id not in added_ids and inviter_id != user_id_str:
+            inviter_data = users[inviter_id]
+            friends.append({
+                "id": inviter_id,
+                "name": inviter_data.get("first_name", "Foydalanuvchi"),
+                "avatar": inviter_data.get("first_name", "U")[0].upper() if inviter_data.get("first_name") else "U",
+                "points": 15,
+                "streak": 1,
+                "joinedAt": str(inviter_data.get("joined_at", ""))[:10]
+            })
     
-    return web.json_response({"friends": friends})
+    resp = web.json_response({"friends": friends})
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp
+
+async def api_user_status(request):
+    if request.method == "OPTIONS":
+        resp = web.Response()
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        resp.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        resp.headers["Access-Control-Allow-Headers"] = "*"
+        return resp
+
+    user_id = request.query.get("user_id")
+    if not user_id:
+        return web.json_response({"error": "user_id required"}, status=400)
+    
+    users = await load_users()
+    udata = users.get(str(user_id), {})
+    cur_likes = udata.get("likes", 0) or 0
+    cur_dislikes = udata.get("dislikes", 0) or 0
+    is_unblocked = udata.get("is_unblocked", True)
+    if is_unblocked is None:
+        is_unblocked = True
+        
+    net_likes = max(0, cur_likes - cur_dislikes)
+    net_dislikes = max(0, cur_dislikes - cur_likes)
+    is_locked = (net_dislikes >= 10) and (not is_unblocked)
+    
+    resp = web.json_response({
+        "user_id": str(user_id),
+        "likes": cur_likes,
+        "dislikes": cur_dislikes,
+        "net_likes": net_likes,
+        "net_dislikes": net_dislikes,
+        "is_unblocked": is_unblocked,
+        "is_locked": is_locked
+    })
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp
 
 @web.middleware
 async def cors_middleware(request, handler):
@@ -951,6 +1042,8 @@ def main():
     app.router.add_options("/api/rate_partner", api_rate_partner)
     app.router.add_post("/api/ai_analyze", api_ai_analyze)
     app.router.add_options("/api/ai_analyze", api_ai_analyze)
+    app.router.add_get("/api/user_status", api_user_status)
+    app.router.add_options("/api/user_status", api_user_status)
     app.router.add_get("/ws/matchmake", ws_matchmake)
     
     if WEBHOOK_URL:

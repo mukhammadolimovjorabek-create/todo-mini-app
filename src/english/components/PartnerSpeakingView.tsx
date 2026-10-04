@@ -157,6 +157,22 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     const current = getDislikesCount(userId);
     setDislikes(current);
     setIsLocked(current >= 10);
+
+    // Sync from server authority
+    if (userId && userId !== 'me') {
+      fetch(`https://todo-mini-app-cwkd.onrender.com/api/user_status?user_id=${userId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && typeof data.net_dislikes === 'number') {
+            setDislikes(data.net_dislikes);
+            setIsLocked(Boolean(data.is_locked));
+            setDislikesCount(userId, data.net_dislikes);
+          }
+        })
+        .catch(err => {
+          console.warn('Error fetching user status:', err);
+        });
+    }
   }, [userId]);
 
   const handleShareInvite = () => {
@@ -334,7 +350,12 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
 
       socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (data.type === 'match_found') {
+        if (data.type === 'locked') {
+          setIsLocked(true);
+          setDislikes(10);
+          setMatchStatus('idle');
+          triggerHaptic('heavy');
+        } else if (data.type === 'match_found') {
           setMatchedPartner(data.partner);
           setMatchStatus('matched');
           triggerHaptic('heavy');
