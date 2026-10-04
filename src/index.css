@@ -106,3 +106,77 @@ body {
   transform-style: preserve-3d;
 }
 
+/* ── PROMPT 1: Animated "Boshlash →" button (arrow nudge + shine + press squeeze) ── */
+.eng-cta {
+  position: relative;
+  overflow: hidden; /* clips the shine to the pill shape */
+  transition: transform .12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.eng-cta:active {
+  transform: scale(.94); /* press squeeze */
+}
+
+.eng-cta__arrow {
+  display: inline-block;
+  animation: eng-cta-nudge 1.2s ease-in-out infinite;
+}
+
+.eng-cta::after { /* shine streak */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 100%;
+  pointer-events: none;
+  background: linear-gradient(100deg,
+    transparent,
+    rgba(255, 255, 255, .7),
+    transparent);
+  transform: translateX(-175%) skewX(-20deg);
+  animation: eng-cta-shine 2.6s ease-in-out infinite;
+}
+
+@keyframes eng-cta-nudge {
+  50% { transform: translateX(5px); }
+}
+
+@keyframes eng-cta-shine {
+  0% {
+    transform: translateX(-175%) skewX(-20deg);
+  }
+  55%, 100% {
+    transform: translateX(350%) skewX(-20deg);
+  }
+}
+
+/* ── PROMPT 2: Waving Uzbekistan flag ("Silliq to'lqin") ── */
+.uz-flag__slice {
+  animation: uz-wave 1.7s ease-in-out infinite;
+}
+
+@keyframes uz-wave {
+  0%, 100% {
+    transform: translateY(calc(var(--a) * -1px));
+  }
+  50% {
+    transform: translateY(calc(var(--a) * 1px));
+  }
+}
+
+.uz-flag__shade {
+  opacity: 0;
+  animation: uz-shade 1.7s ease-in-out infinite;
+}
+
+@keyframes uz-shade {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+

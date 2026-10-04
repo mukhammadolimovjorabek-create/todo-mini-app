@@ -196,7 +196,7 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center space-x-2 mb-1">
-                    <span className="animate-bounce inline-block text-[10px] font-black bg-[#c4f82a] text-[#121124] px-2 py-0.5 rounded-full shadow-[0_0_14px_rgba(196,248,42,0.85)] whitespace-nowrap">
+                    <span className="animate-bounce inline-block text-[11px] font-black bg-[#c4f82a] text-[#121124] px-2.5 py-0.5 rounded-full shadow-[0_0_12px_rgba(196,248,42,0.9),0_0_22px_rgba(196,248,42,0.5)] whitespace-nowrap">
                       Yangi 🔥
                     </span>
                     <span className="text-[11px] font-bold text-purple-200 uppercase tracking-wider">IELTS & CEFR</span>
@@ -210,12 +210,15 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
                 </div>
               </div>
 
-              {/* Boshlash tugmasi */}
+              {/* Boshlash tugmasi (eng-cta animation: arrow nudge + shine sweep + press squeeze) */}
               <div className="pl-2 shrink-0">
-                <div className="inline-flex items-center space-x-1.5 bg-[#c4f82a] text-[#121124] px-4 py-2.5 rounded-full text-xs font-black shadow-md select-none hover:brightness-105 transition-all">
+                <button
+                  type="button"
+                  className="eng-cta inline-flex items-center space-x-1.5 bg-[#c4f82a] text-[#121124] px-4 py-2.5 rounded-full text-xs font-black shadow-md select-none cursor-pointer"
+                >
                   <span>Boshlash</span>
-                  <span className="font-sans font-bold">→</span>
-                </div>
+                  <span className="eng-cta__arrow font-sans font-bold" aria-hidden="true">→</span>
+                </button>
               </div>
             </div>
           </div>

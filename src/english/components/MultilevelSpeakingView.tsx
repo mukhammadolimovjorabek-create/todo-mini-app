@@ -14,6 +14,7 @@ import { getSeenQuestions, markQuestionSeen, saveTestResult } from '../utils/sto
 import { evaluateMultilevelSpeech, type MultilevelEvaluationResult } from '../utils/multilevelScoring';
 import { triggerHaptic } from '../../utils/telegram';
 import { speakEnglishText } from '../../utils/speechVoice';
+import { UzFlagWave } from './UzFlagWave';
 import type { TestResultItem } from '../types';
 
 interface Props {
@@ -663,8 +664,8 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
           style={{ background: 'linear-gradient(135deg, #091f1a 0%, #0e3b32 60%, #155e51 100%)' }}
         >
           <div className="flex items-center space-x-3.5 relative z-10">
-            <div className="w-14 h-14 rounded-2xl bg-[#c4f82a] text-[#121124] flex items-center justify-center text-3xl shadow-lg shrink-0">
-              <span className="animate-flag-wave inline-block select-none transform-gpu filter drop-shadow">🇺🇿</span>
+            <div className="w-14 h-14 rounded-2xl bg-[#c4f82a] text-[#121124] flex items-center justify-center shadow-lg shrink-0 overflow-hidden">
+              <UzFlagWave width={42} />
             </div>
             <div>
               <div className="flex items-center space-x-1.5">

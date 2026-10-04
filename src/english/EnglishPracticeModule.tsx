@@ -8,6 +8,7 @@ import { IeltsDashboard } from './components/IeltsDashboard';
 import { MultilevelDashboard } from './components/MultilevelDashboard';
 import { triggerHaptic } from '../utils/telegram';
 import { SpeakingWaveform } from './components/AnimatedSectionIcons';
+import { UzFlagWave } from './components/UzFlagWave';
 import './tokens.css';
 
 export interface TelegramUserProps {
@@ -273,8 +274,8 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
                 </span>
               </div>
 
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-lg shadow-inner">
-                <span className="animate-flag-wave inline-block">🇺🇿</span>
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shadow-inner overflow-hidden">
+                <UzFlagWave width={28} />
               </div>
             </div>
 
