@@ -79,7 +79,7 @@ export const MultilevelDashboard: React.FC<Props> = ({ onBack, userName }) => {
               Multilevel Speaking & Writing 🎯
             </h3>
             <p className="text-xs text-teal-100/90 leading-relaxed">
-              Xush kelibsiz, <strong>{userName}</strong>! Rasmiy DTM mezonlari, 43 ta Part 1.1 savollari, 19 ta xat va 25 ta insho mavzulari tayyor.
+              Xush kelibsiz, <strong>{userName}</strong>! Rasmiy DTM mezonlari, Speaking, xat va insho mavzulari tayyor.
             </p>
           </div>
         </div>
@@ -132,9 +132,6 @@ export const MultilevelDashboard: React.FC<Props> = ({ onBack, userName }) => {
             <div className="flex flex-wrap gap-1.5 pt-1">
               <span className="text-[10px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-xl">
                 Part 1-3
-              </span>
-              <span className="text-[10px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-xl">
-                43 ta savol
               </span>
               <span className="text-[10px] font-black text-[#c4f82a] bg-[#c4f82a]/10 border border-[#c4f82a]/20 px-2.5 py-1 rounded-xl">
                 Full Mock Sinov

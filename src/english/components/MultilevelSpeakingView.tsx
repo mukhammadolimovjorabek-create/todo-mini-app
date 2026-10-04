@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Mic, MicOff, Volume2, VolumeX, Clock, Award, ChevronRight, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Volume2, VolumeX, Clock, Award, ChevronRight, RotateCcw } from 'lucide-react';
 import {
   getRandomMultilevelPart1_1,
   getRandomMultilevelPart1_2,
@@ -24,7 +24,7 @@ interface Props {
 type PartSelection = 'part1_1' | 'part1_2' | 'part2' | 'part3' | 'full_mock';
 type Step = 'menu' | 'active_test' | 'feedback';
 
-export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) => {
+export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _userName }) => {
   const [step, setStep] = useState<Step>('menu');
   const [selectedPart, setSelectedPart] = useState<PartSelection>('part1_1');
   const [speechEnabled, setSpeechEnabled] = useState(true);
@@ -67,12 +67,22 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
     return `${h}:${m}`;
   };
 
+  const [isExaminerSpeaking, setIsExaminerSpeaking] = useState(false);
+
   const speakText = (text: string, onEnd?: () => void) => {
     if (!speechEnabled) {
       if (onEnd) onEnd();
       return;
     }
-    speakEnglishText(text, { rate: 0.95, pitch: 1.0, onEnd });
+    setIsExaminerSpeaking(true);
+    speakEnglishText(text, {
+      rate: 0.95,
+      pitch: 1.0,
+      onEnd: () => {
+        setIsExaminerSpeaking(false);
+        if (onEnd) onEnd();
+      }
+    });
   };
 
   const isListeningWantedRef = useRef<boolean>(false);
@@ -182,7 +192,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
       setIsTimerRunning(false);
 
       setTimeout(() => {
-        speakText(`Hello ${userName}. Welcome to Multilevel Part 1.1. Question one: ${item.questions[0]}`, () => {
+        speakText(`Welcome to Multilevel Speaking Part 1. Question one: ${item.questions[0]}`, () => {
           setIsTimerRunning(true);
           startListening();
         });
@@ -242,7 +252,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
       setIsTimerRunning(false);
 
       setTimeout(() => {
-        speakText(`Welcome ${userName} to the Full Multilevel Speaking Mock Test. Part 1.1, Question one: ${p1_1.questions[0]}`, () => {
+        speakText(`Welcome to the Full Multilevel Speaking Mock Test. Part 1, Question one: ${p1_1.questions[0]}`, () => {
           setIsTimerRunning(true);
           startListening();
         });
@@ -876,15 +886,20 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
           <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-wider text-slate-700">
-                Sizning nutqingiz (Ovozli javob):
+                Sizning javobingiz:
               </span>
-              {isRecording ? (
+              {isExaminerSpeaking ? (
+                <span className="text-[11px] font-bold text-teal-600 animate-pulse flex items-center space-x-1.5">
+                  <Volume2 size={14} className="text-teal-600 animate-bounce" />
+                  <span>Savol o'qilmoqda (Tinglang)...</span>
+                </span>
+              ) : isRecording ? (
                 <span className="text-[11px] font-bold text-rose-500 animate-pulse flex items-center space-x-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
-                  <span>Gapiring, eshitilmoqda...</span>
+                  <span>Mikrofon faol: Gapiring!</span>
                 </span>
               ) : (
-                <span className="text-[11px] font-bold text-slate-400">Mikrofon kutmoqda</span>
+                <span className="text-[11px] font-bold text-slate-400">Mikrofon kutilmoqda</span>
               )}
             </div>
 
@@ -931,7 +946,9 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
               ) : (
                 <div className="text-center py-4 space-y-1">
                   <p className="text-xs text-slate-400 italic">
-                    Mikrofon orqali gapiring. Aytgan so'zlaringiz shu yerda jonli aks etadi...
+                    {isExaminerSpeaking
+                      ? "Imtihon oluvchi savolni o'qimoqda... Savol tugashi bilan mikrofon avtomatik yoqiladi."
+                      : "Mikrofon avtomatik yoqildi! Erkin gapiring, aytgan so'zlaringiz jonli aks etadi..."}
                   </p>
                   <button
                     type="button"
@@ -955,29 +972,32 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
               )}
             </div>
 
-            {/* Voice Controls */}
-            <div className="flex items-center space-x-2 pt-1">
-              <button
-                onClick={() => {
-                  if (isRecording) stopListening();
-                  else startListening();
-                }}
-                className={`flex-1 py-3.5 rounded-2xl font-black text-xs flex items-center justify-center space-x-2 transition-all ${
-                  isRecording ? 'bg-rose-500 text-white' : 'bg-teal-600 hover:bg-teal-700 text-white shadow-md'
-                }`}
-              >
-                {isRecording ? <MicOff size={16} /> : <Mic size={16} />}
-                <span>{isRecording ? "To'xtatish" : "Mikrofonni yoqish"}</span>
-              </button>
-
+            {/* Automatic Voice Controls */}
+            <div className="pt-1">
               <button
                 disabled={isEvaluating}
                 onClick={handleNextQuestion}
-                className="flex-1 py-3.5 rounded-2xl bg-[#7052ff] hover:bg-[#5b3ce0] text-white font-black text-xs flex items-center justify-center space-x-1.5 shadow-md active:scale-95 transition-all disabled:opacity-50"
+                className={`w-full py-4 rounded-2xl font-black text-xs flex items-center justify-center space-x-2 shadow-lg transition-all active:scale-[0.98] ${
+                  isExaminerSpeaking
+                    ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                    : 'bg-[#7052ff] hover:bg-[#5b3ce0] text-white shadow-indigo-500/20'
+                }`}
               >
-                <span>Keyingisi</span>
-                <ChevronRight size={16} />
+                {isExaminerSpeaking ? (
+                  <>
+                    <Volume2 size={16} />
+                    <span>Savol o'qilmoqda (Tinglang)</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{isRecording ? "Javob berib bo'ldim (Keyingi savolga o'tish)" : "Keyingisi"}</span>
+                    <ChevronRight size={16} />
+                  </>
+                )}
               </button>
+              <p className="text-[10px] text-center text-slate-400 font-medium mt-2">
+                ⚡ Savol tugashi bilan mikrofon avtomatik yoqiladi va vaqt tugaganda keyingi savolga o'tadi.
+              </p>
             </div>
           </div>
         )}

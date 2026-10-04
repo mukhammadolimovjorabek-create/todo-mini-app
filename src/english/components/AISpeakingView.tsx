@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Mic, MicOff, Volume2, VolumeX, Clock, CheckCircle2, RotateCcw, Award, ChevronRight, Sparkles, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Volume2, VolumeX, Clock, CheckCircle2, RotateCcw, Award, ChevronRight, Sparkles, AlertTriangle } from 'lucide-react';
 import { speakingBank, getRandomPart2Topic, getRandomPart3Topic, type Part1Topic, type Part2CueCard, type Part3Topic } from '../data/speakingBank';
 import { getSeenQuestions, markQuestionSeen, saveTestResult } from '../utils/storage';
 import { evaluateCandidateSpeech, type SpeechEvaluationResult } from '../utils/ieltsScoring';
@@ -85,13 +85,23 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     return `${h}:${m}`;
   };
 
+  const [isExaminerSpeaking, setIsExaminerSpeaking] = useState(false);
+
   // Speak function with safety timeout so test never freezes on mobile
   const speakText = (text: string, onEnd?: () => void) => {
     if (!speechEnabled) {
       if (onEnd) onEnd();
       return;
     }
-    speakEnglishText(text, { rate: 0.95, pitch: 1.0, onEnd });
+    setIsExaminerSpeaking(true);
+    speakEnglishText(text, {
+      rate: 0.95,
+      pitch: 1.0,
+      onEnd: () => {
+        setIsExaminerSpeaking(false);
+        if (onEnd) onEnd();
+      }
+    });
   };
 
   const isListeningWantedRef = useRef<boolean>(false);
@@ -228,7 +238,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
 
       setTimeout(() => {
         speakText(
-          `Hello ${userName}. Welcome to Part 1. We will discuss ${topic.topic}. First question: ${topic.questions[0]}`,
+          `Welcome to IELTS Speaking Part 1. Topic: ${topic.topic}. First question: ${topic.questions[0]}`,
           () => {
             setIsTimerRunning(true);
             startListening();
@@ -955,15 +965,20 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
           <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-wider text-slate-700">
-                Sizning nutqingiz (Ovozli javob):
+                Sizning javobingiz:
               </span>
-              {isRecording ? (
+              {isExaminerSpeaking ? (
+                <span className="text-[11px] font-bold text-teal-600 animate-pulse flex items-center space-x-1.5">
+                  <Volume2 size={14} className="text-teal-600 animate-bounce" />
+                  <span>Savol o'qilmoqda (Tinglang)...</span>
+                </span>
+              ) : isRecording ? (
                 <span className="text-[11px] font-bold text-rose-500 animate-pulse flex items-center space-x-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
-                  <span>Gapiring, eshitilmoqda...</span>
+                  <span>Mikrofon faol: Gapiring!</span>
                 </span>
               ) : (
-                <span className="text-[11px] font-bold text-slate-400">Mikrofon kutmoqda</span>
+                <span className="text-[11px] font-bold text-slate-400">Mikrofon kutilmoqda</span>
               )}
             </div>
 
@@ -1010,7 +1025,9 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
               ) : (
                 <div className="text-center py-4 space-y-1">
                   <p className="text-xs text-slate-400 italic">
-                    Mikrofon orqali gapiring. Aytgan so'zlaringiz va talaffuzingiz shu yerda jonli aks etadi...
+                    {isExaminerSpeaking
+                      ? "Imtihon oluvchi savolni o'qimoqda... Savol tugashi bilan mikrofoningiz avtomatik yoqiladi."
+                      : "Mikrofon avtomatik yoqildi! Erkin gapiring, aytgan so'zlaringiz jonli aks etadi..."}
                   </p>
                   <button
                     type="button"
@@ -1034,34 +1051,32 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
               )}
             </div>
 
-            {/* Voice Controls: Restart mic or Finish early */}
-            <div className="flex items-center space-x-2 pt-1">
-              <button
-                onClick={() => {
-                  if (isRecording) {
-                    stopListening();
-                  } else {
-                    startListening();
-                  }
-                }}
-                className={`flex-1 py-3.5 rounded-2xl font-black text-xs flex items-center justify-center space-x-2 transition-all ${
-                  isRecording
-                    ? 'bg-rose-500 text-white'
-                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'
-                }`}
-              >
-                {isRecording ? <MicOff size={16} /> : <Mic size={16} />}
-                <span>{isRecording ? "To'xtatish" : "Mikrofonni yoqish"}</span>
-              </button>
-
+            {/* Voice Controls: Automated exam flow button */}
+            <div className="pt-1">
               <button
                 disabled={isEvaluating}
                 onClick={handleNextQuestion}
-                className="flex-1 py-3.5 rounded-2xl bg-[#7052ff] hover:bg-[#5b3ce0] text-white font-black text-xs flex items-center justify-center space-x-1.5 shadow-md active:scale-95 transition-all disabled:opacity-50"
+                className={`w-full py-4 rounded-2xl font-black text-xs flex items-center justify-center space-x-2 shadow-lg transition-all active:scale-[0.98] ${
+                  isExaminerSpeaking
+                    ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                    : 'bg-[#7052ff] hover:bg-[#5b3ce0] text-white shadow-indigo-500/20'
+                }`}
               >
-                <span>Javobni yakunlash</span>
-                <ChevronRight size={16} />
+                {isExaminerSpeaking ? (
+                  <>
+                    <Volume2 size={16} />
+                    <span>Savol o'qilmoqda (Tinglang)</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{isRecording ? "Javob berib bo'ldim (Keyingi savolga o'tish)" : "Keyingisi"}</span>
+                    <ChevronRight size={16} />
+                  </>
+                )}
               </button>
+              <p className="text-[10px] text-center text-slate-400 font-medium mt-2">
+                ⚡ Savol tugashi bilan mikrofon avtomatik yoqiladi va vaqt tugaganda keyingi savolga o'tadi.
+              </p>
             </div>
           </div>
         )}

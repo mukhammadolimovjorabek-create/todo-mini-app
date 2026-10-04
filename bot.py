@@ -279,7 +279,7 @@ async def cmd_start(message: types.Message):
     
     caption_text = (
         f"Assalomu alaykum, <b>{message.from_user.first_name}</b>! 👋\n\n"
-        "🌟 <b>EduOdyssey | IELTS • Multilevel (CEFR) • Smart To-Do</b> platformasiga xush kelibsiz!\n\n"
+        "🌟 <b>StudyMate</b> — IELTS, Multilevel (CEFR) va Smart To-Do platformasiga xush kelibsiz!\n\n"
         "Bitta ilovada barcha imkoniyatlar:\n"
         "📋 <b>Smart To-Do & Odatlar</b> — kunlik vazifalar, streak va tangalar\n"
         "🎙️ <b>Jonli Speaking Hamkori</b> — real vaqtda audio muloqot va mavzular (Part 1, 2, 3)\n"
