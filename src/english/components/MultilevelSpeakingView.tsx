@@ -11,7 +11,7 @@ import {
   type MultilevelPart3,
 } from '../data/multilevelBank';
 import { getSeenQuestions, markQuestionSeen, saveTestResult } from '../utils/storage';
-import { evaluateCandidateSpeech, type SpeechEvaluationResult } from '../utils/ieltsScoring';
+import { evaluateMultilevelSpeech, type MultilevelEvaluationResult } from '../utils/multilevelScoring';
 import { triggerHaptic } from '../../utils/telegram';
 import { speakEnglishText } from '../../utils/speechVoice';
 import type { TestResultItem } from '../types';
@@ -58,9 +58,11 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
   const [transcriptHistory, setTranscriptHistory] = useState<{ question: string; answer: string }[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
-  const [feedback, setFeedback] = useState<SpeechEvaluationResult | null>(null);
+  const [feedback, setFeedback] = useState<MultilevelEvaluationResult | null>(null);
 
   const recognitionRef = useRef<any>(null);
+  const committedTextRef = useRef<string>('');
+  const currentSessionFinalRef = useRef<string>('');
 
   const getFormattedTime = () => {
     const now = new Date();
@@ -156,18 +158,22 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       };
 
       recognition.onresult = (event: any) => {
-        // Build transcript fresh from all results to avoid repetition bug
-        let finalTranscript = '';
-        let interimTranscript = '';
+        let sessionFinal = '';
+        let sessionInterim = '';
         for (let i = 0; i < event.results.length; ++i) {
-          const transcriptPiece = event.results[i][0]?.transcript || '';
+          const piece = event.results[i][0]?.transcript || '';
           if (event.results[i].isFinal) {
-            finalTranscript += transcriptPiece + ' ';
+            sessionFinal += piece + ' ';
           } else {
-            interimTranscript += transcriptPiece;
+            sessionInterim += piece;
           }
         }
-        const fullText = (finalTranscript + interimTranscript).trim();
+        currentSessionFinalRef.current = sessionFinal;
+        const fullText = [committedTextRef.current, sessionFinal, sessionInterim]
+          .filter(Boolean)
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim();
         if (fullText) {
           setLiveTranscript(fullText);
         }
@@ -193,6 +199,16 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       };
 
       recognition.onend = () => {
+        // Persist any finalized speech from the ended recognition session
+        if (currentSessionFinalRef.current) {
+          committedTextRef.current = [committedTextRef.current, currentSessionFinalRef.current]
+            .filter(Boolean)
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+          currentSessionFinalRef.current = '';
+        }
+
         // Keep mic active during the full 30s/120s timer
         if (isListeningWantedRef.current) {
           try {
@@ -226,6 +242,14 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
 
   const stopListening = () => {
     isListeningWantedRef.current = false;
+    if (currentSessionFinalRef.current) {
+      committedTextRef.current = [committedTextRef.current, currentSessionFinalRef.current]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      currentSessionFinalRef.current = '';
+    }
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
@@ -252,6 +276,8 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     setSelectedPart(part);
     setTranscriptHistory([]);
     setLiveTranscript('');
+    committedTextRef.current = '';
+    currentSessionFinalRef.current = '';
     setFeedback(null);
     setTestStartTime(getFormattedTime());
     setPrepNotes('');
@@ -406,10 +432,18 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       ? (p2Item?.title || '')
       : (p3Item?.statement || '');
 
+    const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+      .filter(Boolean)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
     const newHistory = [
       ...transcriptHistory,
-      { question: currentQ, answer: liveTranscript.trim() || "(Nomzod belgilangan vaqtda javob bermadi)" }
+      { question: currentQ, answer: currentAnswer || "(Nomzod belgilangan vaqtda javob bermadi)" }
     ];
+    committedTextRef.current = '';
+    currentSessionFinalRef.current = '';
     setTranscriptHistory(newHistory);
     setLiveTranscript('');
     setIsManualInput(false);
@@ -438,10 +472,17 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
   const handleFullMockProgression = () => {
     if (mockPhase === 'p1_1') {
       const currentQ = p1_1Item?.questions[mockP1_1Idx] || '';
+      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       const newHistory = [
         ...transcriptHistory,
-        { question: `[Part 1.1] ${currentQ}`, answer: liveTranscript.trim() || "(Javob berilmadi)" }
+        { question: `[Part 1.1] ${currentQ}`, answer: currentAnswer || "(Part 1.1 javobi berilmadi)" }
       ];
+      committedTextRef.current = '';
+      currentSessionFinalRef.current = '';
       setTranscriptHistory(newHistory);
       setLiveTranscript('');
 
@@ -469,10 +510,17 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         startListening();
       });
     } else if (mockPhase === 'p1_2_speak') {
+      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       const newHistory = [
         ...transcriptHistory,
-        { question: `[Part 1.2] ${p1_2Item?.title}`, answer: liveTranscript.trim() || "(Javob berilmadi)" }
+        { question: `[Part 1.2] ${p1_2Item?.title}`, answer: currentAnswer || "(Part 1.2 nutqi berilmadi)" }
       ];
+      committedTextRef.current = '';
+      currentSessionFinalRef.current = '';
       setTranscriptHistory(newHistory);
       setLiveTranscript('');
 
@@ -489,10 +537,17 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         startListening();
       });
     } else if (mockPhase === 'p2_speak') {
+      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       const newHistory = [
         ...transcriptHistory,
-        { question: `[Part 2] ${p2Item?.title}`, answer: liveTranscript.trim() || "(Javob berilmadi)" }
+        { question: `[Part 2] ${p2Item?.title}`, answer: currentAnswer || "(Part 2 nutqi berilmadi)" }
       ];
+      committedTextRef.current = '';
+      currentSessionFinalRef.current = '';
       setTranscriptHistory(newHistory);
       setLiveTranscript('');
 
@@ -509,10 +564,17 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         startListening();
       });
     } else if (mockPhase === 'p3_speak') {
+      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       const newHistory = [
         ...transcriptHistory,
-        { question: `[Part 3] ${p3Item?.statement}`, answer: liveTranscript.trim() || "(Javob berilmadi)" }
+        { question: `[Part 3] ${p3Item?.statement}`, answer: currentAnswer || "(Part 3 nutqi berilmadi)" }
       ];
+      committedTextRef.current = '';
+      currentSessionFinalRef.current = '';
       finishAndEvaluate(newHistory, 'full_mock');
     }
   };
@@ -526,7 +588,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     window.speechSynthesis?.cancel();
 
     setTimeout(() => {
-      const evalResult = evaluateCandidateSpeech(history, evaluatedType === 'full_mock' ? 'full_mock' : 'part1');
+      const evalResult = evaluateMultilevelSpeech(history, evaluatedType);
       setFeedback(evalResult);
       setIsEvaluating(false);
       setStep('feedback');
@@ -540,7 +602,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         part1_2: 'Milliy Multilevel: Part 1.2 (Pictures)',
         part2: 'Milliy Multilevel: Part 2 (Presentation)',
         part3: 'Milliy Multilevel: Part 3 (Debate)',
-        full_mock: 'Milliy Multilevel: Full Speaking Mock',
+        full_mock: 'Milliy Multilevel: Full Speaking Mock (75 ball)',
       };
 
       const historyItem: TestResultItem = {
@@ -550,17 +612,17 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         endTime,
         testType: 'speaking_part1',
         title: titleMap[evaluatedType],
-        topic: 'CEFR Multilevel Speaking Test',
-        overallBand: evalResult.overallBand,
+        topic: 'CEFR Multilevel Speaking Test (75 ball)',
+        overallBand: evalResult.totalScore,
         criteriaScores: {
-          c1Name: 'Fluency',
+          c1Name: 'Fluency & Coherence',
           c1Score: evalResult.fluencyScore,
-          c2Name: 'Lexical',
+          c2Name: 'Lexical Resource',
           c2Score: evalResult.lexicalScore,
-          c3Name: 'Grammar',
+          c3Name: 'Grammar Accuracy',
           c3Score: evalResult.grammarScore,
-          c4Name: 'Pronunciation',
-          c4Score: evalResult.pronunciationScore,
+          c4Name: 'Pronun. & Task',
+          c4Score: evalResult.pronunciationTaskScore,
         },
         strengths: evalResult.strengths,
         improvements: evalResult.improvements,
@@ -569,14 +631,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       saveTestResult(historyItem);
       triggerHaptic('heavy');
     }, 1500);
-  };
-
-  const getCefrGrade = (band: number) => {
-    if (band === 0) return 'Baholanmadi (Javob yo\'q)';
-    if (band >= 7.5) return 'C1 (Advanced)';
-    if (band >= 6.0) return 'B2 (Vantage)';
-    if (band >= 4.5) return 'B1 (Threshold)';
-    return 'A2 (Waystage)';
   };
 
   // ── MENU SCREEN ──
@@ -1042,25 +1096,35 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
                   </div>
                   <textarea
                     value={liveTranscript}
-                    onChange={(e) => setLiveTranscript(e.target.value)}
+                    onChange={(e) => {
+                      setLiveTranscript(e.target.value);
+                      committedTextRef.current = e.target.value;
+                      currentSessionFinalRef.current = '';
+                    }}
                     placeholder="Javobingizni shu yerda yozishingiz yoki tahrirlashingiz mumkin..."
                     rows={3}
                     className="w-full p-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 outline-none focus:border-teal-500 resize-none"
                   />
                 </div>
               ) : liveTranscript ? (
-                <div>
-                  <p className="text-sm font-medium text-slate-900 leading-relaxed font-sans">
-                    "{liveTranscript}"
-                  </p>
-                  <div className="text-right pt-1.5">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center space-x-1.5 text-[10px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-ping" />
+                      <span>Jonli nutq yozilmoqda:</span>
+                    </span>
                     <button
                       type="button"
                       onClick={() => setIsManualInput(true)}
                       className="text-[10px] font-bold text-teal-700 hover:underline"
                     >
-                      ✍️ Tahrirlash / Yozish
+                      ✍️ Tahrirlash
                     </button>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white border border-teal-100 shadow-sm">
+                    <p className="text-sm font-semibold text-slate-900 leading-relaxed font-sans">
+                      "{liveTranscript}"
+                    </p>
                   </div>
                 </div>
               ) : (
@@ -1151,8 +1215,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
 
   // ── FEEDBACK SCREEN ──
   if (step === 'feedback' && feedback) {
-    const cefrGrade = getCefrGrade(feedback.overallBand);
-
     return (
       <div className="p-5 space-y-4 animate-in fade-in duration-300">
         <button
@@ -1163,47 +1225,74 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
           <span>Multilevel menyusiga qaytish</span>
         </button>
 
-        {/* Result Card */}
+        {/* Result Card: Official 75-Point Scale */}
         <div
           className="rounded-[2.2rem] p-6 text-white text-center shadow-xl relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #091f1a 0%, #0e3b32 60%, #155e51 100%)' }}
         >
           <div className="inline-flex items-center space-x-1.5 bg-[#c4f82a]/15 text-[#c4f82a] border border-[#c4f82a]/30 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider mb-2">
             <Award size={12} />
-            <span>MILLIY SERTIFIKAT CEFR DARAJA</span>
+            <span>MILLIY SERTIFIKAT (75 BALLIK TIZIM)</span>
           </div>
 
-          <h3 className="text-3xl font-black text-white my-1 tracking-tight">
-            {cefrGrade}
-          </h3>
-          <p className="text-[11px] text-teal-100">
-            {feedback.overallBand === 0 ? "Ovozli nutq qayd etilmadi" : `Ekvivalent IELTS Ball: ${feedback.overallBand.toFixed(1)}`}
-          </p>
+          <div className="my-2">
+            <span className="text-5xl font-black text-[#c4f82a] tracking-tight">
+              {feedback.totalScore}
+            </span>
+            <span className="text-xl font-bold text-teal-200"> / 75 ball</span>
+          </div>
 
-          <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-4 gap-1 text-center">
+          <h3 className="text-lg font-black text-white mt-1">
+            {feedback.cefrTitle}
+          </h3>
+
+          {feedback.isPartOnly && feedback.partRawScore !== undefined && (
+            <p className="text-[11px] text-[#c4f82a] font-bold mt-2 bg-white/10 py-1 px-3 rounded-lg inline-block">
+              Tanlangan Part balli: {feedback.partRawScore} / 25 ball
+            </p>
+          )}
+
+          {/* 4 Criteria Out of 20, 20, 20, 15 */}
+          <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-4 gap-1.5 text-center">
             <div className="bg-white/5 p-2 rounded-xl">
-              <p className="text-sm font-black text-[#c4f82a]">{feedback.fluencyScore.toFixed(1)}</p>
-              <p className="text-[9px] text-teal-200">Fluency</p>
+              <p className="text-sm font-black text-[#c4f82a]">{feedback.fluencyScore} <span className="text-[9px] text-teal-300">/20</span></p>
+              <p className="text-[9px] text-teal-200 font-bold">Fluency</p>
             </div>
             <div className="bg-white/5 p-2 rounded-xl">
-              <p className="text-sm font-black text-amber-300">{feedback.lexicalScore.toFixed(1)}</p>
-              <p className="text-[9px] text-teal-200">Lexical</p>
+              <p className="text-sm font-black text-amber-300">{feedback.lexicalScore} <span className="text-[9px] text-teal-300">/20</span></p>
+              <p className="text-[9px] text-teal-200 font-bold">Lexical</p>
             </div>
             <div className="bg-white/5 p-2 rounded-xl">
-              <p className="text-sm font-black text-emerald-300">{feedback.grammarScore.toFixed(1)}</p>
-              <p className="text-[9px] text-teal-200">Grammar</p>
+              <p className="text-sm font-black text-emerald-300">{feedback.grammarScore} <span className="text-[9px] text-teal-300">/20</span></p>
+              <p className="text-[9px] text-teal-200 font-bold">Grammar</p>
             </div>
             <div className="bg-white/5 p-2 rounded-xl">
-              <p className="text-sm font-black text-pink-300">{feedback.pronunciationScore.toFixed(1)}</p>
-              <p className="text-[9px] text-teal-200">Pronun.</p>
+              <p className="text-sm font-black text-pink-300">{feedback.pronunciationTaskScore} <span className="text-[9px] text-teal-300">/15</span></p>
+              <p className="text-[9px] text-teal-200 font-bold">Pronun/Task</p>
             </div>
           </div>
         </div>
 
+        {/* Candidate actual speech quotes if any */}
+        {feedback.quotes && feedback.quotes.length > 0 && (
+          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-2">
+            <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-800">
+              🗣️ Sizning nutqingizdan parchalar:
+            </h4>
+            <div className="space-y-1.5">
+              {feedback.quotes.map((q, i) => (
+                <p key={i} className="text-xs text-slate-700 italic bg-teal-50/50 p-2.5 rounded-xl border border-teal-100">
+                  {q}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Feedback advice */}
         <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-3">
           <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
-            Ekspert tavsiyalari (C1 darajaga erishish uchun)
+            Ekspert tavsiyalari (Keyingi daraja uchun)
           </h4>
           <div className="space-y-2">
             {feedback.improvements.map((imp, idx) => (
@@ -1216,7 +1305,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
 
           <div className="pt-2">
             <p className="text-[11px] text-slate-400 italic">
-              ✓ Natija avtomatik ravishda «Topshirilgan sinovlar tarixi»ga saqlandi.
+              ✓ Natija avtomatik ravishda «Topshirilgan sinovlar tarixi»ga saqlandi (75 ballik rasmiy mezon asosida).
             </p>
           </div>
         </div>

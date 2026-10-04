@@ -356,8 +356,14 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
                       </div>
 
                       <div className="text-right shrink-0">
-                        <span className="inline-block text-xs font-black bg-[#7052ff]/10 text-[#7052ff] px-2.5 py-1 rounded-xl">
-                          Band {res.overallBand.toFixed(1)}
+                        <span className={`inline-block text-xs font-black px-2.5 py-1 rounded-xl ${
+                          res.title.includes('Multilevel')
+                            ? 'bg-teal-500/10 text-teal-700'
+                            : 'bg-[#7052ff]/10 text-[#7052ff]'
+                        }`}>
+                          {res.title.includes('Multilevel')
+                            ? `${Math.round(res.overallBand)} / 75 ball`
+                            : `Band ${res.overallBand.toFixed(1)}`}
                         </span>
                         <span className="block text-[9px] text-slate-400 mt-1">
                           {isExpanded ? "Yopish ▲" : "Batafsil ▼"}
@@ -370,19 +376,27 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
                       <div className="mt-3 pt-3 border-t border-slate-100 space-y-2.5 animate-in fade-in duration-200">
                         <div className="grid grid-cols-4 gap-1 text-center bg-slate-50 p-2 rounded-xl text-[10px]">
                           <div>
-                            <span className="font-black text-slate-900 block">{res.criteriaScores.c1Score.toFixed(1)}</span>
+                            <span className="font-black text-slate-900 block">
+                              {res.title.includes('Multilevel') ? Math.round(res.criteriaScores.c1Score) : res.criteriaScores.c1Score.toFixed(1)}
+                            </span>
                             <span className="text-[8px] text-slate-400 truncate">{res.criteriaScores.c1Name}</span>
                           </div>
                           <div>
-                            <span className="font-black text-slate-900 block">{res.criteriaScores.c2Score.toFixed(1)}</span>
+                            <span className="font-black text-slate-900 block">
+                              {res.title.includes('Multilevel') ? Math.round(res.criteriaScores.c2Score) : res.criteriaScores.c2Score.toFixed(1)}
+                            </span>
                             <span className="text-[8px] text-slate-400 truncate">{res.criteriaScores.c2Name}</span>
                           </div>
                           <div>
-                            <span className="font-black text-slate-900 block">{res.criteriaScores.c3Score.toFixed(1)}</span>
+                            <span className="font-black text-slate-900 block">
+                              {res.title.includes('Multilevel') ? Math.round(res.criteriaScores.c3Score) : res.criteriaScores.c3Score.toFixed(1)}
+                            </span>
                             <span className="text-[8px] text-slate-400 truncate">{res.criteriaScores.c3Name}</span>
                           </div>
                           <div>
-                            <span className="font-black text-slate-900 block">{res.criteriaScores.c4Score.toFixed(1)}</span>
+                            <span className="font-black text-slate-900 block">
+                              {res.title.includes('Multilevel') ? Math.round(res.criteriaScores.c4Score) : res.criteriaScores.c4Score.toFixed(1)}
+                            </span>
                             <span className="text-[8px] text-slate-400 truncate">{res.criteriaScores.c4Name}</span>
                           </div>
                         </div>

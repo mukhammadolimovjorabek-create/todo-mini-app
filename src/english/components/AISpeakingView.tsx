@@ -78,6 +78,8 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
 
   // Recognition reference
   const recognitionRef = useRef<any>(null);
+  const committedTextRef = useRef<string>('');
+  const currentSessionFinalRef = useRef<string>('');
 
   const getFormattedTime = () => {
     const now = new Date();
@@ -174,18 +176,22 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       };
 
       recognition.onresult = (event: any) => {
-        // Build transcript fresh from all results to avoid repetition bug
-        let finalTranscript = '';
-        let interimTranscript = '';
+        let sessionFinal = '';
+        let sessionInterim = '';
         for (let i = 0; i < event.results.length; ++i) {
-          const transcriptPiece = event.results[i][0]?.transcript || '';
+          const piece = event.results[i][0]?.transcript || '';
           if (event.results[i].isFinal) {
-            finalTranscript += transcriptPiece + ' ';
+            sessionFinal += piece + ' ';
           } else {
-            interimTranscript += transcriptPiece;
+            sessionInterim += piece;
           }
         }
-        const fullText = (finalTranscript + interimTranscript).trim();
+        currentSessionFinalRef.current = sessionFinal;
+        const fullText = [committedTextRef.current, sessionFinal, sessionInterim]
+          .filter(Boolean)
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim();
         if (fullText) {
           setLiveTranscript(fullText);
         }
@@ -212,6 +218,16 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       };
 
       recognition.onend = () => {
+        // Persist any finalized speech from the ended recognition session
+        if (currentSessionFinalRef.current) {
+          committedTextRef.current = [committedTextRef.current, currentSessionFinalRef.current]
+            .filter(Boolean)
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+          currentSessionFinalRef.current = '';
+        }
+
         // As long as the exam question timer is running and listening is desired, keep microphone alive!
         if (isListeningWantedRef.current) {
           try {
@@ -246,6 +262,14 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
 
   const stopListening = () => {
     isListeningWantedRef.current = false;
+    if (currentSessionFinalRef.current) {
+      committedTextRef.current = [committedTextRef.current, currentSessionFinalRef.current]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      currentSessionFinalRef.current = '';
+    }
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
@@ -298,6 +322,8 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
 
     setTranscriptHistory([]);
     setLiveTranscript('');
+    committedTextRef.current = '';
+    currentSessionFinalRef.current = '';
     setFeedback(null);
     setTestStartTime(getFormattedTime());
     setStep('active_test');
@@ -440,10 +466,18 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       ? (p2Topic?.cueCard || '')
       : (p3Topic?.questions[p3Index] || '');
 
+    const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+      .filter(Boolean)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
     const newHistory = [
       ...transcriptHistory,
-      { question: currentQ, answer: liveTranscript.trim() || "(Nomzod belgilangan vaqtda javob bermadi)" }
+      { question: currentQ, answer: currentAnswer || "(Nomzod belgilangan vaqtda javob bermadi)" }
     ];
+    committedTextRef.current = '';
+    currentSessionFinalRef.current = '';
     setTranscriptHistory(newHistory);
     setLiveTranscript('');
 
@@ -480,10 +514,17 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
   const handleFullMockStep = () => {
     if (mockPhase === 'p1') {
       const currentQ = p1Topic?.questions[mockP1Idx] || '';
+      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       const newHistory = [
         ...transcriptHistory,
-        { question: `[Part 1] ${currentQ}`, answer: liveTranscript.trim() || "(Part 1 javobi berilmadi)" }
+        { question: `[Part 1] ${currentQ}`, answer: currentAnswer || "(Part 1 javobi berilmadi)" }
       ];
+      committedTextRef.current = '';
+      currentSessionFinalRef.current = '';
       setTranscriptHistory(newHistory);
       setLiveTranscript('');
 
@@ -504,10 +545,17 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
         });
       }
     } else if (mockPhase === 'p2_speak') {
+      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       const newHistory = [
         ...transcriptHistory,
-        { question: `[Part 2 Cue Card] ${p2Topic?.cueCard}`, answer: liveTranscript.trim() || "(Part 2 nutqi berilmadi)" }
+        { question: `[Part 2 Cue Card] ${p2Topic?.cueCard}`, answer: currentAnswer || "(Part 2 nutqi berilmadi)" }
       ];
+      committedTextRef.current = '';
+      currentSessionFinalRef.current = '';
       setTranscriptHistory(newHistory);
       setLiveTranscript('');
 
@@ -521,10 +569,17 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       });
     } else if (mockPhase === 'p3') {
       const currentQ = p3Topic?.questions[mockP3Idx] || '';
+      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       const newHistory = [
         ...transcriptHistory,
-        { question: `[Part 3] ${currentQ}`, answer: liveTranscript.trim() || "(Part 3 javobi berilmadi)" }
+        { question: `[Part 3] ${currentQ}`, answer: currentAnswer || "(Part 3 javobi berilmadi)" }
       ];
+      committedTextRef.current = '';
+      currentSessionFinalRef.current = '';
       setTranscriptHistory(newHistory);
       setLiveTranscript('');
 
@@ -1077,25 +1132,35 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
                   </div>
                   <textarea
                     value={liveTranscript}
-                    onChange={(e) => setLiveTranscript(e.target.value)}
+                    onChange={(e) => {
+                      setLiveTranscript(e.target.value);
+                      committedTextRef.current = e.target.value;
+                      currentSessionFinalRef.current = '';
+                    }}
                     placeholder="Javobingizni shu yerda yozishingiz yoki tahrirlashingiz mumkin..."
                     rows={3}
                     className="w-full p-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 outline-none focus:border-[#7052ff] resize-none"
                   />
                 </div>
               ) : liveTranscript ? (
-                <div>
-                  <p className="text-sm font-medium text-slate-900 leading-relaxed font-sans">
-                    "{liveTranscript}"
-                  </p>
-                  <div className="text-right pt-1.5">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center space-x-1.5 text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                      <span>Jonli nutq yozilmoqda:</span>
+                    </span>
                     <button
                       type="button"
                       onClick={() => setIsManualInput(true)}
                       className="text-[10px] font-bold text-[#7052ff] hover:underline"
                     >
-                      ✍️ Tahrirlash / Yozish
+                      ✍️ Tahrirlash
                     </button>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white border border-emerald-100 shadow-sm">
+                    <p className="text-sm font-semibold text-slate-900 leading-relaxed font-sans">
+                      "{liveTranscript}"
+                    </p>
                   </div>
                 </div>
               ) : (

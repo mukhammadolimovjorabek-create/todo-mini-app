@@ -137,47 +137,65 @@ export function evaluateCandidateSpeech(
   }[testType];
 
   // ── 1. Calculate Fluency and Coherence (FC) ──
-  let fcRaw = 6.0;
-  if (totalWords >= targetWords) fcRaw += 0.5;
-  if (totalWords >= targetWords * 1.4) fcRaw += 0.5;
-  if (discourseFound.length >= 2) fcRaw += 0.5;
-  if (discourseFound.length >= 4) fcRaw += 0.5;
-  if (fillersFound.length >= 1) fcRaw += 0.5;
-  if (totalWords < targetWords * 0.4) fcRaw -= 1.5;
-  if (totalWords < 15) fcRaw = 3.0;
+  let fcRaw = 5.0;
+  if (totalWords < 15) {
+    fcRaw = 2.0;
+  } else if (totalWords < 30) {
+    fcRaw = 3.0;
+  } else if (totalWords < 50) {
+    fcRaw = 4.0;
+  } else {
+    if (totalWords >= targetWords) fcRaw += 0.5;
+    if (totalWords >= targetWords * 1.3) fcRaw += 0.5;
+    if (discourseFound.length >= 2) fcRaw += 0.5;
+    if (discourseFound.length >= 4) fcRaw += 0.5;
+    if (fillersFound.length >= 1) fcRaw += 0.5;
+  }
 
   // ── 2. Calculate Lexical Resource (LR) ──
-  let lrRaw = 6.0;
-  if (ttr > 0.55 && totalWords > 40) lrRaw += 0.5;
-  if (vocabFound.length >= 1) lrRaw += 0.5;
-  if (vocabFound.length >= 3) lrRaw += 0.5;
-  if (idiomsFound.length >= 1) lrRaw += 0.5;
-  if (basicCount > 6 && vocabFound.length === 0) lrRaw -= 0.5;
-  if (totalWords < 30) lrRaw -= 1.0;
-  if (totalWords < 15) lrRaw = 3.0;
+  let lrRaw = 5.0;
+  if (totalWords < 15) {
+    lrRaw = 2.0;
+  } else if (totalWords < 30) {
+    lrRaw = 3.0;
+  } else if (totalWords < 50) {
+    lrRaw = 4.0;
+  } else {
+    if (ttr > 0.52 && totalWords > 40) lrRaw += 0.5;
+    if (vocabFound.length >= 1) lrRaw += 0.5;
+    if (vocabFound.length >= 3) lrRaw += 0.5;
+    if (idiomsFound.length >= 1) lrRaw += 0.5;
+    if (basicCount > 6 && vocabFound.length === 0) lrRaw -= 0.5;
+  }
 
   // ── 3. Calculate Grammatical Range and Accuracy (GRA) ──
-  let graRaw = 6.0;
-  if (grammarFound.length >= 2) graRaw += 0.5;
-  if (grammarFound.length >= 4) graRaw += 0.5;
-  if (grammarFound.length >= 6) graRaw += 0.5;
-  if (totalWords >= targetWords) graRaw += 0.5;
-  if (totalWords < 40) graRaw -= 1.0;
-  if (totalWords < 15) graRaw = 3.0;
+  let graRaw = 5.0;
+  if (totalWords < 15) {
+    graRaw = 2.0;
+  } else if (totalWords < 30) {
+    graRaw = 3.0;
+  } else if (totalWords < 50) {
+    graRaw = 4.0;
+  } else {
+    if (grammarFound.length >= 1) graRaw += 0.5;
+    if (grammarFound.length >= 3) graRaw += 0.5;
+    if (grammarFound.length >= 5) graRaw += 0.5;
+    if (totalWords >= targetWords) graRaw += 0.5;
+  }
 
   // ── 4. Calculate Pronunciation (PR) ──
   let prRaw = Math.round(((fcRaw + lrRaw + graRaw) / 3) * 2) / 2;
 
-  // Bound each criterion between 2.0 and 9.0
-  const clamp = (val: number) => Math.min(9.0, Math.max(2.0, Math.round(val * 2) / 2));
+  // Bound each criterion strictly between 1.0 and 9.0 in half-band steps
+  const clamp = (val: number) => Math.min(9.0, Math.max(1.0, Math.round(val * 2) / 2));
   const fc = clamp(fcRaw);
   const lr = clamp(lrRaw);
   const gra = clamp(graRaw);
   const pr = clamp(prRaw);
 
-  // ── Overall IELTS Band Score official rounding ──
-  // Cambridge rule: average of 4 criteria rounded to nearest half band
-  // .25 rounds up to .5; .75 rounds up to 1.0
+  // ── Official Cambridge IELTS Overall Band Rounding ──
+  // Average of 4 criteria:
+  // .25 rounds up to .5; .75 rounds up to next whole band; <.25 rounds down
   const avg = (fc + lr + gra + pr) / 4;
   const intPart = Math.floor(avg);
   const decimal = avg - intPart;
@@ -190,7 +208,7 @@ export function evaluateCandidateSpeech(
   } else {
     overall = intPart;
   }
-  overall = Math.min(9.0, Math.max(5.0, overall));
+  overall = Math.min(9.0, Math.max(1.0, overall));
 
   // Strengths identification
   const strengths: string[] = [];
@@ -211,19 +229,21 @@ export function evaluateCandidateSpeech(
     strengths.push("Savollarga to'g'ridan-to'g'ri javob berildi va asosiy g'oyani yetkazib berishga erishildi.");
   }
 
-  // Actionable improvements for next band
+  // Actionable improvements based on actual band
   const improvements: string[] = [];
-  if (discourseFound.length < 3) {
-    improvements.push("Nutq oqimini bog'lash uchun 'Furthermore', 'Consequently', 'In terms of' kabi akademik bog'lovchilarni faolroq ishlating.");
-  }
-  if (vocabFound.length < 2) {
-    improvements.push("Oddiy so'zlar (good, nice, big) o'rniga Band 8+ sinonimlarni (masalan: 'paramount', 'substantial', 'predominantly') qo'llang.");
-  }
-  if (grammarFound.length < 3) {
-    improvements.push("Murakkab grammatik strukturalar (Conditionals: 'If I were to...', Inversion: 'Rarely do I...') salmog'ini ko'paytiring.");
-  }
-  if (totalWords < targetWords) {
-    improvements.push(`Javoblaringiz hajmini kengaytiring. Rasmiy imtihonda har bir fikr uchun 'Sabab + Misol' (Reason + Example) keltiring.`);
+  if (overall < 5.0) {
+    improvements.push("Javoblar hajmini oshiring. Har bir savolga 'Because...', 'For instance...' deb kamida 2-3 ta to'liq gap bilan javob bering.");
+    improvements.push("Oddiy so'zlardan to'liq gaplar tuzishni va savol so'zlarini javobingizda qayta ifodalashni (paraphrasing) mashq qiling.");
+  } else {
+    if (discourseFound.length < 3) {
+      improvements.push("Nutq oqimini bog'lash uchun 'Furthermore', 'Consequently', 'In terms of' kabi akademik bog'lovchilarni faolroq ishlating.");
+    }
+    if (vocabFound.length < 2) {
+      improvements.push("Oddiy so'zlar (good, nice, big) o'rniga Band 8+ sinonimlarni (masalan: 'paramount', 'substantial', 'predominantly') qo'llang.");
+    }
+    if (grammarFound.length < 3) {
+      improvements.push("Murakkab grammatik strukturalar (Conditionals: 'If I were to...', Inversion: 'Rarely do I...') salmog'ini ko'paytiring.");
+    }
   }
 
   return {
