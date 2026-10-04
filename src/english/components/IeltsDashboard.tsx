@@ -120,10 +120,6 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
               >
                 Part 1-3
               </button>
-              <div className="text-[11px] font-extrabold text-indigo-100 bg-gradient-to-r from-indigo-500/30 to-purple-500/25 px-3 py-1.5 rounded-xl border border-indigo-400/40 shadow-xs flex items-center space-x-1.5">
-                  <Users size={12} className="text-indigo-300 shrink-0" />
-                  <span>Sherik qidirish</span>
-                </div>
             </div>
 
             <button

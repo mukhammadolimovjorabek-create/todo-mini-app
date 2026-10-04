@@ -431,7 +431,12 @@ async def ws_matchmake(request):
     await ws.prepare(request)
     
     user_id = request.query.get("user_id") or "guest"
-    user_data = {"name": "Foydalanuvchi", "username": "", "likes": 0, "dislikes": 0}
+    user_name = request.query.get("user_name") or "Foydalanuvchi"
+    gender = request.query.get("gender") or "male"
+    filter_gender = request.query.get("filter_gender") or "any"
+    room_id = request.query.get("room_id") or ""
+    
+    user_data = {"name": user_name, "username": "", "likes": 0, "dislikes": 0, "gender": gender}
     
     if db_pool:
         try:
@@ -439,16 +444,22 @@ async def ws_matchmake(request):
             async with db_pool.acquire() as conn:
                 row = await conn.fetchrow("SELECT first_name, username, likes, dislikes FROM users WHERE user_id = $1", user_id_int)
                 if row:
-                    user_data = {
-                        "name": row['first_name'] or "Foydalanuvchi",
-                        "username": row['username'] or "",
-                        "likes": row['likes'] or 0,
-                        "dislikes": row['dislikes'] or 0
-                    }
+                    user_data["likes"] = row['likes'] or 0
+                    user_data["dislikes"] = row['dislikes'] or 0
+                    if not user_name or user_name == "Foydalanuvchi" or user_name == "Siz":
+                        user_data["name"] = row['first_name'] or user_name
         except Exception as e:
             logging.error(f"Error fetching user info for WS: {e}")
             
-    me = {'ws': ws, 'user_id': user_id, 'data': user_data, 'room_id': None}
+    me = {
+        'ws': ws,
+        'user_id': user_id,
+        'data': user_data,
+        'gender': gender,
+        'filter_gender': filter_gender,
+        'room_id': room_id,
+        'active_room': None
+    }
     
     # Filter out dead/closed sockets
     clean_pool = [p for p in waiting_pool if not p['ws'].closed and p['ws'] != ws]
@@ -457,21 +468,41 @@ async def ws_matchmake(request):
     
     matched = False
     for p in waiting_pool:
-        if not p['ws'].closed and p['ws'] != ws:
-            waiting_pool.remove(p)
-            room_id = str(uuid.uuid4())
-            me['room_id'] = room_id
-            p['room_id'] = room_id
-            active_rooms[room_id] = [me, p]
+        if p['ws'].closed or p['ws'] == ws:
+            continue
             
-            p_partner = {"id": p['user_id'], "name": p['data']['name'], "username": p['data']['username'], "likes": p['data']['likes'], "dislikes": p['data']['dislikes']}
-            me_partner = {"id": me['user_id'], "name": me['data']['name'], "username": me['data']['username'], "likes": me['data']['likes'], "dislikes": me['data']['dislikes']}
+        is_compatible = False
+        
+        # 1. Agar ikkalasi ham bir xil taklif xonasiga (room_id) ulangan bo'lsa
+        if room_id and p.get('room_id'):
+            if room_id == p['room_id']:
+                is_compatible = True
+        # 2. Agar umumiy qidiruv bo'lsa (ikkalasi ham taklif xonasisiz)
+        elif not room_id and not p.get('room_id'):
+            me_wants = me['filter_gender']
+            p_wants = p.get('filter_gender', 'any')
+            
+            # Jins filtri mosligi
+            me_ok = (me_wants == 'any' or me_wants == p.get('gender'))
+            p_ok = (p_wants == 'any' or p_wants == me.get('gender'))
+            if me_ok and p_ok:
+                is_compatible = True
+                
+        if is_compatible:
+            waiting_pool.remove(p)
+            session_room_id = str(uuid.uuid4())
+            me['active_room'] = session_room_id
+            p['active_room'] = session_room_id
+            active_rooms[session_room_id] = [me, p]
+            
+            p_partner = {"id": p['user_id'], "name": p['data']['name'], "likes": p['data']['likes'], "dislikes": p['data']['dislikes']}
+            me_partner = {"id": me['user_id'], "name": me['data']['name'], "likes": me['data']['likes'], "dislikes": me['data']['dislikes']}
             
             try:
                 await me['ws'].send_json({"type": "match_found", "partner": p_partner})
                 await p['ws'].send_json({"type": "match_found", "partner": me_partner})
                 matched = True
-                logging.info(f"Matched users: {me['user_id']} with {p['user_id']}")
+                logging.info(f"MATCHED: {me['data']['name']} with {p['data']['name']} in room {session_room_id}")
                 break
             except Exception as e:
                 logging.error(f"Error sending match notifications: {e}")
@@ -487,9 +518,9 @@ async def ws_matchmake(request):
         async for msg in ws:
             if msg.type == web.WSMsgType.TEXT:
                 data = msg.json()
-                room_id = me['room_id']
-                if room_id and room_id in active_rooms:
-                    for p in active_rooms[room_id]:
+                active_room_id = me['active_room']
+                if active_room_id and active_room_id in active_rooms:
+                    for p in active_rooms[active_room_id]:
                         if p['ws'] != ws and not p['ws'].closed:
                             try:
                                 await p['ws'].send_json(data)
@@ -500,17 +531,17 @@ async def ws_matchmake(request):
     finally:
         if me in waiting_pool:
             waiting_pool.remove(me)
-        room_id = me['room_id']
-        if room_id and room_id in active_rooms:
-            partners = active_rooms[room_id]
+        active_room_id = me['active_room']
+        if active_room_id and active_room_id in active_rooms:
+            partners = active_rooms[active_room_id]
             for p in partners:
                 if p['ws'] != ws and not p['ws'].closed:
                     try:
                         await p['ws'].send_json({"type": "partner_left"})
                     except Exception:
                         pass
-            if room_id in active_rooms:
-                del active_rooms[room_id]
+            if active_room_id in active_rooms:
+                del active_rooms[active_room_id]
             
     return ws
 

@@ -14,7 +14,7 @@ export function App() {
   const [isEnglishModule, setIsEnglishModule] = useState(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      return params.get('module') === 'english';
+      return params.get('module') === 'english' || Boolean(params.get('room'));
     } catch {
       return false;
     }

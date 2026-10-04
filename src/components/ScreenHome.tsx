@@ -179,7 +179,50 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
         </div>
 
         {/* ── 2-rasmdagi zamonaviy to'q binafsha Progress Card ── */}
-        <div className="mt-4 rounded-[2rem] p-5 bg-[#1e1552] text-white shadow-xl relative overflow-hidden">
+        {/* 🚀 Ingliz tili (IELTS / Multilevel) Premium Boshlash Card (Yuqorida va Katta) */}
+        {onOpenEnglish && (
+          <div
+            onClick={onOpenEnglish}
+            className="my-3.5 rounded-[2.2rem] p-5 text-white shadow-xl cursor-pointer border border-indigo-400/30 active:scale-[0.98] transition-all relative overflow-hidden"
+            style={{ background: 'linear-gradient(135deg, #100b2e 0%, #1e135e 50%, #341299 100%)' }}
+          >
+            {/* Ambient neon glow */}
+            <div className="absolute -top-10 -right-10 w-36 h-36 bg-[#c4f82a]/20 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="flex items-center justify-between relative z-10">
+              <div className="flex items-center space-x-3.5 min-w-0 flex-1">
+                <div className="w-12 h-12 rounded-2xl bg-[#c4f82a]/20 border border-[#c4f82a]/40 flex items-center justify-center font-black text-base text-[#c4f82a] shrink-0 shadow-inner backdrop-blur-xs uppercase">
+                  {userName ? userName.slice(0, 2).toUpperCase() : 'ME'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className="animate-bounce inline-block text-[10px] font-black bg-[#c4f82a] text-[#121124] px-2 py-0.5 rounded-full shadow-[0_0_14px_rgba(196,248,42,0.85)] whitespace-nowrap">
+                      Yangi 🔥
+                    </span>
+                    <span className="text-[11px] font-bold text-purple-200 uppercase tracking-wider">IELTS & CEFR</span>
+                  </div>
+                  <h4 className="text-sm font-black text-white tracking-tight leading-tight">
+                    IELTS & Multilevel Practice
+                  </h4>
+                  <p className="text-[11px] text-purple-200/90 truncate mt-0.5 font-medium">
+                    AI Examiner (9.0), Writing & Jonli Sheriklik
+                  </p>
+                </div>
+              </div>
+
+              {/* Boshlash tugmasi */}
+              <div className="pl-2 shrink-0">
+                <div className="inline-flex items-center space-x-1.5 bg-[#c4f82a] text-[#121124] px-4 py-2.5 rounded-full text-xs font-black shadow-md select-none hover:brightness-105 transition-all">
+                  <span>Boshlash</span>
+                  <span className="font-sans font-bold">→</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── 2-rasmdagi zamonaviy to'q binafsha Progress Card ── */}
+        <div className="rounded-[2rem] p-5 bg-[#1e1552] text-white shadow-xl relative overflow-hidden">
           <div className="flex items-center justify-between">
             {/* Chap tomon: Foiz va vazifalar soni */}
             <div>
@@ -246,48 +289,6 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
             </p>
           </div>
         </div>
-
-        {/* 🇬🇧 Ingliz tili (IELTS / Multilevel) Premium Boshlash Card */}
-        {onOpenEnglish && (
-          <div
-            onClick={onOpenEnglish}
-            className="mt-3.5 rounded-2xl p-4 text-white shadow-lg cursor-pointer border border-indigo-400/25 active:scale-[0.98] transition-all relative overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, #120e2c 0%, #1e1552 50%, #321884 100%)' }}
-          >
-            {/* Ambient neon glow */}
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#c4f82a]/15 rounded-full blur-2xl pointer-events-none" />
-
-            <div className="flex items-center justify-between relative z-10">
-              <div className="flex items-center space-x-3 min-w-0 flex-1">
-                <div className="w-11 h-11 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center text-2xl shrink-0 shadow-inner backdrop-blur-xs">
-                  🇬🇧
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center space-x-1.5 mb-0.5">
-                    <span className="animate-wiggle text-[9px] font-black bg-[#c4f82a] text-[#121124] px-1.5 py-0.5 rounded-full shadow-xs whitespace-nowrap">
-                      Yangi 🔥
-                    </span>
-                    <span className="text-[10px] font-bold text-purple-300 uppercase tracking-wider">IELTS & CEFR</span>
-                  </div>
-                  <h4 className="text-xs font-black text-white tracking-tight leading-tight">
-                    IELTS & Multilevel Practice
-                  </h4>
-                  <p className="text-[10.5px] text-purple-200/90 truncate mt-0.5 font-medium">
-                    AI Examiner (9.0), Writing & Sheriklik
-                  </p>
-                </div>
-              </div>
-
-              {/* Boshlash tugmasi: qimirlamaydi (mutlaqo barqaror) */}
-              <div className="pl-2 shrink-0">
-                <div className="inline-flex items-center space-x-1 bg-[#c4f82a] text-[#121124] px-3.5 py-2 rounded-full text-xs font-black shadow-md select-none">
-                  <span>Boshlash</span>
-                  <span className="font-sans font-bold">→</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── Vazifalar bo'limi: Kunlik va Haftalik (Foydalanuvchi talabi) ── */}

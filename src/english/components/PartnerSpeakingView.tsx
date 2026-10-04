@@ -43,8 +43,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   const [searchTimer, setSearchTimer] = useState(0);
   const [matchedPartner, setMatchedPartner] = useState<any>(null);
 
-  // Active Room state
-  const [activePart, setActivePart] = useState<RoomPart>('part1');
+
   const [p1Topic, setP1Topic] = useState<Part1Topic>(() => getRandomPart1Topic());
   const [p1QuestionIdx, setP1QuestionIdx] = useState(0);
 
@@ -65,7 +64,10 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   const [dislikeReason, setDislikeReason] = useState<string>('');
 
   // Real room ID for Telegram direct pairing
-  const [roomId] = useState(() => 'room_' + Math.floor(100000 + Math.random() * 900000));
+  const urlRoom = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('room') : null;
+  const [roomId] = useState(() => urlRoom || ('room_' + Math.floor(100000 + Math.random() * 900000)));
+  const [isDirectInvite, setIsDirectInvite] = useState(() => Boolean(urlRoom));
+  const [selectedPart, setSelectedPart] = useState<RoomPart | null>(null);
   const [copiedInvite, setCopiedInvite] = useState(false);
   const [ws, setWs] = useState<WebSocket | null>(null);
 
@@ -97,6 +99,14 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     }
   }, [userId]);
 
+  // Auto-start search if user joined via room invite URL
+  useEffect(() => {
+    if (urlRoom && matchStatus === 'idle') {
+      setIsDirectInvite(true);
+      setMatchStatus('searching');
+    }
+  }, [urlRoom]);
+
   // Keep lock state synced
   useEffect(() => {
     const current = getDislikesCount(userId);
@@ -106,8 +116,10 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
 
   const handleShareInvite = () => {
     triggerHaptic('medium');
+    setIsDirectInvite(true);
+    setMatchStatus('searching');
     const inviteUrl = `${window.location.origin}?room=${roomId}&module=english`;
-    const shareText = `Salom! Men bilan IELTS Speaking mashq qilasizmi? Xona ID: ${roomId}`;
+    const shareText = `Salom! Men bilan IELTS Speaking mashq qilasizmi? Bosing va kiring: ${inviteUrl}`;
     
     const tg = getTelegramWebApp();
     if (tg && typeof (tg as any).openTelegramLink === 'function') {
@@ -119,12 +131,23 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     }
   };
 
+  const getSupportedMimeType = () => {
+    if (typeof MediaRecorder === 'undefined') return '';
+    const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg', 'audio/aac'];
+    for (const t of types) {
+      if (MediaRecorder.isTypeSupported(t)) return t;
+    }
+    return '';
+  };
+
   const startRecording = async () => {
     try {
       triggerHaptic('medium');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunksRef.current = [];
-      const mediaRecorder = new MediaRecorder(stream);
+      const mimeType = getSupportedMimeType();
+      const options = mimeType ? { mimeType } : undefined;
+      const mediaRecorder = options ? new MediaRecorder(stream, options) : new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
 
       mediaRecorder.ondataavailable = (e) => {
@@ -134,7 +157,8 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const recordedType = mediaRecorder.mimeType || 'audio/webm';
+        const audioBlob = new Blob(audioChunksRef.current, { type: recordedType });
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {
@@ -147,7 +171,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
         stream.getTracks().forEach((track) => track.stop());
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(250);
       setIsRecording(true);
       setRecordDuration(0);
       recordTimerRef.current = setInterval(() => {
@@ -198,7 +222,8 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
         });
       }, 1000);
       
-      const socket = new WebSocket(`wss://todo-mini-app-cwkd.onrender.com/ws/matchmake?user_id=${userId}`);
+      const targetRoom = isDirectInvite ? roomId : '';
+      const socket = new WebSocket(`wss://todo-mini-app-cwkd.onrender.com/ws/matchmake?user_id=${userId}&user_name=${encodeURIComponent(userName)}&gender=${userGender || 'male'}&filter_gender=${filterGender}&room_id=${targetRoom}`);
       socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'match_found') {
@@ -218,20 +243,25 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
               audio.onended = () => {
                 setIsPartnerSpeaking(false);
               };
-              audio.play().catch(() => {
+              audio.play().catch((e) => {
+                console.log('Autoplay blocked:', e);
                 setIsPartnerSpeaking(false);
               });
             } catch (err) {
               setIsPartnerSpeaking(false);
             }
-            triggerHaptic('light');
+            triggerHaptic('heavy');
           }
         } else if (data.type === 'chat_message') {
           if (data.text === 'TURN_SWITCH') {
             setSpeakerTurn(prev => prev === 'me' ? 'partner' : 'me');
             triggerHaptic('light');
-          } else if (data.text.startsWith('PART_')) {
-            setActivePart(data.text.replace('PART_', '').toLowerCase() as any);
+          } else if (data.text.startsWith('PART_SELECT_')) {
+            const chosen = data.text.replace('PART_SELECT_', '').toLowerCase() as RoomPart;
+            setSelectedPart(chosen);
+            triggerHaptic('heavy');
+          } else if (data.text === 'PART_DESELECT') {
+            setSelectedPart(null);
             triggerHaptic('light');
           }
         } else if (data.type === 'partner_left') {
@@ -272,8 +302,21 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     return () => clearInterval(timer);
   }, [isP2TimerRunning, p2Timer, p2Phase]);
 
+  const choosePart = (p: RoomPart) => {
+    triggerHaptic('medium');
+    setSelectedPart(p);
+    if (ws) ws.send(JSON.stringify({ type: 'chat_message', text: `PART_SELECT_${p.toUpperCase()}` }));
+  };
+
+  const deselectPart = () => {
+    triggerHaptic('light');
+    setSelectedPart(null);
+    if (ws) ws.send(JSON.stringify({ type: 'chat_message', text: 'PART_DESELECT' }));
+  };
+
   const handleStartSearch = () => {
     triggerHaptic('medium');
+    setIsDirectInvite(false);
     setSearchTimer(0);
     setMatchStatus('searching');
   };
@@ -704,10 +747,10 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
 
             <div className="space-y-2">
               <h3 className="text-lg font-black text-slate-900">
-                Mos sherik qidirilmoqda...
+                {isDirectInvite ? "Do'stingiz kutilmoqda..." : "Mos sherik qidirilmoqda..."}
               </h3>
               <p className="text-xs text-slate-500">
-                {filterGender === 'female' ? "Faqat qizlar filtri faol" : filterGender === 'male' ? "Faqat o'g'il bolalar filtri faol" : "Barcha faol talabalar tekshirilmoqda"}
+                {isDirectInvite ? `Xona ID: ${roomId} • Do'stingiz havola orqali kirsa avtomat ulanadi` : filterGender === 'female' ? "Faqat qizlar filtri faol" : filterGender === 'male' ? "Faqat o'g'il bolalar filtri faol" : "Barcha faol talabalar tekshirilmoqda"}
               </p>
               <div className="inline-flex items-center space-x-1.5 bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-mono font-bold">
                 <Clock size={12} />
@@ -766,51 +809,73 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
               </button>
             </div>
 
-            {/* Speaking Part Tabs */}
-            <div className="grid grid-cols-3 gap-2 bg-slate-200/60 p-1.5 rounded-2xl">
-              <button
-                onClick={() => {
-                  triggerHaptic('light');
-                  setActivePart('part1');
-                }}
-                className={`py-2 rounded-xl text-xs font-black transition-all ${
-                  activePart === 'part1'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Part 1 (Savollar)
-              </button>
-              <button
-                onClick={() => {
-                  triggerHaptic('light');
-                  setActivePart('part2');
-                }}
-                className={`py-2 rounded-xl text-xs font-black transition-all ${
-                  activePart === 'part2'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Part 2 (Cue Card)
-              </button>
-              <button
-                onClick={() => {
-                  triggerHaptic('light');
-                  setActivePart('part3');
-                }}
-                className={`py-2 rounded-xl text-xs font-black transition-all ${
-                  activePart === 'part3'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Part 3 (Munozara)
-              </button>
-            </div>
+            {/* Part Selection Screen if not selected yet */}
+            {!selectedPart ? (
+              <div className="bg-white rounded-3xl p-5 border border-indigo-100 shadow-sm space-y-3.5 text-center animate-in zoom-in-95 duration-200">
+                <div className="space-y-1">
+                  <h3 className="text-base font-black text-slate-900">Mashq bo'limini tanlang 🎯</h3>
+                  <p className="text-xs text-slate-500">Ikkalangiz birga mashq qiladigan bo'limni tanlang:</p>
+                </div>
+
+                <div className="space-y-2 text-left">
+                  <button
+                    onClick={() => choosePart('part1')}
+                    className="w-full p-3.5 rounded-2xl border border-indigo-100 hover:border-[#7052ff] bg-indigo-50/40 hover:bg-indigo-50 flex items-center justify-between transition-all active:scale-[0.98] group"
+                  >
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 group-hover:text-[#7052ff]">Part 1: Savollar (Interview)</h4>
+                      <p className="text-[10.5px] text-slate-500 mt-0.5">Shaxsiy hayot va qiziqishlar bo'yicha qisqa savollar</p>
+                    </div>
+                    <div className="w-7 h-7 rounded-xl bg-white text-[#7052ff] font-black text-xs flex items-center justify-center shadow-xs">
+                      1
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => choosePart('part2')}
+                    className="w-full p-3.5 rounded-2xl border border-amber-100 hover:border-amber-400 bg-amber-50/40 hover:bg-amber-50 flex items-center justify-between transition-all active:scale-[0.98] group"
+                  >
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 group-hover:text-amber-700">Part 2: Cue Card (Nutq)</h4>
+                      <p className="text-[10.5px] text-slate-500 mt-0.5">1 min tayyorgarlik va 2 min monolog nutqi</p>
+                    </div>
+                    <div className="w-7 h-7 rounded-xl bg-white text-amber-600 font-black text-xs flex items-center justify-center shadow-xs">
+                      2
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => choosePart('part3')}
+                    className="w-full p-3.5 rounded-2xl border border-emerald-100 hover:border-emerald-500 bg-emerald-50/40 hover:bg-emerald-50 flex items-center justify-between transition-all active:scale-[0.98] group"
+                  >
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 group-hover:text-emerald-700">Part 3: Munozara (Discussion)</h4>
+                      <p className="text-[10.5px] text-slate-500 mt-0.5">Chuqur mavzular bo'yicha tahliliy muloqot</p>
+                    </div>
+                    <div className="w-7 h-7 rounded-xl bg-white text-emerald-600 font-black text-xs flex items-center justify-center shadow-xs">
+                      3
+                    </div>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between bg-slate-100 px-3.5 py-2 rounded-2xl text-xs font-black text-slate-700 border border-slate-200">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  {selectedPart === 'part1' ? 'Part 1 (Savollar)' : selectedPart === 'part2' ? 'Part 2 (Cue Card)' : 'Part 3 (Munozara)'}
+                </span>
+                <button
+                  onClick={deselectPart}
+                  className="text-[#7052ff] hover:text-[#5b3ce0] flex items-center space-x-1 text-[11px] font-bold"
+                >
+                  <RotateCcw size={12} />
+                  <span>Bo'limni almashtirish</span>
+                </button>
+              </div>
+            )}
 
             {/* ── PART 1 SECTION ── */}
-            {activePart === 'part1' && (
+            {selectedPart === 'part1' && (
               <div className="bg-white rounded-3xl p-5 border border-slate-100 space-y-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
@@ -870,7 +935,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
             )}
 
             {/* ── PART 2 SECTION ── */}
-            {activePart === 'part2' && (
+            {selectedPart === 'part2' && (
               <div className="bg-white rounded-3xl p-5 border border-slate-100 space-y-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
@@ -950,7 +1015,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
             )}
 
             {/* ── PART 3 SECTION ── */}
-            {activePart === 'part3' && (
+            {selectedPart === 'part3' && (
               <div className="bg-white rounded-3xl p-5 border border-slate-100 space-y-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">

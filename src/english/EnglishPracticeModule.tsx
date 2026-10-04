@@ -28,8 +28,20 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
 }) => {
   const [profile, setProfile] = useState<EnglishUserProfile | null>(() => getEnglishProfile());
   const [showSettings, setShowSettings] = useState(false);
-  const [selectedExam, setSelectedExam] = useState<ExamType | null>(null);
-  const [ieltsInitialView, setIeltsInitialView] = useState<'menu' | 'reading' | 'writing' | 'speaking' | 'ai_speaking' | 'partner_speaking'>('menu');
+  const [selectedExam, setSelectedExam] = useState<ExamType | null>(() => {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get('room')) return 'ielts';
+    } catch {}
+    return null;
+  });
+  const [ieltsInitialView, setIeltsInitialView] = useState<'menu' | 'reading' | 'writing' | 'speaking' | 'ai_speaking' | 'partner_speaking'>(() => {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get('room')) return 'partner_speaking';
+    } catch {}
+    return 'menu';
+  });
   const [results, setResults] = useState<TestResultItem[]>(() => getTestResults());
   const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
 
@@ -119,7 +131,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
               <span className="text-[10px] font-bold bg-[#7052ff]/10 text-[#7052ff] px-2 py-0.5 rounded-full">v1.2</span>
             </div>
             <h2 className="text-lg font-black text-slate-900 tracking-tight leading-tight">
-              Ingliz tili mashqlari 🇬🇧
+              Ingliz tili mashqlari
             </h2>
           </div>
         </div>
