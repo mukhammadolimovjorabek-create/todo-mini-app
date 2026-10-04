@@ -133,7 +133,7 @@ export const ScreenAnalytics: React.FC = () => {
 
   // Shaxsiy referral link - Telegram bot universal havola (doim xatosiz ochiladi)
   const botUsername = 'aitasklistbot';
-  const myTelegramId = '5466728043';
+  const myTelegramId = getTelegramUser()?.id;
   const referralLink = `https://t.me/${botUsername}?start=ref_${myTelegramId}`;
 
   const copyReferralLink = () => {
