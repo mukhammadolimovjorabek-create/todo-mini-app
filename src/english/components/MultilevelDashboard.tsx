@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, Award } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Award, Users } from 'lucide-react';
 import { MultilevelSpeakingView } from './MultilevelSpeakingView';
 import { MultilevelWritingView } from './MultilevelWritingView';
+import { PartnerSpeakingView } from './PartnerSpeakingView';
 import { triggerHaptic } from '../../utils/telegram';
 import {
   SpeakingWaveform,
@@ -14,10 +15,11 @@ interface Props {
   userName: string;
 }
 
-type ActiveView = 'menu' | 'speaking' | 'writing';
+type ActiveView = 'menu' | 'speaking' | 'writing' | 'partner_speaking';
 
 export const MultilevelDashboard: React.FC<Props> = ({ onBack, userName }) => {
   const [activeView, setActiveView] = useState<ActiveView>('menu');
+  const [showSpeakingModal, setShowSpeakingModal] = useState(false);
 
   if (activeView === 'speaking') {
     return <MultilevelSpeakingView onBack={() => setActiveView('menu')} userName={userName} />;
@@ -25,6 +27,10 @@ export const MultilevelDashboard: React.FC<Props> = ({ onBack, userName }) => {
 
   if (activeView === 'writing') {
     return <MultilevelWritingView onBack={() => setActiveView('menu')} userName={userName} />;
+  }
+
+  if (activeView === 'partner_speaking') {
+    return <PartnerSpeakingView onBack={() => setActiveView('menu')} userName={userName} />;
   }
 
   // ── MAIN DASHBOARD MENU ──
@@ -86,7 +92,7 @@ export const MultilevelDashboard: React.FC<Props> = ({ onBack, userName }) => {
             tabIndex={0}
             onClick={() => {
               triggerHaptic('medium');
-              setActiveView('speaking');
+              setShowSpeakingModal(true);
             }}
             className="p-5 rounded-[2rem] bg-[#181630] border border-white/10 hover:border-emerald-400/50 hover:shadow-lg transition-all cursor-pointer group active:scale-[0.99] space-y-3 text-white"
           >
@@ -190,6 +196,77 @@ export const MultilevelDashboard: React.FC<Props> = ({ onBack, userName }) => {
 
         </div>
       </div>
+
+      {/* Speaking Mode Modal (Sherik qidirish vs AI Examiner) */}
+      {showSpeakingModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0a0818]/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="bg-[#181630] border border-emerald-500/30 w-full max-w-sm rounded-[2rem] p-6 space-y-5 shadow-2xl relative animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
+            <button
+              onClick={() => setShowSpeakingModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition-colors"
+            >
+              ✕
+            </button>
+
+            <div className="text-center space-y-1 pr-8">
+              <h3 className="text-xl font-black text-white tracking-tight">Speaking Tartibi</h3>
+              <p className="text-xs text-slate-400 font-medium">Kim bilan shug'ullanishni tanlang:</p>
+            </div>
+
+            <div className="space-y-3">
+              {/* 1. CEFR AI Examiner */}
+              <button
+                onClick={() => {
+                  triggerHaptic('heavy');
+                  setShowSpeakingModal(false);
+                  setActiveView('speaking');
+                }}
+                className="w-full text-left p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-[0.98] transition-all flex items-center gap-4 group"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                  <SpeakingWaveform color="#10B981" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-white group-hover:text-emerald-400 transition-colors">
+                    CEFR AI Examiner
+                  </h4>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                    DTM standarti (B1-C1) bo'yicha sun'iy intellekt
+                  </p>
+                </div>
+                <div className="ml-auto w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50 group-hover:bg-emerald-500 group-hover:text-black transition-all">
+                  <ArrowRight size={12} />
+                </div>
+              </button>
+
+              {/* 2. Sherik qidirish */}
+              <button
+                onClick={() => {
+                  triggerHaptic('heavy');
+                  setShowSpeakingModal(false);
+                  setActiveView('partner_speaking');
+                }}
+                className="w-full text-left p-4 rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 hover:from-indigo-500/20 hover:to-purple-500/20 active:scale-[0.98] transition-all flex items-center gap-4 group shadow-[0_0_15px_rgba(99,102,241,0.1)]"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                  <Users size={24} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-white group-hover:text-indigo-400 transition-colors">
+                    Sherik qidirish (Jonli)
+                  </h4>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                    Haqiqiy insonlar bilan jonli suhbat va mashq
+                  </p>
+                </div>
+                <div className="ml-auto w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50 group-hover:bg-indigo-500 group-hover:text-white transition-all">
+                  <ArrowRight size={12} />
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

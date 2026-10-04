@@ -84,33 +84,51 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     return `${h}:${m}`;
   };
 
-  // Speak function
+  // Speak function with safety timeout so test never freezes on mobile
   const speakText = (text: string, onEnd?: () => void) => {
     if (!speechEnabled || !('speechSynthesis' in window)) {
       if (onEnd) onEnd();
       return;
     }
+    let ended = false;
+    const safeEnd = () => {
+      if (!ended) {
+        ended = true;
+        if (onEnd) onEnd();
+      }
+    };
+
+    const safetyTimer = setTimeout(() => {
+      safeEnd();
+    }, Math.max(2500, Math.min(8000, text.length * 80)));
+
     try {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-GB';
       utterance.rate = 0.95;
       utterance.pitch = 1.0;
-      if (onEnd) {
-        utterance.onend = () => onEnd();
-        utterance.onerror = () => onEnd();
-      }
+      utterance.onend = () => {
+        clearTimeout(safetyTimer);
+        safeEnd();
+      };
+      utterance.onerror = () => {
+        clearTimeout(safetyTimer);
+        safeEnd();
+      };
       window.speechSynthesis.speak(utterance);
     } catch {
-      if (onEnd) onEnd();
+      clearTimeout(safetyTimer);
+      safeEnd();
     }
   };
 
   const isListeningWantedRef = useRef<boolean>(false);
   const accumulatedTextRef = useRef<string>('');
+  const hasMicPermissionRef = useRef<boolean>(false);
   const [isManualInput, setIsManualInput] = useState<boolean>(false);
 
-  // Start Recognition automatically with auto-reconnect and error tolerance
+  // Start Recognition automatically with cached permission and hardware release
   const startListening = async () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -120,10 +138,12 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
 
     isListeningWantedRef.current = true;
 
-    // Prompt microphone permission explicitly
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    // Prompt microphone permission ONLY ONCE and immediately release tracks so SpeechRecognition can access hardware!
+    if (!hasMicPermissionRef.current && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop());
+        hasMicPermissionRef.current = true;
       } catch (err) {
         console.warn("Microphone permission prompt warning:", err);
       }
@@ -883,9 +903,22 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
             <span className="text-[10px] font-black uppercase text-[#7052ff] bg-purple-50 px-2 py-0.5 rounded-md">
               Mavzu: {p1Topic.topic}
             </span>
-            <p className="text-base font-black text-slate-900 mt-1 leading-snug">
-              "{p1Topic.questions[selectedPart === 'full_mock' ? mockP1Idx : p1Index]}"
-            </p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-base font-black text-slate-900 mt-1 leading-snug">
+                "{p1Topic.questions[selectedPart === 'full_mock' ? mockP1Idx : p1Index]}"
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  speakText(p1Topic.questions[selectedPart === 'full_mock' ? mockP1Idx : p1Index]);
+                }}
+                className="shrink-0 p-2 rounded-xl bg-purple-50 text-[#7052ff] hover:bg-purple-100 transition-all active:scale-95 flex items-center gap-1 text-[11px] font-bold"
+                title="Savolni qayta eshitish"
+              >
+                <Volume2 size={16} />
+              </button>
+            </div>
             <p className="text-[11px] text-slate-400">
               Savol {(selectedPart === 'full_mock' ? mockP1Idx : p1Index) + 1} / {selectedPart === 'full_mock' ? 3 : Math.min(p1Topic.questions.length, 4)}
             </p>
@@ -904,9 +937,22 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
               </span>
             </div>
 
-            <h3 className="text-base font-black text-slate-900 leading-snug">
-              {p2Topic.cueCard}
-            </h3>
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="text-base font-black text-slate-900 leading-snug">
+                {p2Topic.cueCard}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  speakText(p2Topic.cueCard);
+                }}
+                className="shrink-0 p-2 rounded-xl bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all active:scale-95 flex items-center gap-1 text-[11px] font-bold"
+                title="Mavzuni qayta eshitish"
+              >
+                <Volume2 size={16} />
+              </button>
+            </div>
 
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-700 space-y-1">
               <p className="font-bold text-slate-900">You should say:</p>
@@ -933,9 +979,22 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
             <span className="text-[10px] font-black uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
               Mavzu: {p3Topic.topic}
             </span>
-            <p className="text-base font-black text-slate-900 mt-1 leading-snug">
-              "{p3Topic.questions[selectedPart === 'full_mock' ? mockP3Idx : p3Index]}"
-            </p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-base font-black text-slate-900 mt-1 leading-snug">
+                "{p3Topic.questions[selectedPart === 'full_mock' ? mockP3Idx : p3Index]}"
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  speakText(p3Topic.questions[selectedPart === 'full_mock' ? mockP3Idx : p3Index]);
+                }}
+                className="shrink-0 p-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all active:scale-95 flex items-center gap-1 text-[11px] font-bold"
+                title="Savolni qayta eshitish"
+              >
+                <Volume2 size={16} />
+              </button>
+            </div>
             <p className="text-[11px] text-slate-400">
               Savol {(selectedPart === 'full_mock' ? mockP3Idx : p3Index) + 1} / {selectedPart === 'full_mock' ? 3 : Math.min(p3Topic.questions.length, 3)}
             </p>

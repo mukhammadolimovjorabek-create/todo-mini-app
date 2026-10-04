@@ -71,23 +71,41 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
       if (onEnd) onEnd();
       return;
     }
+    let ended = false;
+    const safeEnd = () => {
+      if (!ended) {
+        ended = true;
+        if (onEnd) onEnd();
+      }
+    };
+
+    const safetyTimer = setTimeout(() => {
+      safeEnd();
+    }, Math.max(2500, Math.min(8000, text.length * 80)));
+
     try {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'en-US';
       utterance.rate = 0.95;
-      if (onEnd) {
-        utterance.onend = () => onEnd();
-        utterance.onerror = () => onEnd();
-      }
+      utterance.onend = () => {
+        clearTimeout(safetyTimer);
+        safeEnd();
+      };
+      utterance.onerror = () => {
+        clearTimeout(safetyTimer);
+        safeEnd();
+      };
       window.speechSynthesis.speak(utterance);
     } catch {
-      if (onEnd) onEnd();
+      clearTimeout(safetyTimer);
+      safeEnd();
     }
   };
 
   const isListeningWantedRef = useRef<boolean>(false);
   const accumulatedTextRef = useRef<string>('');
+  const hasMicPermissionRef = useRef<boolean>(false);
   const [isManualInput, setIsManualInput] = useState<boolean>(false);
 
   const startListening = async () => {
@@ -99,10 +117,12 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
 
     isListeningWantedRef.current = true;
 
-    // Prompt microphone permission explicitly
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    // Prompt microphone permission ONLY ONCE and immediately release tracks so SpeechRecognition has access!
+    if (!hasMicPermissionRef.current && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop());
+        hasMicPermissionRef.current = true;
       } catch (err) {
         console.warn("Microphone permission prompt warning:", err);
       }
@@ -769,9 +789,22 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
         {/* Part 1.1 Question */}
         {(selectedPart === 'part1_1' || (selectedPart === 'full_mock' && mockPhase === 'p1_1')) && p1_1Item && (
           <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 space-y-2">
-            <span className="text-[10px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">
-              Part 1.1 • Savol {selectedPart === 'full_mock' ? mockP1_1Idx + 1 : p1_1Idx + 1} / 3
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">
+                Part 1.1 • Savol {selectedPart === 'full_mock' ? mockP1_1Idx + 1 : p1_1Idx + 1} / 3
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  speakText(p1_1Item.questions[selectedPart === 'full_mock' ? mockP1_1Idx : p1_1Idx]);
+                }}
+                className="p-1.5 rounded-xl bg-teal-50 text-teal-700 hover:bg-teal-100 transition-all active:scale-95 flex items-center gap-1 text-[11px] font-bold"
+                title="Savolni eshitish"
+              >
+                <Volume2 size={16} />
+              </button>
+            </div>
             <p className="text-base font-black text-slate-900 mt-1 leading-snug">
               "{p1_1Item.questions[selectedPart === 'full_mock' ? mockP1_1Idx : p1_1Idx]}"
             </p>
@@ -782,9 +815,22 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
         {/* Part 1.2 Pictures Card */}
         {(selectedPart === 'part1_2' || (selectedPart === 'full_mock' && (mockPhase === 'p1_2_prep' || mockPhase === 'p1_2_speak'))) && p1_2Item && (
           <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 space-y-2">
-            <span className="text-[10px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">
-              Part 1.2: Pictures Comparison
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">
+                Part 1.2: Pictures Comparison
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  speakText(`Part 1.2: Picture Comparison. ${p1_2Item.prompt}`);
+                }}
+                className="p-1.5 rounded-xl bg-teal-50 text-teal-700 hover:bg-teal-100 transition-all active:scale-95 flex items-center gap-1 text-[11px] font-bold"
+                title="Vazifani eshitish"
+              >
+                <Volume2 size={16} />
+              </button>
+            </div>
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5 text-xs text-slate-800">
               <p className="font-bold text-slate-900">• {p1_2Item.prompt}</p>
               {p1_2Item.questions.slice(1).map((q, i) => (
@@ -797,9 +843,22 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
         {/* Part 2 Presentation Card */}
         {(selectedPart === 'part2' || (selectedPart === 'full_mock' && (mockPhase === 'p2_prep' || mockPhase === 'p2_speak'))) && p2Item && (
           <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 space-y-2">
-            <span className="text-[10px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">
-              Part 2: Topic Presentation
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">
+                Part 2: Topic Presentation
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  speakText(`Part 2: Topic Presentation. ${p2Item.questions[0] || ''}`);
+                }}
+                className="p-1.5 rounded-xl bg-teal-50 text-teal-700 hover:bg-teal-100 transition-all active:scale-95 flex items-center gap-1 text-[11px] font-bold"
+                title="Mavzuni eshitish"
+              >
+                <Volume2 size={16} />
+              </button>
+            </div>
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5 text-xs text-slate-800">
               {p2Item.questions.map((q, i) => (
                 <p key={i} className="font-bold">• {q}</p>
@@ -811,9 +870,22 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
         {/* Part 3 Debate Card */}
         {(selectedPart === 'part3' || (selectedPart === 'full_mock' && (mockPhase === 'p3_prep' || mockPhase === 'p3_speak'))) && p3Item && (
           <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 space-y-3">
-            <span className="text-[10px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">
-              Part 3: Discussion (For vs Against)
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">
+                Part 3: Discussion (For vs Against)
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  speakText(`Part 3: Discussion. ${p3Item.statement}`);
+                }}
+                className="p-1.5 rounded-xl bg-teal-50 text-teal-700 hover:bg-teal-100 transition-all active:scale-95 flex items-center gap-1 text-[11px] font-bold"
+                title="Munozara mavzusini eshitish"
+              >
+                <Volume2 size={16} />
+              </button>
+            </div>
             <h4 className="text-sm font-black text-slate-900 leading-snug">
               "{p3Item.statement}"
             </h4>

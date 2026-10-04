@@ -192,43 +192,12 @@ const READING_PASSAGES: ReadingPassage[] = [
         paraphraseAnalysis: '"substantial donation" = "especially large donation"',
         explanation: 'Imperator Yupiter ibodatxonasini barpo etish uchun katta miqdorda ehson/mablag\' (donation) bergan.',
       },
-      {
-        id: 14,
-        type: 'completion',
-        questionText: 'Cyriacus made drawings of the ... to the temple and its decorative carvings:',
-        correctAnswer: 'doorway',
-        paragraphRef: 'Paragraph E',
-        evidenceQuote: 'He sketched the great doorway adorned with carved foliage and mythological characters.',
-        paraphraseAnalysis: '"sketched" = "made drawings of" ; "great doorway" = "doorway to the temple"',
-        explanation: 'Kyiriakus ibodatxonaning o\'yma naqshlar bilan bezatilgan hashamatli eshigi (doorway) rasmini chizgan.',
-      },
-      {
-        id: 15,
-        type: 'completion',
-        questionText: 'By the 15th century Delphi had almost disappeared due to natural disasters and ...:',
-        correctAnswer: 'war',
-        paragraphRef: 'Paragraph F',
-        evidenceQuote: '...he found war, earthquakes and avalanches had all but obliterated its ruins.',
-        paraphraseAnalysis: '"earthquakes and avalanches" (natural disasters) + "war"',
-        explanation: 'Delfi xarobalari tabiiy ofatlar (zilzila, qor ko\'chkisi) va urush (war) oqibatida yo\'q bo\'lib ketgan.',
-      },
-      {
-        id: 16,
-        type: 'completion',
-        questionText: 'Cyriacus found a ... above Delphi:',
-        correctAnswer: 'theatre',
-        acceptableAnswers: ['theater', 'theatre'],
-        paragraphRef: 'Paragraph F',
-        evidenceQuote: 'Climbing uphill towards the rocks that tower over the site, he came upon a theatre built into the slope.',
-        paraphraseAnalysis: '"Climbing uphill towards rocks" = "above Delphi" ; "came upon a theatre" = "found a theatre"',
-        explanation: 'Tog\' qoyalari tomon yuqoriga chiqqanda, u qiyalikda qurilgan qadimiy teatrni (theatre) topgan.',
-      },
     ],
   },
   {
     id: 'passage_sleep_science',
     title: 'The Science of Sleep and Memory Consolidation',
-    subtitle: 'IELTS Academic Reading Passage 2',
+    subtitle: 'IELTS Academic Reading · Passage 2',
     paragraphs: [
       {
         label: 'A',
@@ -244,12 +213,16 @@ const READING_PASSAGES: ReadingPassage[] = [
       },
       {
         label: 'D',
-        text: 'Conversely, chronic sleep deprivation severely impairs these neurochemical processes. Individuals restricted to fewer than six hours of sleep per night exhibit a 40% reduction in hippocampal retention capacity. Furthermore, lack of sleep triggers an accumulation of beta-amyloid proteins, toxic metabolic waste products directly linked to neurodegenerative disorders such as Alzheimer\'s disease.',
+        text: 'Conversely, chronic sleep deprivation severely impairs these neurochemical processes. Individuals restricted to fewer than six hours of sleep per night exhibit a 40% reduction in hippocampal retention capacity. Furthermore, during slow-wave sleep, the brain’s glymphatic system expands, flushing out metabolic waste products including neurotoxic beta-amyloid proteins. Failure to clear these proteins is directly linked to Alzheimer’s disease and other degenerative cognitive impairments.',
+      },
+      {
+        label: 'E',
+        text: 'Across the human lifespan, the architecture of sleep changes dramatically. Infants spend up to fifty percent of their slumber in REM sleep, aiding rapid neural plasticity, whereas elderly adults experience a steep decline in slow-wave sleep spindles. Gerontologists stress that maintaining consistent circadian rhythms and adequate deep sleep preserves executive cognitive functions well into advanced age.',
       },
     ],
     questions: [
       {
-        id: 1,
+        id: 14,
         type: 'tfng',
         questionText: 'Early historical theories accurately recognized that the brain remains cognitively active during sleep.',
         correctAnswer: 'FALSE',
@@ -259,7 +232,7 @@ const READING_PASSAGES: ReadingPassage[] = [
         explanation: 'Tarixan uyqu miya faoliyati to\'xtaydigan passiv holat deb hisoblangan, bu esa da\'voga ziddir (FALSE).',
       },
       {
-        id: 2,
+        id: 15,
         type: 'tfng',
         questionText: 'Sleep spindles are generated in the thalamus during NREM slow-wave sleep.',
         correctAnswer: 'TRUE',
@@ -269,7 +242,7 @@ const READING_PASSAGES: ReadingPassage[] = [
         explanation: 'Paragraph B da uyqu veretenolari (sleep spindles) talamusda hosil bo\'lishi to\'g\'ridan-to\'g\'ri tasdiqlangan (TRUE).',
       },
       {
-        id: 3,
+        id: 16,
         type: 'tfng',
         questionText: 'REM sleep primarily consolidates factual and declarative knowledge rather than emotional integration.',
         correctAnswer: 'FALSE',
@@ -279,7 +252,7 @@ const READING_PASSAGES: ReadingPassage[] = [
         explanation: 'Faktik bilimlarni NREM uyqu mustahkamlaydi, REM esa hissiy tajriba va ijodiy bog\'lanishlarni shakllantiradi (FALSE).',
       },
       {
-        id: 4,
+        id: 17,
         type: 'tfng',
         questionText: 'The Harvard University study received funding from international healthcare organizations.',
         correctAnswer: 'NOT GIVEN',
@@ -288,46 +261,433 @@ const READING_PASSAGES: ReadingPassage[] = [
         paraphraseAnalysis: 'Tadqiqotchilar Garvarddan ekani aytilgan, ammo moliyalashtirish manbasi haqida hech narsa yozilmagan.',
         explanation: 'Matnda tadqiqotni moliyalashtirgan xalqaro tashkilotlar haqida hech qanday ma\'lumot berilmagan (NOT GIVEN).',
       },
+      {
+        id: 18,
+        type: 'tfng',
+        questionText: 'The glymphatic system clears beta-amyloid proteins from the brain primarily during slow-wave sleep.',
+        correctAnswer: 'TRUE',
+        paragraphRef: 'Paragraph D',
+        evidenceQuote: '...during slow-wave sleep, the brain’s glymphatic system expands, flushing out metabolic waste products including neurotoxic beta-amyloid proteins.',
+        paraphraseAnalysis: '"flushing out metabolic waste products including beta-amyloid" = "clears beta-amyloid proteins"',
+        explanation: 'Chuqur uyqu paytida glimfatik tizim zaharli beta-amiloid oqsillarini miyadan tozalashi tasdiqlangan (TRUE).',
+      },
+      {
+        id: 19,
+        type: 'tfng',
+        questionText: 'Elderly adults experience an increase in slow-wave sleep spindles compared to younger generations.',
+        correctAnswer: 'FALSE',
+        paragraphRef: 'Paragraph E',
+        evidenceQuote: '...whereas elderly adults experience a steep decline in slow-wave sleep spindles.',
+        paraphraseAnalysis: '"steep decline" ↔ "experience an increase" (Qarama-qarshi)',
+        explanation: 'Katta yoshli insonlarda uyqu veretenolari ko\'paymaydi, aksincha keskin kamayadi (FALSE).',
+      },
+      {
+        id: 20,
+        type: 'completion',
+        questionText: 'Memories move from the temporary storage of the hippocampus to the permanent structure of the ...:',
+        correctAnswer: 'neocortex',
+        paragraphRef: 'Paragraph B',
+        evidenceQuote: '...from the temporary storage of the hippocampus to the permanent architecture of the neocortex.',
+        paraphraseAnalysis: '"permanent architecture of the neocortex" = "permanent structure of the neocortex"',
+        explanation: 'Ma\'lumotlar gipokampdan uzoq muddatli xotira markazi bo\'lgan neokorteksga (neocortex) o\'tkaziladi.',
+      },
+      {
+        id: 21,
+        type: 'completion',
+        questionText: 'Fast bursts of electrical brain signals generated in the thalamus are called sleep ...:',
+        correctAnswer: 'spindles',
+        paragraphRef: 'Paragraph B',
+        evidenceQuote: 'Simultaneously, fast bursts of activity known as sleep spindles originate in the thalamus.',
+        paraphraseAnalysis: '"fast bursts of activity known as sleep spindles"',
+        explanation: 'Talamusda hosil bo\'ladigan qisqa elektr tebranishlari sleep spindles (uyqu urchuqlari) deb ataladi.',
+      },
+      {
+        id: 22,
+        type: 'completion',
+        questionText: 'Creative problem-solving and emotional integration occur primarily during ... sleep:',
+        correctAnswer: 'REM',
+        acceptableAnswers: ['rem', 'rapid eye movement'],
+        paragraphRef: 'Paragraph C',
+        evidenceQuote: 'While NREM sleep stabilizes declarative facts... REM sleep integrates novel emotional experiences and fosters creative problem-solving...',
+        paraphraseAnalysis: '"REM sleep integrates novel emotional experiences and fosters creative problem-solving"',
+        explanation: 'Ijodiy yondashuv va hissiyotlarni qayta ishlash asosan REM (Rapid Eye Movement) uyqu bosqichida kechadi.',
+      },
+      {
+        id: 23,
+        type: 'completion',
+        questionText: 'Restricting sleep to under six hours per night causes a 40 percent reduction in ... capacity:',
+        correctAnswer: 'retention',
+        acceptableAnswers: ['hippocampal retention', 'retention'],
+        paragraphRef: 'Paragraph D',
+        evidenceQuote: 'Individuals restricted to fewer than six hours of sleep per night exhibit a 40% reduction in hippocampal retention capacity.',
+        paraphraseAnalysis: '"40% reduction in hippocampal retention capacity"',
+        explanation: '6 soatdan kam uxlash xotirada saqlash (retention) qobiliyatini 40 foizga pasaytiradi.',
+      },
+      {
+        id: 24,
+        type: 'completion',
+        questionText: 'The neurotoxic metabolic waste product linked to Alzheimer’s disease is ...:',
+        correctAnswer: 'beta-amyloid',
+        acceptableAnswers: ['beta amyloid', 'beta-amyloid proteins'],
+        paragraphRef: 'Paragraph D',
+        evidenceQuote: '...flushing out metabolic waste products including neurotoxic beta-amyloid proteins.',
+        paraphraseAnalysis: '"neurotoxic beta-amyloid proteins directly linked to Alzheimer\'s disease"',
+        explanation: 'Altsgeymer xastaligiga olib keluvchi zaharli oqsil qoldiqlari beta-amiloid (beta-amyloid) deb ataladi.',
+      },
+      {
+        id: 25,
+        type: 'completion',
+        questionText: 'The brain’s specialized waste-cleansing network active during slow-wave sleep is the ... system:',
+        correctAnswer: 'glymphatic',
+        paragraphRef: 'Paragraph D',
+        evidenceQuote: 'Furthermore, during slow-wave sleep, the brain’s glymphatic system expands, flushing out metabolic waste...',
+        paraphraseAnalysis: '"brain’s glymphatic system expands, flushing out metabolic waste"',
+        explanation: 'Miyani chiqindilardan tozalovchi tizim glimfatik (glymphatic) tizimdir.',
+      },
+      {
+        id: 26,
+        type: 'completion',
+        questionText: 'Infants spend up to fifty percent of their sleep in REM, promoting rapid neural ...:',
+        correctAnswer: 'plasticity',
+        paragraphRef: 'Paragraph E',
+        evidenceQuote: 'Infants spend up to fifty percent of their slumber in REM sleep, aiding rapid neural plasticity...',
+        paraphraseAnalysis: '"aiding rapid neural plasticity" = "promoting rapid neural plasticity"',
+        explanation: 'Chaqaloqlarda REM uyqu miya neyronlarining tezkor moslashuvchanligini (plasticity) kuchaytiradi.',
+      },
     ],
   },
   {
-    id: 'passage_vertical_farming',
-    title: 'Vertical Farming: Cultivating the Cities of Tomorrow',
-    subtitle: 'IELTS Academic Reading Passage 3',
+    id: 'passage_keyless_society',
+    title: 'The Keyless Society',
+    subtitle: 'IELTS Academic Reading · Passage 3',
     paragraphs: [
       {
         label: 'A',
-        text: 'With the global human population projected to reach nearly 10 billion by 2050, traditional agriculture faces unprecedented constraints. Arable land is diminishing rapidly due to soil erosion and urbanization, while conventional farming consumes over 70% of accessible freshwater reserves worldwide.',
+        text: 'Students who want to enter the University of Montreal\'s Athletic Complex need more than just a conventional ID card - their identities must be authenticated by an electronic hand scanner. In some California housing estates, a key alone is insufficient to get someone in the door; his or her voice print must also be verified. And soon, customers at some Japanese banks will have to present their faces for scanning before they can enter the building and withdraw their money.',
       },
       {
         label: 'B',
-        text: 'Vertical farming offers an innovative technological alternative. By cultivating crops in vertically stacked layers within climate-controlled indoor skyscrapers, growers eliminate dependence on seasonal weather. Utilizing closed-loop aeroponic and hydroponic irrigation systems, vertical farms reduce water consumption by up to 95% compared to traditional open-field farming.',
+        text: 'All of these are applications of biometrics, a little-known but fast-growing technology that involves the use of physical or biological characteristics to identify individuals. In use for more than a decade at some high-security government institutions in the United States and Canada, biometrics are now rapidly popping up in the everyday world. Already, more than 10,000 facilities, from prisons to day-care centres, monitor people\'s fingerprints or other physical parts to ensure that they are who they claim to be. Some 60 biometric companies around the world pulled in at least $22 million last year and that grand total is expected to mushroom to at least $50 million by 1999.',
       },
       {
         label: 'C',
-        text: 'Despite these remarkable ecological benefits, critics highlight considerable financial challenges. The capital expenditure required for specialized LED grow lights, sophisticated climate sensors, and automated robotics remains prohibitive. Consequently, commercial vertical farms currently focus almost exclusively on high-value leafy greens and strawberries, rather than staple caloric crops like wheat or maize.',
+        text: 'Biometric security systems operate by storing a digitised record of some unique human feature. When an authorised user wishes to enter or use the facility, the system scans the person\'s corresponding characteristics and attempts to match them against those on record. Systems using fingerprints, hands, voices, irises, retinas, and faces are already on the market, while others—such as those based on typing patterns and body odour—are in different stages of development.',
+      },
+      {
+        label: 'D',
+        text: 'Fingerprint scanner devices are the most universally used biometrics application due to their adoption by security forces and law enforcement over the past two decades. Today, American states use them to verify welfare payment claims and prevent multiple fraudulent applications, saving taxpayers millions of dollars. Similar pilot projects have been introduced in cities like Toronto, where fingerprint verification helps eliminate welfare fraud and identity duplication.',
+      },
+      {
+        label: 'E',
+        text: 'The hand scanner, known commercially as the HandKey, is currently the most broadly used commercial biometric system. It reads the unique three-dimensional shape, size, surface area, and asymmetry of a person\'s hand. Originally developed for high-security areas such as nuclear power plants, the HandKey made its commercial breakthrough when it was deployed at the 1996 Olympic Village in Atlanta to control access for thousands of Olympic athletes, trainers, and staff. Today, thousands of businesses and sports clubs use hand scanners for employee time-management and secure access.',
+      },
+      {
+        label: 'F',
+        text: 'Other biometric technologies are expanding quickly into public transportation and banking. Airports in countries like Malaysia are equipping terminals with facial scanners to match airline passengers with their luggage and flight tickets, preventing security breaches. Japanese banks are introducing face and iris scanners at ATMs, while residential communities in California have adopted voiceprints so that home owners can unlock doors simply by speaking. Early trials trace back as far as 1974, when an American firm first tested hand readers, but current digital processors make today\'s systems far faster and more reliable.',
+      },
+      {
+        label: 'G',
+        text: 'Despite their rapid proliferation, biometric systems face common objections and concerns regarding privacy and civil liberties. Civil liberties advocates fear that centralized databases of personal biometric profiles could be misused or linked across institutions—for example, matching health records with financial transactions or consumer habits. In Toronto, community activists protested against welfare fingerprinting, arguing that requiring welfare claimants to scan their fingers stigmatized them by treating them like suspected criminals.',
+      },
+      {
+        label: 'H',
+        text: 'Nonetheless, biometric developers and security analysts argue that the public will ultimately accept the inevitable adoption of these systems. As electronic fraud, identity theft, and security concerns escalate, traditional passwords, PINs, and keys are becoming obsolete and easily compromised. In an increasingly crowded and automated world where authentication is paramount, biometrics provide a fast, convenient, and foolproof safeguard. Proponents believe that within a few years, society will view biometrics not as an intrusion, but as an indispensable facet of daily life.',
       },
     ],
     questions: [
       {
-        id: 1,
-        type: 'tfng',
-        questionText: 'Traditional agriculture currently utilizes the majority of global accessible freshwater.',
-        correctAnswer: 'TRUE',
-        paragraphRef: 'Paragraph A',
-        evidenceQuote: '...while conventional farming consumes over 70% of accessible freshwater reserves worldwide.',
-        paraphraseAnalysis: '"consumes over 70%" = "utilizes the majority"',
-        explanation: 'An\'anaviy qishloq xo\'jaligi dunyodagi ichimlik suvi zaxiralarining 70% dan ortig\'ini (ko\'p qismini) sarflaydi (TRUE).',
+        id: 27,
+        type: 'mcq',
+        questionText: 'Choose the most suitable heading for Paragraph B:',
+        options: [
+          'i - Common objections',
+          'ii - Who\'s planning what',
+          'iii - This type sells best in the shops',
+          'iv - The figures say it all',
+          'v - Early trials',
+          'vi - They can\'t get in without these',
+          'vii - How does it work?',
+          'viii - Fighting fraud',
+          'ix - Systems to avoid',
+          'x - Accepting the inevitable',
+        ],
+        correctAnswer: 'iv - The figures say it all',
+        acceptableAnswers: ['iv', 'iv - The figures say it all', '4'],
+        paragraphRef: 'Paragraph B',
+        evidenceQuote: 'Some 60 biometric companies around the world pulled in at least $22 million last year and that grand total is expected to mushroom to at least $50 million by 1999.',
+        paraphraseAnalysis: 'Bozorning o\'sishi, moliya va statistik ko\'rsatkichlar keltirilgan: "The figures say it all" (iv).',
+        explanation: 'Paragraph B da biometriya bozoridagi daromadlar ($22m dan $50m gacha) va muassasalar soni kabi raqamlar keltirilgan.',
       },
       {
-        id: 2,
-        type: 'tfng',
-        questionText: 'Vertical farms consume approximately the same amount of water as open-field agriculture.',
-        correctAnswer: 'FALSE',
-        paragraphRef: 'Paragraph B',
-        evidenceQuote: '...vertical farms reduce water consumption by up to 95% compared to traditional open-field farming.',
-        paraphraseAnalysis: '"reduce water consumption by up to 95%" ↔ "consume approximately the same amount"',
-        explanation: 'Vertikal fermalar an\'anaviy dehqonchilikka qaraganda suv sarfini 95% gacha qisqartiradi (FALSE).',
+        id: 28,
+        type: 'mcq',
+        questionText: 'Choose the most suitable heading for Paragraph C:',
+        options: [
+          'i - Common objections',
+          'ii - Who\'s planning what',
+          'iii - This type sells best in the shops',
+          'iv - The figures say it all',
+          'v - Early trials',
+          'vi - They can\'t get in without these',
+          'vii - How does it work?',
+          'viii - Fighting fraud',
+          'ix - Systems to avoid',
+          'x - Accepting the inevitable',
+        ],
+        correctAnswer: 'vii - How does it work?',
+        acceptableAnswers: ['vii', 'vii - How does it work?', '7'],
+        paragraphRef: 'Paragraph C',
+        evidenceQuote: 'Biometric security systems operate by storing a digitised record of some unique human feature. When an authorised user wishes to enter... the system scans the person\'s corresponding characteristics and attempts to match them...',
+        paraphraseAnalysis: 'Tizimning texnik ishlash mexanizmi tushuntirilgan: "How does it work?" (vii).',
+        explanation: 'Paragraph C da biometriya qanday ishlashi (namunani saqlash va tekshirish) batafsil tushuntirilgan.',
+      },
+      {
+        id: 29,
+        type: 'mcq',
+        questionText: 'Choose the most suitable heading for Paragraph D:',
+        options: [
+          'i - Common objections',
+          'ii - Who\'s planning what',
+          'iii - This type sells best in the shops',
+          'iv - The figures say it all',
+          'v - Early trials',
+          'vi - They can\'t get in without these',
+          'vii - How does it work?',
+          'viii - Fighting fraud',
+          'ix - Systems to avoid',
+          'x - Accepting the inevitable',
+        ],
+        correctAnswer: 'viii - Fighting fraud',
+        acceptableAnswers: ['viii', 'viii - Fighting fraud', '8'],
+        paragraphRef: 'Paragraph D',
+        evidenceQuote: '...verify welfare payment claims and prevent multiple fraudulent applications, saving taxpayers millions of dollars... helps eliminate welfare fraud...',
+        paraphraseAnalysis: 'Firibgarlikning oldini olish va davlat mablag\'larini tejash: "Fighting fraud" (viii).',
+        explanation: 'Paragraph D da barmoq izlari orqali nafaqa bo\'yicha firibgarliklarni bartaraf etish tasvirlangan.',
+      },
+      {
+        id: 30,
+        type: 'mcq',
+        questionText: 'Choose the most suitable heading for Paragraph E:',
+        options: [
+          'i - Common objections',
+          'ii - Who\'s planning what',
+          'iii - This type sells best in the shops',
+          'iv - The figures say it all',
+          'v - Early trials',
+          'vi - They can\'t get in without these',
+          'vii - How does it work?',
+          'viii - Fighting fraud',
+          'ix - Systems to avoid',
+          'x - Accepting the inevitable',
+        ],
+        correctAnswer: 'iii - This type sells best in the shops',
+        acceptableAnswers: ['iii', 'iii - This type sells best in the shops', '3'],
+        paragraphRef: 'Paragraph E',
+        evidenceQuote: 'The hand scanner, known commercially as the HandKey, is currently the most broadly used commercial biometric system.',
+        paraphraseAnalysis: 'Tijoriy jihatdan eng ommabop va eng ko\'p sotilayotgan tizim: "This type sells best in the shops" (iii).',
+        explanation: 'Paragraph E da HandKey tizimi tijoriy bozorlarda eng keng tarqalgan mahsulot ekani ko\'rsatilgan.',
+      },
+      {
+        id: 31,
+        type: 'mcq',
+        questionText: 'Choose the most suitable heading for Paragraph F:',
+        options: [
+          'i - Common objections',
+          'ii - Who\'s planning what',
+          'iii - This type sells best in the shops',
+          'iv - The figures say it all',
+          'v - Early trials',
+          'vi - They can\'t get in without these',
+          'vii - How does it work?',
+          'viii - Fighting fraud',
+          'ix - Systems to avoid',
+          'x - Accepting the inevitable',
+        ],
+        correctAnswer: 'ii - Who\'s planning what',
+        acceptableAnswers: ['ii', 'ii - Who\'s planning what', '2'],
+        paragraphRef: 'Paragraph F',
+        evidenceQuote: 'Airports in Malaysia are equipping terminals... Japanese banks are introducing face and iris scanners... California communities have adopted voiceprints...',
+        paraphraseAnalysis: 'Turli sohalar va davlatlar nimalarni rejalashtirayotgani: "Who\'s planning what" (ii).',
+        explanation: 'Malayziya aeroportlari, Yaponiya banklari va Kaliforniya mahallalari qanday texnologiyalarni rejalashtirayotgani yoritilgan.',
+      },
+      {
+        id: 32,
+        type: 'mcq',
+        questionText: 'Choose the most suitable heading for Paragraph G:',
+        options: [
+          'i - Common objections',
+          'ii - Who\'s planning what',
+          'iii - This type sells best in the shops',
+          'iv - The figures say it all',
+          'v - Early trials',
+          'vi - They can\'t get in without these',
+          'vii - How does it work?',
+          'viii - Fighting fraud',
+          'ix - Systems to avoid',
+          'x - Accepting the inevitable',
+        ],
+        correctAnswer: 'i - Common objections',
+        acceptableAnswers: ['i', 'i - Common objections', '1'],
+        paragraphRef: 'Paragraph G',
+        evidenceQuote: 'Despite their rapid proliferation, biometric systems face common objections and concerns regarding privacy and civil liberties.',
+        paraphraseAnalysis: 'Aholining umumiy e\'tirozlari va inson huquqlari xavotirlari: "Common objections" (i).',
+        explanation: 'Paragraph G da daxlsizlik va fuqarolik erkinliklari yuzasidan bildirilgan e\'tirozlar ta\'kidlangan.',
+      },
+      {
+        id: 33,
+        type: 'mcq',
+        questionText: 'Choose the most suitable heading for Paragraph H:',
+        options: [
+          'i - Common objections',
+          'ii - Who\'s planning what',
+          'iii - This type sells best in the shops',
+          'iv - The figures say it all',
+          'v - Early trials',
+          'vi - They can\'t get in without these',
+          'vii - How does it work?',
+          'viii - Fighting fraud',
+          'ix - Systems to avoid',
+          'x - Accepting the inevitable',
+        ],
+        correctAnswer: 'x - Accepting the inevitable',
+        acceptableAnswers: ['x', 'x - Accepting the inevitable', '10'],
+        paragraphRef: 'Paragraph H',
+        evidenceQuote: 'Nonetheless, biometric developers and security analysts argue that the public will ultimately accept the inevitable adoption of these systems.',
+        paraphraseAnalysis: 'Jamiyat muqarrar texnologik o\'zgarishni qabul qilishi: "Accepting the inevitable" (x).',
+        explanation: 'Paragraph H da biometriyani muqarrar va kundalik zaruriyat deb qabul qilish aytib o\'tilgan.',
+      },
+      {
+        id: 34,
+        type: 'mcq',
+        questionText: 'Match the group of people to the biometric system: sports students',
+        options: [
+          'A - fingerprint scanner',
+          'B - hand scanner',
+          'C - body odour',
+          'D - voiceprint',
+          'E - face scanner',
+          'F - typing pattern',
+        ],
+        correctAnswer: 'B - hand scanner',
+        acceptableAnswers: ['B', 'B - hand scanner', 'hand scanner'],
+        paragraphRef: 'Paragraph A',
+        evidenceQuote: 'Students who want to enter the University of Montreal\'s Athletic Complex need more than just a conventional ID card - their identities must be authenticated by an electronic hand scanner.',
+        paraphraseAnalysis: 'Athletic Complex students (sports students) = hand scanner (B).',
+        explanation: 'Monreal Universiteti sport majmuasi talabalari (sports students) elektron qo\'l skaneri (B) orqali kiradi.',
+      },
+      {
+        id: 35,
+        type: 'mcq',
+        questionText: 'Match the group of people to the biometric system: Olympic athletes',
+        options: [
+          'A - fingerprint scanner',
+          'B - hand scanner',
+          'C - body odour',
+          'D - voiceprint',
+          'E - face scanner',
+          'F - typing pattern',
+        ],
+        correctAnswer: 'B - hand scanner',
+        acceptableAnswers: ['B', 'B - hand scanner', 'hand scanner'],
+        paragraphRef: 'Paragraph E',
+        evidenceQuote: '...deployed at the 1996 Olympic Village in Atlanta to control access for thousands of Olympic athletes, trainers, and staff.',
+        paraphraseAnalysis: 'Olympic athletes = HandKey (hand scanner - B).',
+        explanation: 'Atlantadagi Olimpiada shaharchasida sportchilar (Olympic athletes) uchun HandKey qo\'l skaneri (B) ishlatilgan.',
+      },
+      {
+        id: 36,
+        type: 'mcq',
+        questionText: 'Match the group of people to the biometric system: airline passengers',
+        options: [
+          'A - fingerprint scanner',
+          'B - hand scanner',
+          'C - body odour',
+          'D - voiceprint',
+          'E - face scanner',
+          'F - typing pattern',
+        ],
+        correctAnswer: 'E - face scanner',
+        acceptableAnswers: ['E', 'E - face scanner', 'face scanner'],
+        paragraphRef: 'Paragraph F',
+        evidenceQuote: 'Airports in countries like Malaysia are equipping terminals with facial scanners to match airline passengers with their luggage...',
+        paraphraseAnalysis: 'airline passengers = facial scanners (E).',
+        explanation: 'Malayziya aeroportlarida samolyot yo\'lovchilari (airline passengers) yuz skaneri (E) orqali tekshiriladi.',
+      },
+      {
+        id: 37,
+        type: 'mcq',
+        questionText: 'Match the group of people to the biometric system: welfare claimants',
+        options: [
+          'A - fingerprint scanner',
+          'B - hand scanner',
+          'C - body odour',
+          'D - voiceprint',
+          'E - face scanner',
+          'F - typing pattern',
+        ],
+        correctAnswer: 'A - fingerprint scanner',
+        acceptableAnswers: ['A', 'A - fingerprint scanner', 'fingerprint scanner'],
+        paragraphRef: 'Paragraph D & G',
+        evidenceQuote: 'American states use them to verify welfare payment claims... requiring welfare claimants to scan their fingers...',
+        paraphraseAnalysis: 'welfare claimants = fingerprint scanner (A).',
+        explanation: 'Ijtimoiy yordam oluvchilar (welfare claimants) barmoq izi skaneri (A) bilan tasdiqlanadi.',
+      },
+      {
+        id: 38,
+        type: 'mcq',
+        questionText: 'Match the group of people to the biometric system: business employees',
+        options: [
+          'A - fingerprint scanner',
+          'B - hand scanner',
+          'C - body odour',
+          'D - voiceprint',
+          'E - face scanner',
+          'F - typing pattern',
+        ],
+        correctAnswer: 'B - hand scanner',
+        acceptableAnswers: ['B', 'B - hand scanner', 'hand scanner'],
+        paragraphRef: 'Paragraph E',
+        evidenceQuote: 'Today, thousands of businesses and sports clubs use hand scanners for employee time-management and secure access.',
+        paraphraseAnalysis: 'business employees = hand scanners (B).',
+        explanation: 'Korxona va kompaniyalar xodimlari (business employees) ish vaqtini hisoblashda qo\'l skaneridan (B) foydalanadi.',
+      },
+      {
+        id: 39,
+        type: 'mcq',
+        questionText: 'Match the group of people to the biometric system: home owners',
+        options: [
+          'A - fingerprint scanner',
+          'B - hand scanner',
+          'C - body odour',
+          'D - voiceprint',
+          'E - face scanner',
+          'F - typing pattern',
+        ],
+        correctAnswer: 'D - voiceprint',
+        acceptableAnswers: ['D', 'D - voiceprint', 'voiceprint'],
+        paragraphRef: 'Paragraph A & F',
+        evidenceQuote: 'In some California housing estates... residential communities in California have adopted voiceprints so that home owners can unlock doors simply by speaking.',
+        paraphraseAnalysis: 'home owners in housing estates = voiceprint (D).',
+        explanation: 'Uy egalari (home owners) eshiklarni ochish uchun ovozli identifikatsiya (voiceprint - D) tizimidan foydalanadilar.',
+      },
+      {
+        id: 40,
+        type: 'mcq',
+        questionText: 'Match the group of people to the biometric system: bank customers',
+        options: [
+          'A - fingerprint scanner',
+          'B - hand scanner',
+          'C - body odour',
+          'D - voiceprint',
+          'E - face scanner',
+          'F - typing pattern',
+        ],
+        correctAnswer: 'E - face scanner',
+        acceptableAnswers: ['E', 'E - face scanner', 'face scanner'],
+        paragraphRef: 'Paragraph A & F',
+        evidenceQuote: 'And soon, customers at some Japanese banks will have to present their faces for scanning before they can enter the building and withdraw their money.',
+        paraphraseAnalysis: 'bank customers = face scanner (E).',
+        explanation: 'Bank mijozlari (bank customers) Yaponiya banklarida yuz skaneridan (E) o\'tishi talab qilinadi.',
       },
     ],
   },
@@ -406,35 +766,44 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
     setAnswers((prev) => ({ ...prev, [questionId]: answer }));
   };
 
+  const calculateIeltsReadingBand = (rawScore: number): number => {
+    if (rawScore >= 39) return 9.0;
+    if (rawScore >= 37) return 8.5;
+    if (rawScore >= 35) return 8.0;
+    if (rawScore >= 33) return 7.5;
+    if (rawScore >= 30) return 7.0;
+    if (rawScore >= 27) return 6.5;
+    if (rawScore >= 23) return 6.0;
+    if (rawScore >= 19) return 5.5;
+    if (rawScore >= 15) return 5.0;
+    if (rawScore >= 13) return 4.5;
+    if (rawScore >= 10) return 4.0;
+    if (rawScore >= 8) return 3.5;
+    if (rawScore >= 6) return 3.0;
+    if (rawScore >= 4) return 2.5;
+    return 2.0;
+  };
+
   const handleSubmit = () => {
-    let correctCount = 0;
-    currentPassage.questions.forEach((q) => {
-      if (checkIsCorrect(q, answers[q.id])) {
-        correctCount += 1;
-      }
+    let totalCorrect = 0;
+    READING_PASSAGES.forEach((passage) => {
+      passage.questions.forEach((q) => {
+        if (checkIsCorrect(q, answers[q.id])) {
+          totalCorrect += 1;
+        }
+      });
     });
 
-    const total = currentPassage.questions.length;
-    const ratio = correctCount / total;
+    const totalQuestions = 40;
+    const band = calculateIeltsReadingBand(totalCorrect);
 
-    // IELTS Academic Band calculation
-    let band = 4.0;
-    if (ratio >= 0.93) band = 9.0;
-    else if (ratio >= 0.85) band = 8.5;
-    else if (ratio >= 0.75) band = 8.0;
-    else if (ratio >= 0.65) band = 7.5;
-    else if (ratio >= 0.55) band = 7.0;
-    else if (ratio >= 0.45) band = 6.5;
-    else if (ratio >= 0.35) band = 6.0;
-    else if (ratio >= 0.25) band = 5.0;
-
-    setScore(correctCount);
+    setScore(totalCorrect);
     setBandScore(band);
     setIsSubmitted(true);
     setIsTimerRunning(false);
     triggerHaptic('heavy');
 
-    // Auto-open analyses of wrong questions
+    // Auto-open analyses of wrong questions in current passage
     const initialExpanded: Record<number, boolean> = {};
     currentPassage.questions.forEach((q) => {
       if (!checkIsCorrect(q, answers[q.id])) {
@@ -454,26 +823,26 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
       startTime,
       endTime,
       testType: 'reading',
-      title: `IELTS Reading: ${currentPassage.title}`,
-      topic: currentPassage.subtitle,
+      title: `IELTS Reading (40 ta savol)`,
+      topic: `${READING_PASSAGES[0].title} • ${READING_PASSAGES[1].title} • ${READING_PASSAGES[2].title}`,
       overallBand: band,
       criteriaScores: {
         c1Name: 'To\'g\'ri javoblar',
-        c1Score: correctCount,
+        c1Score: totalCorrect,
         c2Name: 'Jami savollar',
-        c2Score: total,
+        c2Score: totalQuestions,
         c3Name: 'Aniqlik',
-        c3Score: Math.round(ratio * 100),
+        c3Score: Math.round((totalCorrect / totalQuestions) * 100),
         c4Name: 'Band Natija',
         c4Score: band,
       },
       strengths: [
-        `${total} ta savoldan ${correctCount} tasiga to'g'ri javob berildi (${Math.round(ratio * 100)}%).`,
-        `Akademik matndan faktik ma'lumotlarni qidirish va tahlil qilish mahorati.`,
+        `40 ta savoldan ${totalCorrect} tasiga to'g'ri javob berildi (${Math.round((totalCorrect / totalQuestions) * 100)}%).`,
+        `Haqiqiy IELTS Academic 3 ta Passage va 40 ta savollik to'liq sinov.`,
       ],
       improvements: [
-        correctCount < total
-          ? `Noto'g'ri belgilangan ${total - correctCount} ta savol bo'yicha "Tahlil qilish" tugmasini ochib parafrazlarni o'rganing.`
+        totalCorrect < totalQuestions
+          ? `Xato belgilangan ${totalQuestions - totalCorrect} ta savol bo'yicha "Tahlil qilish" tugmasini ochib parafrazlarni o'rganing.`
           : `Mukammal natija! 9.0 darajali aniqlik bilan yakunlandi.`,
       ],
     };
@@ -608,26 +977,30 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
       <div className="p-4 sm:p-5 flex-1 max-w-2xl mx-auto w-full space-y-4">
         {/* Passage Switcher Tabs */}
         <div className="flex bg-slate-200/70 p-1 rounded-2xl space-x-1">
-          {READING_PASSAGES.map((p, idx) => (
-            <button
-              key={p.id}
-              onClick={() => {
-                triggerHaptic('light');
-                setSelectedPassageIdx(idx);
-                setAnswers({});
-                setIsSubmitted(false);
-                setShowOnlyErrors(false);
-                setExpandedAnalysisIds({});
-              }}
-              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all ${
-                selectedPassageIdx === idx
-                  ? 'bg-white text-[#7052ff] shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Passage {idx + 1}
-            </button>
-          ))}
+          {READING_PASSAGES.map((p, idx) => {
+            const rangeStr = idx === 0 ? '1–13' : idx === 1 ? '14–26' : '27–40';
+            const answeredCount = p.questions.filter((q) => !!answers[q.id]).length;
+            return (
+              <button
+                key={p.id}
+                onClick={() => {
+                  triggerHaptic('light');
+                  setSelectedPassageIdx(idx);
+                  setShowOnlyErrors(false);
+                }}
+                className={`flex-1 py-2 px-1 rounded-xl text-xs font-black transition-all ${
+                  selectedPassageIdx === idx
+                    ? 'bg-white text-[#7052ff] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <div>Passage {idx + 1}</div>
+                <div className="text-[10px] font-medium text-slate-400">
+                  Q{rangeStr} {answeredCount > 0 ? `(${answeredCount}/${p.questions.length})` : ''}
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         {/* ── BEFORE STARTING: SHOW START CARD (Savollarni ko'rsatmaslik) ── */}
@@ -810,7 +1183,7 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
 
             {!isSubmitted && (
               <span className="text-[11px] font-bold text-slate-400">
-                Belgilandi: {Object.keys(answers).length} / {currentPassage.questions.length}
+                Belgilandi: {Object.keys(answers).length} / 40
               </span>
             )}
           </div>

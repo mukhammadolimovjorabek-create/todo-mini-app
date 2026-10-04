@@ -42,17 +42,49 @@ const SAMPLE_TASK2_PROMPTS = [
 export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _userName }) => {
   const [activeTab, setActiveTab] = useState<WritingTaskTab>('task1');
   const [task2Idx, setTask2Idx] = useState(0);
-  const [essayText, setEssayText] = useState('');
+
+  // Separate states for Task 1 and Task 2 to prevent data loss and tab collisions
+  const [task1Text, setTask1Text] = useState('');
+  const [task2Text, setTask2Text] = useState('');
+  const [task1Started, setTask1Started] = useState(false);
+  const [task2Started, setTask2Started] = useState(false);
+  const [task1Result, setTask1Result] = useState<WritingBandBreakdown | null>(null);
+  const [task2Result, setTask2Result] = useState<WritingBandBreakdown | null>(null);
+  const [task1TimeLeft, setTask1TimeLeft] = useState(20 * 60);
+  const [task2TimeLeft, setTask2TimeLeft] = useState(40 * 60);
+
   const [isEvaluating, setIsEvaluating] = useState(false);
-  const [result, setResult] = useState<WritingBandBreakdown | null>(null);
-
-  // Exam Start and Exit Confirmation
-  const [isStarted, setIsStarted] = useState(false);
   const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
-
-  // Official IELTS Timers: Task 1 = 20 min (1200s), Task 2 = 40 min (2400s)
-  const [timeLeft, setTimeLeft] = useState<number>(() => (activeTab === 'task1' ? 20 * 60 : 40 * 60));
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
+
+  // Active task derived values
+  const essayText = activeTab === 'task1' ? task1Text : task2Text;
+  const isStarted = activeTab === 'task1' ? task1Started : task2Started;
+  const result = activeTab === 'task1' ? task1Result : task2Result;
+  const timeLeft = activeTab === 'task1' ? task1TimeLeft : task2TimeLeft;
+
+  const setEssayText = (text: string) => {
+    if (activeTab === 'task1') setTask1Text(text);
+    else setTask2Text(text);
+  };
+
+  const setIsStarted = (started: boolean) => {
+    if (activeTab === 'task1') setTask1Started(started);
+    else setTask2Started(started);
+  };
+
+  const setResult = (res: WritingBandBreakdown | null) => {
+    if (activeTab === 'task1') setTask1Result(res);
+    else setTask2Result(res);
+  };
+
+  const setTimeLeft = (valOrFn: number | ((prev: number) => number)) => {
+    if (activeTab === 'task1') {
+      setTask1TimeLeft((prev) => (typeof valOrFn === 'function' ? valOrFn(prev) : valOrFn));
+    } else {
+      setTask2TimeLeft((prev) => (typeof valOrFn === 'function' ? valOrFn(prev) : valOrFn));
+    }
+  };
 
   // Auto-submit on timer expiry
   useEffect(() => {
@@ -70,7 +102,7 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isStarted, isTimerRunning, timeLeft, result, isEvaluating]);
+  }, [isStarted, isTimerRunning, timeLeft, result, isEvaluating, activeTab]);
 
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -264,50 +296,52 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
         <div className="grid grid-cols-2 gap-2 bg-slate-200/60 p-1.5 rounded-2xl">
           <button
             onClick={() => {
-              if (isStarted && !result && essayText.trim().length > 30) {
-                triggerHaptic('medium');
-                setShowExitConfirmModal(true);
+              if (activeTab === 'task2' && task2Started && !task2Result) {
+                triggerHaptic('heavy');
+                alert("🔒 Task 2 inshosi davom etmoqda! Task 1 ga o'tish uchun avval Task 2 ni tekshirtiring yoki yakunlang.");
                 return;
               }
               triggerHaptic('light');
               setActiveTab('task1');
-              setResult(null);
-              setIsStarted(false);
-              setIsTimerRunning(false);
-              setTimeLeft(20 * 60);
             }}
             className={`py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 ${
               activeTab === 'task1'
                 ? 'bg-white text-slate-900 shadow-sm'
+                : activeTab === 'task2' && task2Started && !task2Result
+                ? 'text-slate-400 opacity-50 cursor-not-allowed'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <BarChart3 size={15} className="text-[#7052ff]" />
             <span>Task 1: Diagramma (20m)</span>
+            {activeTab === 'task2' && task2Started && !task2Result && (
+              <span className="text-[10px]" title="Qulflangan">🔒</span>
+            )}
           </button>
 
           <button
             onClick={() => {
-              if (isStarted && !result && essayText.trim().length > 30) {
-                triggerHaptic('medium');
-                setShowExitConfirmModal(true);
+              if (activeTab === 'task1' && task1Started && !task1Result) {
+                triggerHaptic('heavy');
+                alert("🔒 Task 1 sinovi davom etmoqda! Task 2 ga o'tish uchun avval Task 1 ni tekshirtiring yoki yakunlang.");
                 return;
               }
               triggerHaptic('light');
               setActiveTab('task2');
-              setResult(null);
-              setIsStarted(false);
-              setIsTimerRunning(false);
-              setTimeLeft(40 * 60);
             }}
             className={`py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 ${
               activeTab === 'task2'
                 ? 'bg-white text-slate-900 shadow-sm'
+                : activeTab === 'task1' && task1Started && !task1Result
+                ? 'text-slate-400 opacity-50 cursor-not-allowed'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <FileText size={15} className="text-[#7052ff]" />
             <span>Task 2: Insho (40m)</span>
+            {activeTab === 'task1' && task1Started && !task1Result && (
+              <span className="text-[10px]" title="Qulflangan">🔒</span>
+            )}
           </button>
         </div>
 

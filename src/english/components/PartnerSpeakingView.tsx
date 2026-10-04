@@ -133,7 +133,8 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
 
   const getSupportedMimeType = () => {
     if (typeof MediaRecorder === 'undefined') return '';
-    const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg', 'audio/aac'];
+    // Priority: audio/mp4 (universal on iOS & modern Android), then webm/opus
+    const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg', 'audio/aac'];
     for (const t of types) {
       if (MediaRecorder.isTypeSupported(t)) return t;
     }
@@ -157,7 +158,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
       };
 
       mediaRecorder.onstop = () => {
-        const recordedType = mediaRecorder.mimeType || 'audio/webm';
+        const recordedType = mediaRecorder.mimeType || mimeType || 'audio/mp4';
         const audioBlob = new Blob(audioChunksRef.current, { type: recordedType });
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
@@ -233,7 +234,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
         } else if (data.type === 'voice_note') {
           if (data.audio) {
             setLastAudioUrl(data.audio);
-            setIsPartnerSpeaking(true);
+            triggerHaptic('heavy');
             try {
               if (currentAudioRef.current) {
                 currentAudioRef.current.pause();
@@ -243,14 +244,15 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
               audio.onended = () => {
                 setIsPartnerSpeaking(false);
               };
-              audio.play().catch((e) => {
-                console.log('Autoplay blocked:', e);
+              audio.play().then(() => {
+                setIsPartnerSpeaking(true);
+              }).catch((e) => {
+                console.log('Autoplay blocked, showing manual play button:', e);
                 setIsPartnerSpeaking(false);
               });
             } catch (err) {
               setIsPartnerSpeaking(false);
             }
-            triggerHaptic('heavy');
           }
         } else if (data.type === 'chat_message') {
           if (data.text === 'TURN_SWITCH') {
@@ -1080,25 +1082,47 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
                 <div className="flex items-center space-x-2">
                   <div className={`w-3 h-3 rounded-full ${isPartnerSpeaking ? 'bg-emerald-400 animate-ping' : 'bg-indigo-400'}`} />
                   <span className="text-xs font-black tracking-wide">
-                    {isPartnerSpeaking ? "🔊 Sherigingiz gapirmoqda..." : "🎙️ Jonli Ovozli Muloqot"}
+                    {isPartnerSpeaking ? "🔊 Sherigingiz ovozi yangramoqda..." : "🎙️ Jonli Ovozli Muloqot"}
                   </span>
                 </div>
-                {lastAudioUrl && !isPartnerSpeaking && (
+              </div>
+
+              {/* Prominent Audio Player Card for received voice notes */}
+              {lastAudioUrl && (
+                <div className="bg-white/10 border border-emerald-400/40 rounded-2xl p-3.5 flex items-center justify-between gap-2 shadow-inner">
+                  <div className="flex items-center space-x-2.5">
+                    <span className="text-2xl">{isPartnerSpeaking ? '🔊' : '🎙️'}</span>
+                    <div>
+                      <h5 className="text-xs font-black text-white">
+                        {isPartnerSpeaking ? "Ovoz tinglanmoqda..." : "Yangi ovozli xabar keldi!"}
+                      </h5>
+                      <p className="text-[10px] text-emerald-300 font-medium">
+                        {isPartnerSpeaking ? "Jonli ijro etilmoqda" : "Eshitish uchun tugmani bosing"}
+                      </p>
+                    </div>
+                  </div>
+
                   <button
+                    type="button"
                     onClick={() => {
-                      if (lastAudioUrl) {
+                      triggerHaptic('medium');
+                      if (isPartnerSpeaking && currentAudioRef.current) {
+                        currentAudioRef.current.pause();
+                        setIsPartnerSpeaking(false);
+                      } else if (lastAudioUrl) {
+                        if (currentAudioRef.current) currentAudioRef.current.pause();
                         const audio = new Audio(lastAudioUrl);
-                        setIsPartnerSpeaking(true);
+                        currentAudioRef.current = audio;
                         audio.onended = () => setIsPartnerSpeaking(false);
-                        audio.play().catch(() => setIsPartnerSpeaking(false));
+                        audio.play().then(() => setIsPartnerSpeaking(true)).catch(() => setIsPartnerSpeaking(false));
                       }
                     }}
-                    className="text-[11px] font-bold text-indigo-200 hover:text-white bg-white/10 px-2.5 py-1 rounded-xl transition-all"
+                    className="px-3.5 py-2 rounded-xl bg-[#c4f82a] text-[#0e0d1d] font-black text-xs shadow-md active:scale-95 transition-all flex items-center space-x-1 shrink-0"
                   >
-                    ▶️ Oxirgi ovozni tinglash
+                    <span>{isPartnerSpeaking ? "⏸️ To'xtatish" : "▶️ Tinglash"}</span>
                   </button>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Microphone interaction card */}
               <div className="flex flex-col items-center justify-center py-2 space-y-3">
