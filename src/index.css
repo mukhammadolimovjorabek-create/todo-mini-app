@@ -66,28 +66,43 @@ body {
   display: inline-block;
 }
 
-/* Hilpiraydigan bayroq animatsiyasi */
-@keyframes flagWave {
+/* Realistik to'lqinlanuvchi (hilpiraydigan) bayroq animatsiyasi */
+@keyframes flagWaveRealistic {
   0% {
-    transform: rotate(0deg) skewY(0deg) scale(1);
+    transform: perspective(400px) rotateY(0deg) skewY(0deg) translateY(0);
   }
-  25% {
-    transform: rotate(-5deg) skewY(-3deg) scale(1.05) translateY(-2px);
+  20% {
+    transform: perspective(400px) rotateY(-18deg) skewY(-4deg) translateY(-2px);
   }
-  50% {
-    transform: rotate(3deg) skewY(2deg) scale(1.02) translateY(1px);
+  40% {
+    transform: perspective(400px) rotateY(12deg) skewY(3deg) translateY(1px);
   }
-  75% {
-    transform: rotate(-4deg) skewY(-2deg) scale(1.06) translateY(-1px);
+  60% {
+    transform: perspective(400px) rotateY(-14deg) skewY(-3deg) translateY(-1px);
+  }
+  80% {
+    transform: perspective(400px) rotateY(8deg) skewY(2deg) translateY(0px);
   }
   100% {
-    transform: rotate(0deg) skewY(0deg) scale(1);
+    transform: perspective(400px) rotateY(0deg) skewY(0deg) translateY(0);
+  }
+}
+
+@keyframes flagShimmer {
+  0%, 100% {
+    opacity: 0.85;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(2px 6px 10px rgba(0,0,0,0.35));
   }
 }
 
 .animate-flag-wave {
-  animation: flagWave 2.8s ease-in-out infinite;
-  transform-origin: bottom left;
+  animation: flagWaveRealistic 2.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite, flagShimmer 2.2s ease-in-out infinite;
+  transform-origin: left center;
   display: inline-block;
+  transform-style: preserve-3d;
 }
 

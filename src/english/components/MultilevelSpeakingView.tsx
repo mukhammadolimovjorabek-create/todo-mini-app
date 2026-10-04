@@ -50,6 +50,8 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
   const [countdown, setCountdown] = useState<number>(30);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [prepNotes, setPrepNotes] = useState('');
+  // 3-second transition delay after examiner finishes reading question
+  const [prepDelay, setPrepDelay] = useState<number | null>(null);
 
   // Live voice recognition
   const [liveTranscript, setLiveTranscript] = useState('');
@@ -69,9 +71,31 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
 
   const [isExaminerSpeaking, setIsExaminerSpeaking] = useState(false);
 
+  // Trigger 3-second pause after examiner reads question before user's time and mic start
+  const triggerStartAfterSpeech = (onStart: () => void) => {
+    setPrepDelay(3);
+    let count = 3;
+    const interval = setInterval(() => {
+      count -= 1;
+      if (count > 0) {
+        setPrepDelay(count);
+      } else {
+        clearInterval(interval);
+        setPrepDelay(null);
+        onStart();
+      }
+    }, 1000);
+  };
+
   const speakText = (text: string, onEnd?: () => void) => {
+    // Stop user timer and mic while examiner is speaking
+    setIsTimerRunning(false);
+    stopListening();
+
     if (!speechEnabled) {
-      if (onEnd) onEnd();
+      if (onEnd) {
+        triggerStartAfterSpeech(onEnd);
+      }
       return;
     }
     setIsExaminerSpeaking(true);
@@ -80,7 +104,9 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       pitch: 1.0,
       onEnd: () => {
         setIsExaminerSpeaking(false);
-        if (onEnd) onEnd();
+        if (onEnd) {
+          triggerStartAfterSpeech(onEnd);
+        }
       }
     });
   };
@@ -984,6 +1010,11 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
                   <Volume2 size={14} className="text-teal-600 animate-bounce" />
                   <span>Savol o'qilmoqda (Tinglang)...</span>
                 </span>
+              ) : prepDelay !== null ? (
+                <span className="text-[11px] font-black text-amber-600 animate-pulse flex items-center space-x-1.5 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                  <span>Tayyorlaning: {prepDelay} sek...</span>
+                </span>
               ) : isRecording ? (
                 <span className="text-[11px] font-bold text-rose-500 animate-pulse flex items-center space-x-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
@@ -1082,10 +1113,10 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
             {/* Automatic Voice Controls */}
             <div className="pt-1">
               <button
-                disabled={isEvaluating}
+                disabled={isEvaluating || isExaminerSpeaking || prepDelay !== null}
                 onClick={handleNextQuestion}
                 className={`w-full py-4 rounded-2xl font-black text-xs flex items-center justify-center space-x-2 shadow-lg transition-all active:scale-[0.98] ${
-                  isExaminerSpeaking
+                  isExaminerSpeaking || prepDelay !== null
                     ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
                     : 'bg-[#7052ff] hover:bg-[#5b3ce0] text-white shadow-indigo-500/20'
                 }`}
@@ -1095,15 +1126,20 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
                     <Volume2 size={16} />
                     <span>Savol o'qilmoqda (Tinglang)</span>
                   </>
+                ) : prepDelay !== null ? (
+                  <>
+                    <Clock size={16} className="animate-spin text-amber-600" />
+                    <span>Tayyorlaning: {prepDelay} soniya...</span>
+                  </>
                 ) : (
                   <>
-                    <span>{isRecording ? "Javob berib bo'ldim (Keyingi savolga o'tish)" : "Keyingisi"}</span>
+                    <span>{isRecording || liveTranscript ? "⏹️ Javobni tugatish (Keyingi savolga o'tish)" : "Keyingi savolga o'tish"}</span>
                     <ChevronRight size={16} />
                   </>
                 )}
               </button>
               <p className="text-[10px] text-center text-slate-400 font-medium mt-2">
-                ⚡ Savol tugashi bilan mikrofon avtomatik yoqiladi va vaqt tugaganda keyingi savolga o'tadi.
+                ⚡ Savol tugagach 3 sek kutib mikrofon yoqiladi. Vaqt tugasa yoki "Javobni tugatish" bosilsa keyingi savolga o'tadi.
               </p>
             </div>
           </div>
