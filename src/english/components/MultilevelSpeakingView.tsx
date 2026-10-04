@@ -165,19 +165,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
       };
 
       recognition.onend = () => {
-        if (isListeningWantedRef.current) {
-          try {
-            recognition.start();
-          } catch {
-            setTimeout(() => {
-              if (isListeningWantedRef.current) {
-                try { recognition.start(); } catch {}
-              }
-            }, 250);
-          }
-        } else {
-          setIsRecording(false);
-        }
+        setIsRecording(false);
       };
 
       recognition.start();

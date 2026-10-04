@@ -21,66 +21,7 @@ interface Props {
 type GenderFilter = 'any' | 'female' | 'male';
 type RoomPart = 'part1' | 'part2' | 'part3';
 
-// Universal 16-bit PCM WAV Encoder (compatible with 100% of iOS, Android, and Desktop browsers)
-function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSampleRate = 16000): Blob {
-  let totalLength = 0;
-  for (const c of chunks) totalLength += c.length;
-  const merged = new Float32Array(totalLength);
-  let offset = 0;
-  for (const c of chunks) {
-    merged.set(c, offset);
-    offset += c.length;
-  }
-
-  // Downsample to 16kHz for crisp voice clarity and compact payload
-  let samples = merged;
-  if (inputSampleRate !== targetSampleRate) {
-    const ratio = inputSampleRate / targetSampleRate;
-    const newLength = Math.round(merged.length / ratio);
-    samples = new Float32Array(newLength);
-    let sampleOffset = 0;
-    for (let i = 0; i < newLength; i++) {
-      const nextOffset = Math.round((i + 1) * ratio);
-      let sum = 0;
-      let count = 0;
-      for (let j = sampleOffset; j < nextOffset && j < merged.length; j++) {
-        sum += merged[j];
-        count++;
-      }
-      samples[i] = count > 0 ? sum / count : 0;
-      sampleOffset = nextOffset;
-    }
-  }
-
-  const buffer = new ArrayBuffer(44 + samples.length * 2);
-  const view = new DataView(buffer);
-
-  const writeString = (v: DataView, o: number, str: string) => {
-    for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i));
-  };
-
-  writeString(view, 0, 'RIFF');
-  view.setUint32(4, 36 + samples.length * 2, true);
-  writeString(view, 8, 'WAVE');
-  writeString(view, 12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true); // PCM
-  view.setUint16(22, 1, true); // Mono
-  view.setUint32(24, targetSampleRate, true);
-  view.setUint32(28, targetSampleRate * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
-  writeString(view, 36, 'data');
-  view.setUint32(40, samples.length * 2, true);
-
-  let pcmOffset = 44;
-  for (let i = 0; i < samples.length; i++, pcmOffset += 2) {
-    const s = Math.max(-1, Math.min(1, samples[i]));
-    view.setInt16(pcmOffset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-  }
-
-  return new Blob([buffer], { type: 'audio/wav' });
-}export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGender = 'male' }) => {
+export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGender = 'male' }) => {
   const telegramUser = getTelegramUser();
   const userId = telegramUser?.id || 'me';
   const isDev = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('dev');
@@ -123,7 +64,8 @@ function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSample
   const [isDirectInvite, setIsDirectInvite] = useState(() => Boolean(urlRoom));
   const [selectedPart, setSelectedPart] = useState<RoomPart | null>(null);
   const [copiedInvite, setCopiedInvite] = useState(false);
-  const [ws, setWs] = useState<WebSocket | null>(null);
+  const [, setWs] = useState<WebSocket | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   // Audio / Push-to-talk states
   const [isRecording, setIsRecording] = useState(false);
@@ -138,9 +80,6 @@ function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSample
   // Cross-platform audio references
   const persistentStreamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
-  const mediaStreamSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const pcmChunksRef = useRef<Float32Array[]>([]);
 
   // Unlock mobile audio playback upon any user gesture
   const unlockAudioContext = () => {
@@ -251,35 +190,17 @@ function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSample
       unlockAudioContext();
       const stream = await getAudioStream();
 
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioCtx) {
-        try {
-          const ctx = new AudioCtx();
-          audioContextRef.current = ctx;
-          if (ctx.state === 'suspended') {
-            await ctx.resume();
-          }
-          const source = ctx.createMediaStreamSource(stream);
-          mediaStreamSourceRef.current = source;
-          const processor = ctx.createScriptProcessor(4096, 1, 1);
-          scriptProcessorRef.current = processor;
-          pcmChunksRef.current = [];
+      audioChunksRef.current = [];
+      const mimeType = getSupportedMimeType();
+      const options = mimeType ? { mimeType } : undefined;
+      const mediaRecorder = options ? new MediaRecorder(stream, options) : new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
 
-          processor.onaudioprocess = (e) => {
-            const input = e.inputBuffer.getChannelData(0);
-            pcmChunksRef.current.push(new Float32Array(input));
-          };
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
 
-          source.connect(processor);
-          processor.connect(ctx.destination);
-        } catch (webAudioErr) {
-          console.warn("WebAudio processor fallback to MediaRecorder:", webAudioErr);
-          startMediaRecorderFallback(stream);
-        }
-      } else {
-        startMediaRecorderFallback(stream);
-      }
-
+      mediaRecorder.start(250);
       setIsRecording(true);
       setRecordDuration(0);
       recordTimerRef.current = setInterval(() => {
@@ -291,18 +212,6 @@ function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSample
     }
   };
 
-  const startMediaRecorderFallback = (stream: MediaStream) => {
-    audioChunksRef.current = [];
-    const mimeType = getSupportedMimeType();
-    const options = mimeType ? { mimeType } : undefined;
-    const mediaRecorder = options ? new MediaRecorder(stream, options) : new MediaRecorder(stream);
-    mediaRecorderRef.current = mediaRecorder;
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) audioChunksRef.current.push(e.data);
-    };
-    mediaRecorder.start(250);
-  };
-
   const stopRecording = () => {
     if (!isRecording) return;
     triggerHaptic('medium');
@@ -311,33 +220,7 @@ function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSample
       clearInterval(recordTimerRef.current);
     }
 
-    // MUTE tracks instead of stopping them so permission is remembered without re-prompts!
-    if (persistentStreamRef.current) {
-      persistentStreamRef.current.getAudioTracks().forEach(t => { t.enabled = false; });
-    }
-
-    if (scriptProcessorRef.current && audioContextRef.current) {
-      try {
-        scriptProcessorRef.current.disconnect();
-        mediaStreamSourceRef.current?.disconnect();
-        const sampleRate = audioContextRef.current.sampleRate || 44100;
-        audioContextRef.current.close().catch(() => {});
-        audioContextRef.current = null;
-
-        const wavBlob = encodeWAV(pcmChunksRef.current, sampleRate, 16000);
-        pcmChunksRef.current = [];
-        const reader = new FileReader();
-        reader.readAsDataURL(wavBlob);
-        reader.onloadend = () => {
-          const base64Audio = reader.result as string;
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: 'voice_note', audio: base64Audio }));
-          }
-        };
-      } catch (e) {
-        console.error("WAV encode error:", e);
-      }
-    } else if (mediaRecorderRef.current) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.onstop = () => {
         const mimeType = getSupportedMimeType();
         const recordedType = mediaRecorderRef.current?.mimeType || mimeType || 'audio/mp4';
@@ -346,8 +229,11 @@ function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSample
         reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {
           const base64Audio = reader.result as string;
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: 'voice_note', audio: base64Audio }));
+          const targetWs = wsRef.current;
+          if (targetWs && targetWs.readyState === WebSocket.OPEN) {
+            targetWs.send(JSON.stringify({ type: 'voice_note', audio: base64Audio }));
+          } else {
+            console.warn("WebSocket not open, cannot send voice note");
           }
         };
         audioChunksRef.current = [];
@@ -363,7 +249,27 @@ function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSample
         currentAudioRef.current.pause();
         currentAudioRef.current = null;
       }
-      const audio = new Audio(audioUri);
+
+      let playSrc = audioUri;
+      if (audioUri.startsWith('data:')) {
+        try {
+          const parts = audioUri.split(',');
+          const mimeMatch = parts[0].match(/:(.*?);/);
+          const mime = mimeMatch ? mimeMatch[1] : 'audio/mp4';
+          const bstr = atob(parts[1]);
+          let n = bstr.length;
+          const u8arr = new Uint8Array(n);
+          while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+          }
+          const blob = new Blob([u8arr], { type: mime });
+          playSrc = URL.createObjectURL(blob);
+        } catch {
+          playSrc = audioUri;
+        }
+      }
+
+      const audio = new Audio(playSrc);
       currentAudioRef.current = audio;
       audio.onended = () => {
         setIsPartnerSpeaking(false);
@@ -374,21 +280,24 @@ function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSample
       await audio.play();
       setIsPartnerSpeaking(true);
     } catch (e) {
-      console.log('Autoplay was blocked or audio error:', e);
+      console.log('Autoplay deferred or error:', e);
       setIsPartnerSpeaking(false);
     }
   };
 
   const handleEndSession = () => {
     triggerHaptic('medium');
-    if (ws) ws.close();
+    if (wsRef.current) {
+      try { wsRef.current.close(); } catch {}
+      wsRef.current = null;
+      setWs(null);
+    }
     if (isRecording) {
       stopRecording();
     }
     if (currentAudioRef.current) {
       currentAudioRef.current.pause();
     }
-    // Release persistent microphone tracks only on session exit
     if (persistentStreamRef.current) {
       persistentStreamRef.current.getTracks().forEach((track) => track.stop());
       persistentStreamRef.current = null;
@@ -414,6 +323,9 @@ function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSample
       
       const targetRoom = isDirectInvite ? roomId : '';
       const socket = new WebSocket(`wss://todo-mini-app-cwkd.onrender.com/ws/matchmake?user_id=${userId}&user_name=${encodeURIComponent(userName)}&gender=${userGender || 'male'}&filter_gender=${filterGender}&room_id=${targetRoom}`);
+      wsRef.current = socket;
+      setWs(socket);
+
       socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'match_found') {
@@ -445,16 +357,15 @@ function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSample
       };
       socket.onclose = () => {
         setWs(null);
-      };
-      setWs(socket);
-      
-      return () => {
-        clearInterval(interval);
-        if (socket.readyState === WebSocket.OPEN) {
-          socket.close();
-        }
+        wsRef.current = null;
       };
     }
+
+    return () => {
+      if (interval) clearInterval(interval);
+      // NOTE: Do NOT close socket here because when transitioning from searching -> matched,
+      // React unmounts this effect and closing the socket would kill the active match!
+    };
   }, [matchStatus, userId]);
 
   // Part 2 Timer
@@ -480,13 +391,17 @@ function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSample
   const choosePart = (p: RoomPart) => {
     triggerHaptic('medium');
     setSelectedPart(p);
-    if (ws) ws.send(JSON.stringify({ type: 'chat_message', text: `PART_SELECT_${p.toUpperCase()}` }));
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'chat_message', text: `PART_SELECT_${p.toUpperCase()}` }));
+    }
   };
 
   const deselectPart = () => {
     triggerHaptic('light');
     setSelectedPart(null);
-    if (ws) ws.send(JSON.stringify({ type: 'chat_message', text: 'PART_DESELECT' }));
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'chat_message', text: 'PART_DESELECT' }));
+    }
   };
 
   const handleStartSearch = () => {
@@ -498,7 +413,11 @@ function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSample
 
   const handleCancelSearch = () => {
     triggerHaptic('light');
-    if (ws) ws.close();
+    if (wsRef.current) {
+      try { wsRef.current.close(); } catch {}
+      wsRef.current = null;
+      setWs(null);
+    }
     setMatchStatus('idle');
     setSearchTimer(0);
   };
@@ -518,6 +437,11 @@ function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSample
 
   const handleLeaveRoom = () => {
     triggerHaptic('medium');
+    if (wsRef.current) {
+      try { wsRef.current.close(); } catch {}
+      wsRef.current = null;
+      setWs(null);
+    }
     if (persistentStreamRef.current) {
       persistentStreamRef.current.getTracks().forEach((track) => track.stop());
       persistentStreamRef.current = null;
@@ -976,7 +900,11 @@ function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSample
               <button
                 onClick={() => {
                   triggerHaptic('light');
-                  setSpeakerTurn((prev: 'me' | 'partner') => (prev === 'me' ? 'partner' : 'me'));
+                  const nextTurn = speakerTurn === 'me' ? 'partner' : 'me';
+                  setSpeakerTurn(nextTurn);
+                  if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                    wsRef.current.send(JSON.stringify({ type: 'chat_message', text: 'TURN_SWITCH' }));
+                  }
                 }}
                 className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
                   speakerTurn === 'me'
@@ -1287,11 +1215,7 @@ function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSample
                         currentAudioRef.current.pause();
                         setIsPartnerSpeaking(false);
                       } else if (lastAudioUrl) {
-                        if (currentAudioRef.current) currentAudioRef.current.pause();
-                        const audio = new Audio(lastAudioUrl);
-                        currentAudioRef.current = audio;
-                        audio.onended = () => setIsPartnerSpeaking(false);
-                        audio.play().then(() => setIsPartnerSpeaking(true)).catch(() => setIsPartnerSpeaking(false));
+                        playIncomingAudio(lastAudioUrl);
                       }
                     }}
                     className="px-3.5 py-2 rounded-xl bg-[#c4f82a] text-[#0e0d1d] font-black text-xs shadow-md active:scale-95 transition-all flex items-center space-x-1 shrink-0"
