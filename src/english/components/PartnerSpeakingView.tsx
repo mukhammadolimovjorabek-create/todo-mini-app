@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Search, Users, RotateCcw, Clock, ShieldAlert, PhoneCall, ChevronRight, Share2, Check, Lock, AlertTriangle, Send, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Search, Users, RotateCcw, Clock, ShieldAlert, ChevronRight, Share2, Check, Lock, AlertTriangle, Send, Sparkles } from 'lucide-react';
 import { getRandomPart1Topic, getRandomPart2Topic, getRandomPart3Topic, type Part1Topic, type Part2CueCard, type Part3Topic } from '../data/speakingBank';
 import { triggerHaptic, getTelegramWebApp, getTelegramUser } from '../../utils/telegram';
 import {
@@ -59,10 +59,6 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   // Turn management: 'me' | 'partner'
   const [speakerTurn, setSpeakerTurn] = useState<'me' | 'partner'>('me');
 
-  // Telegram consent exchange
-  const [hasSharedConsent, setHasSharedConsent] = useState(false);
-  const [partnerConsented, setPartnerConsented] = useState(false);
-
   // Like/Dislike rating modal on exit
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [selectedSticker, setSelectedSticker] = useState<'like' | 'dislike' | null>(null);
@@ -72,6 +68,16 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   const [roomId] = useState(() => 'room_' + Math.floor(100000 + Math.random() * 900000));
   const [copiedInvite, setCopiedInvite] = useState(false);
   const [ws, setWs] = useState<WebSocket | null>(null);
+
+  // Audio / Push-to-talk states
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordDuration, setRecordDuration] = useState(0);
+  const [isPartnerSpeaking, setIsPartnerSpeaking] = useState(false);
+  const [lastAudioUrl, setLastAudioUrl] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordTimerRef = useRef<any>(null);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Check URL params for unblock query (?unblocked=1)
   useEffect(() => {
@@ -113,9 +119,67 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     }
   };
 
+  const startRecording = async () => {
+    try {
+      triggerHaptic('medium');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = () => {
+          const base64Audio = reader.result as string;
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'voice_note', audio: base64Audio }));
+          }
+        };
+        audioChunksRef.current = [];
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordDuration(0);
+      recordTimerRef.current = setInterval(() => {
+        setRecordDuration((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error('Mikrofon xatosi:', err);
+      alert('Mikrofondan foydalanishga ruxsat berilmadi. Iltimos brauzer yoki Telegram sozlamalarida mikrofonga ruxsat bering.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      triggerHaptic('medium');
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (recordTimerRef.current) {
+        clearInterval(recordTimerRef.current);
+      }
+    }
+  };
+
   const handleEndSession = () => {
     triggerHaptic('medium');
     if (ws) ws.close();
+    if (isRecording) {
+      stopRecording();
+    }
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+    }
+    setIsPartnerSpeaking(false);
     setMatchStatus('idle');
     setShowRatingModal(true);
   };
@@ -141,11 +205,29 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
           setMatchedPartner(data.partner);
           setMatchStatus('matched');
           triggerHaptic('heavy');
+        } else if (data.type === 'voice_note') {
+          if (data.audio) {
+            setLastAudioUrl(data.audio);
+            setIsPartnerSpeaking(true);
+            try {
+              if (currentAudioRef.current) {
+                currentAudioRef.current.pause();
+              }
+              const audio = new Audio(data.audio);
+              currentAudioRef.current = audio;
+              audio.onended = () => {
+                setIsPartnerSpeaking(false);
+              };
+              audio.play().catch(() => {
+                setIsPartnerSpeaking(false);
+              });
+            } catch (err) {
+              setIsPartnerSpeaking(false);
+            }
+            triggerHaptic('light');
+          }
         } else if (data.type === 'chat_message') {
-          if (data.text === 'CONSENT') {
-            setPartnerConsented(true);
-            triggerHaptic('heavy');
-          } else if (data.text === 'TURN_SWITCH') {
+          if (data.text === 'TURN_SWITCH') {
             setSpeakerTurn(prev => prev === 'me' ? 'partner' : 'me');
             triggerHaptic('light');
           } else if (data.text.startsWith('PART_')) {
@@ -203,11 +285,6 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     setSearchTimer(0);
   };
 
-  const handleShareConsent = () => {
-    triggerHaptic('medium');
-    setHasSharedConsent(true);
-    if (ws) ws.send(JSON.stringify({ type: 'chat_message', text: 'CONSENT' }));
-  };
 
   const handleRequestUnlock = async () => {
     setIsNotifyingAdmin(true);
@@ -243,8 +320,6 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     setDislikeReason('');
     setMatchedPartner(null);
     setMatchStatus('idle');
-    setHasSharedConsent(false);
-    setPartnerConsented(false);
   };
 
   // ── RENDER LOCKED STATE IF USER HAS >= 10 DISLIKES ──
@@ -657,9 +732,9 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
               <div className="flex items-center space-x-3">
                 <div className="relative">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black text-xl">
-                    {matchedPartner.gender === 'female' ? '👧' : '👦'}
+                    {matchedPartner.name ? matchedPartner.name[0].toUpperCase() : '👤'}
                   </div>
-                  <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" />
+                  <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full animate-pulse" />
                 </div>
                 <div>
                   <div className="flex items-center space-x-2">
@@ -668,8 +743,9 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
                       Bog'landi 🟢
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {matchedPartner.city} • Maqsad: Band {matchedPartner.targetBand}
+                  <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
+                    <span className="text-indigo-600 font-bold">👍 {matchedPartner.likes || 0}</span>
+                    <span className="text-rose-500 font-bold">👎 {matchedPartner.dislikes || 0}</span>
                   </p>
                 </div>
               </div>
@@ -933,54 +1009,75 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
               </div>
             )}
 
-            {/* Direct Telegram Connect Option (Mutual Consent) */}
-            <div className="bg-indigo-50/80 border border-indigo-100 rounded-2xl p-4 space-y-3">
+            {/* Live Voice Chat / Push-to-Talk Communicator */}
+            <div className="bg-gradient-to-br from-indigo-900 via-[#1e1a44] to-[#0e0d1d] text-white rounded-3xl p-5 border border-indigo-500/30 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <PhoneCall size={16} className="text-[#7052ff]" />
-                  <span className="text-xs font-black text-slate-900">Telegram orqali to'g'ridan-to'g'ri qo'ng'iroq</span>
-                </div>
-                {partnerConsented && hasSharedConsent && (
-                  <span className="text-[10px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                    Ochildi ✓
+                  <div className={`w-3 h-3 rounded-full ${isPartnerSpeaking ? 'bg-emerald-400 animate-ping' : 'bg-indigo-400'}`} />
+                  <span className="text-xs font-black tracking-wide">
+                    {isPartnerSpeaking ? "🔊 Sherigingiz gapirmoqda..." : "🎙️ Jonli Ovozli Muloqot"}
                   </span>
+                </div>
+                {lastAudioUrl && !isPartnerSpeaking && (
+                  <button
+                    onClick={() => {
+                      if (lastAudioUrl) {
+                        const audio = new Audio(lastAudioUrl);
+                        setIsPartnerSpeaking(true);
+                        audio.onended = () => setIsPartnerSpeaking(false);
+                        audio.play().catch(() => setIsPartnerSpeaking(false));
+                      }
+                    }}
+                    className="text-[11px] font-bold text-indigo-200 hover:text-white bg-white/10 px-2.5 py-1 rounded-xl transition-all"
+                  >
+                    ▶️ Oxirgi ovozni tinglash
+                  </button>
                 )}
               </div>
 
-              {!hasSharedConsent ? (
-                <div className="space-y-2">
-                  <p className="text-[11px] text-slate-600 leading-relaxed">
-                    Agar sherigingiz bilan Telegram orqali ovozli qo'ng'iroq qilmoqchi bo'lsangiz, o'z roziligingizni bering. Har ikki tomon ruxsat berganda username ko'rinadi.
-                  </p>
-                  <button
-                    onClick={handleShareConsent}
-                    className="w-full py-2.5 rounded-xl bg-[#7052ff] hover:bg-[#5b3ce0] text-white text-xs font-black transition-all shadow-sm active:scale-95"
-                  >
-                    O'z username'imni ulashishga roziman
-                  </button>
+              {/* Microphone interaction card */}
+              <div className="flex flex-col items-center justify-center py-2 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isRecording) {
+                      stopRecording();
+                    } else {
+                      startRecording();
+                    }
+                  }}
+                  className={`w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-2xl active:scale-95 ${
+                    isRecording
+                      ? 'bg-rose-500 text-white animate-pulse ring-8 ring-rose-500/30 shadow-rose-500/50'
+                      : 'bg-[#c4f82a] text-[#0e0d1d] hover:bg-[#b5eb22] shadow-emerald-500/30'
+                  }`}
+                >
+                  {isRecording ? (
+                    <div className="flex flex-col items-center">
+                      <span className="text-2xl">⏹️</span>
+                      <span className="text-[10px] font-black uppercase mt-0.5">To'xtatish</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <span className="text-2xl">🎙️</span>
+                      <span className="text-[10px] font-black uppercase mt-0.5">Gapirish</span>
+                    </div>
+                  )}
+                </button>
+
+                <div className="text-center space-y-1">
+                  {isRecording ? (
+                    <div className="flex items-center justify-center space-x-2 text-rose-300 font-mono text-sm font-black">
+                      <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                      <span>Ovoz yozilmoqda: 00:{recordDuration < 10 ? `0${recordDuration}` : recordDuration}</span>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-300 font-medium">
+                      Mikrofonni bosing va gapiring. Tugatgach yana bosing — ovozingiz sherigingizga boradi!
+                    </p>
+                  )}
                 </div>
-              ) : !partnerConsented ? (
-                <div className="text-center py-2">
-                  <span className="text-xs text-indigo-700 font-bold animate-pulse">
-                    Sherigingizdan rozilik kutilmoqda...
-                  </span>
-                </div>
-              ) : (
-                <div className="bg-white rounded-xl p-3 border border-indigo-100 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-bold block">Sherigingiz Telegrami:</span>
-                    <span className="text-sm font-black text-[#7052ff]">@{matchedPartner.username}</span>
-                  </div>
-                  <a
-                    href={`https://t.me/${matchedPartner.username}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-4 py-2 rounded-xl bg-[#7052ff] text-white text-xs font-black hover:bg-[#5b3ce0] transition-all"
-                  >
-                    Telegramda ochish
-                  </a>
-                </div>
-              )}
+              </div>
             </div>
 
           </div>

@@ -463,12 +463,14 @@ async def ws_matchmake(request):
         async for msg in ws:
             if msg.type == web.WSMsgType.TEXT:
                 data = msg.json()
-                if data.get("type") == "chat_message":
-                    room_id = me['room_id']
-                    if room_id and room_id in active_rooms:
-                        for p in active_rooms[room_id]:
-                            if p['ws'] != ws:
-                                await p['ws'].send_json({"type": "chat_message", "text": data.get("text")})
+                room_id = me['room_id']
+                if room_id and room_id in active_rooms:
+                    for p in active_rooms[room_id]:
+                        if p['ws'] != ws:
+                            try:
+                                await p['ws'].send_json(data)
+                            except Exception:
+                                pass
     except Exception:
         pass
     finally:
