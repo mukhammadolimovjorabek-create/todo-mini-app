@@ -38,9 +38,12 @@ export function speakEnglishText(
   };
 
   const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  // Format IELTS phonetically so speech engine says "Eye-elts" as a single word, not individual letters
+  const processedText = text.replace(/\bIELTS\b/gi, 'Eye-elts');
+
   // On Vercel, /api/tts is handled by the serverless function. On local dev, it connects to local bot server.
   const baseUrl = isLocal ? 'http://localhost:8000' : '';
-  const ttsUrl = `${baseUrl}/api/tts?text=${encodeURIComponent(text)}&lang=en-GB&voice=en-GB-RyanNeural`;
+  const ttsUrl = `${baseUrl}/api/tts?text=${encodeURIComponent(processedText)}&lang=en-GB&voice=en-GB-RyanNeural`;
 
   const audio = new Audio(ttsUrl);
   currentAudio = audio;
@@ -100,7 +103,8 @@ function playStrictEnglishWebSpeech(text: string, onEnd: () => void): void {
 
   try {
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
+    const processedText = text.replace(/\bIELTS\b/gi, 'Eye-elts');
+    const utterance = new SpeechSynthesisUtterance(processedText);
     utterance.voice = enVoice;
     utterance.lang = enVoice.lang;
     utterance.rate = 0.95;

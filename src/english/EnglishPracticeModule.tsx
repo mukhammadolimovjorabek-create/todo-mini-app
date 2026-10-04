@@ -264,8 +264,9 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
             {/* Header: Badge & UZ Flag Shield */}
             <div className="flex items-center justify-between relative z-10">
               <div className="flex items-center space-x-2">
-                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/15 border border-emerald-400/30 px-3 py-1 rounded-full">
-                  🇺🇿 MILLIY SERTIFIKAT
+                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/15 border border-emerald-400/30 px-3 py-1 rounded-full flex items-center space-x-1">
+                  <span className="animate-flag-wave inline-block">🇺🇿</span>
+                  <span>MILLIY SERTIFIKAT</span>
                 </span>
                 <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded-full border border-emerald-400/20">
                   CEFR B1 - C1
@@ -273,7 +274,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
               </div>
 
               <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-lg shadow-inner">
-                🇺🇿
+                <span className="animate-flag-wave inline-block">🇺🇿</span>
               </div>
             </div>
 

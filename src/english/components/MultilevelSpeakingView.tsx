@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Volume2, VolumeX, Clock, Award, ChevronRight, RotateCcw, Mic, MicOff } from 'lucide-react';
+import { ArrowLeft, Volume2, VolumeX, Clock, Award, ChevronRight, RotateCcw, Mic, MicOff, Image as ImageIcon } from 'lucide-react';
 import {
   getRandomMultilevelPart1_1,
   getRandomMultilevelPart1_2,
@@ -150,7 +150,9 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       recognition.onerror = (event: any) => {
         console.warn("Speech recognition error:", event.error);
         if (event.error === 'no-speech') {
-          // Normal silence while thinking, do NOT stop mic!
+          // Normal pause while candidate thinks or stops talking.
+          // In Android WebView, no-speech triggers onend.
+          // By keeping isListeningWantedRef.current = true, onend will cleanly restart.
           return;
         }
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
@@ -160,16 +162,27 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
           return;
         }
         if (event.error === 'network') {
-          setIsManualInput(true);
+          console.warn("Network issue with speech recognition");
         }
       };
 
       recognition.onend = () => {
+        // Keep mic active during the full 30s/120s timer
         if (isListeningWantedRef.current) {
           try {
             recognition.start();
+            setIsRecording(true);
           } catch {
-            setIsRecording(false);
+            setTimeout(() => {
+              if (isListeningWantedRef.current) {
+                try {
+                  recognition.start();
+                  setIsRecording(true);
+                } catch {
+                  setIsRecording(false);
+                }
+              }
+            }, 300);
           }
         } else {
           setIsRecording(false);
@@ -570,7 +583,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         >
           <div className="flex items-center space-x-3.5 relative z-10">
             <div className="w-14 h-14 rounded-2xl bg-[#c4f82a] text-[#121124] flex items-center justify-center text-3xl shadow-lg shrink-0">
-              🇺🇿
+              <span className="animate-flag-wave inline-block select-none transform-gpu filter drop-shadow">🇺🇿</span>
             </div>
             <div>
               <div className="flex items-center space-x-1.5">
@@ -809,10 +822,11 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
 
         {/* Part 1.2 Pictures Card */}
         {(selectedPart === 'part1_2' || (selectedPart === 'full_mock' && (mockPhase === 'p1_2_prep' || mockPhase === 'p1_2_speak'))) && p1_2Item && (
-          <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 space-y-2">
+          <div className="bg-white rounded-[2rem] p-5 shadow-sm border border-slate-100 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">
-                Part 1.2: Pictures Comparison
+              <span className="text-[10px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md flex items-center space-x-1">
+                <ImageIcon size={12} />
+                <span>Part 1.2: Pictures Comparison</span>
               </span>
               <button
                 type="button"
@@ -826,10 +840,51 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
                 <Volume2 size={16} />
               </button>
             </div>
+
+            {/* Visual Two-Picture Comparison Cards (Rasmlar ko'rgazmasi) */}
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              {/* Picture A */}
+              <div className="rounded-2xl overflow-hidden border border-slate-200/80 bg-gradient-to-b from-sky-50 to-slate-100 shadow-sm flex flex-col items-center justify-center p-3 text-center min-h-[125px] relative group">
+                <span className="absolute top-2 left-2 text-[9px] font-black uppercase bg-white/90 text-sky-800 px-2 py-0.5 rounded-md shadow-xs border border-sky-100">
+                  Picture A
+                </span>
+                <div className="text-3xl my-2 transform group-hover:scale-110 transition-transform">
+                  {p1_2Item.title.toLowerCase().includes('plane') || p1_2Item.title.toLowerCase().includes('travel') ? '✈️' :
+                   p1_2Item.title.toLowerCase().includes('nature') || p1_2Item.title.toLowerCase().includes('park') ? '🌲' :
+                   p1_2Item.title.toLowerCase().includes('sale') || p1_2Item.title.toLowerCase().includes('market') ? '🛍️' :
+                   p1_2Item.title.toLowerCase().includes('bicycle') || p1_2Item.title.toLowerCase().includes('car') ? '🚲' :
+                   p1_2Item.title.toLowerCase().includes('work') ? '💻' : '🏙️'}
+                </div>
+                <p className="text-[11px] font-bold text-slate-800 line-clamp-2 px-1">
+                  {p1_2Item.title.split(':')[1]?.split('...')[0]?.trim() || p1_2Item.title}
+                </p>
+                <span className="text-[9px] text-slate-500 mt-1 font-medium">Aspekt 1</span>
+              </div>
+
+              {/* Picture B */}
+              <div className="rounded-2xl overflow-hidden border border-slate-200/80 bg-gradient-to-b from-amber-50 to-slate-100 shadow-sm flex flex-col items-center justify-center p-3 text-center min-h-[125px] relative group">
+                <span className="absolute top-2 left-2 text-[9px] font-black uppercase bg-white/90 text-amber-800 px-2 py-0.5 rounded-md shadow-xs border border-amber-100">
+                  Picture B
+                </span>
+                <div className="text-3xl my-2 transform group-hover:scale-110 transition-transform">
+                  {p1_2Item.title.toLowerCase().includes('plane') || p1_2Item.title.toLowerCase().includes('travel') ? '🚆' :
+                   p1_2Item.title.toLowerCase().includes('nature') || p1_2Item.title.toLowerCase().includes('park') ? '🏙️' :
+                   p1_2Item.title.toLowerCase().includes('sale') || p1_2Item.title.toLowerCase().includes('market') ? '🏬' :
+                   p1_2Item.title.toLowerCase().includes('bicycle') || p1_2Item.title.toLowerCase().includes('car') ? '🚗' :
+                   p1_2Item.title.toLowerCase().includes('work') ? '🏢' : '🌄'}
+                </div>
+                <p className="text-[11px] font-bold text-slate-800 line-clamp-2 px-1">
+                  {p1_2Item.questions[1] || "Alternative aspect & comparison"}
+                </p>
+                <span className="text-[9px] text-slate-500 mt-1 font-medium">Aspekt 2</span>
+              </div>
+            </div>
+
+            {/* Prompt & Questions */}
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5 text-xs text-slate-800">
               <p className="font-bold text-slate-900">• {p1_2Item.prompt}</p>
-              {p1_2Item.questions.slice(1).map((q, i) => (
-                <p key={i}>• {q}</p>
+              {p1_2Item.questions.map((q, i) => (
+                <p key={i} className="text-slate-700">• {q}</p>
               ))}
             </div>
           </div>

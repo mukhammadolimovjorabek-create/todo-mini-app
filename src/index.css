@@ -66,3 +66,28 @@ body {
   display: inline-block;
 }
 
+/* Hilpiraydigan bayroq animatsiyasi */
+@keyframes flagWave {
+  0% {
+    transform: rotate(0deg) skewY(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-5deg) skewY(-3deg) scale(1.05) translateY(-2px);
+  }
+  50% {
+    transform: rotate(3deg) skewY(2deg) scale(1.02) translateY(1px);
+  }
+  75% {
+    transform: rotate(-4deg) skewY(-2deg) scale(1.06) translateY(-1px);
+  }
+  100% {
+    transform: rotate(0deg) skewY(0deg) scale(1);
+  }
+}
+
+.animate-flag-wave {
+  animation: flagWave 2.8s ease-in-out infinite;
+  transform-origin: bottom left;
+  display: inline-block;
+}
+

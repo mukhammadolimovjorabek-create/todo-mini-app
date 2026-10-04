@@ -170,7 +170,9 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       recognition.onerror = (event: any) => {
         console.warn("Speech recognition error:", event.error);
         if (event.error === 'no-speech') {
-          // Normal brief pause while user is thinking, do NOT turn off mic
+          // Candidate paused or stopped speaking temporarily.
+          // In mobile browsers, no-speech triggers onend next.
+          // By keeping isListeningWantedRef.current = true, onend will immediately restart!
           return;
         }
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
@@ -180,16 +182,29 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
           return;
         }
         if (event.error === 'network') {
-          setIsManualInput(true);
+          // If network error, attempt keep listening unless user manually stops
+          console.warn("Network issue with speech recognition");
         }
       };
 
       recognition.onend = () => {
+        // As long as the exam question timer is running and listening is desired, keep microphone alive!
         if (isListeningWantedRef.current) {
           try {
             recognition.start();
+            setIsRecording(true);
           } catch {
-            setIsRecording(false);
+            // If rapid restart is rejected by browser, retry after tiny delay
+            setTimeout(() => {
+              if (isListeningWantedRef.current) {
+                try {
+                  recognition.start();
+                  setIsRecording(true);
+                } catch {
+                  setIsRecording(false);
+                }
+              }
+            }, 300);
           }
         } else {
           setIsRecording(false);

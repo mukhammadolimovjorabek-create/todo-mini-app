@@ -14,7 +14,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    const clean = String(text).replace(/[\n\r]+/g, ' ').trim();
+    // Replace IELTS acronym with phonetic spelling so TTS pronounces it as a natural single word "Eye-elts" instead of letter by letter
+    const clean = String(text)
+      .replace(/\bIELTS\b/gi, 'Eye-elts')
+      .replace(/[\n\r]+/g, ' ')
+      .trim();
     // Google TTS accepts up to 200 chars per call
     const chunk = clean.length > 200 ? clean.substring(0, 197) + '...' : clean;
     const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(lang)}&client=tw-ob&q=${encodeURIComponent(chunk)}`;
