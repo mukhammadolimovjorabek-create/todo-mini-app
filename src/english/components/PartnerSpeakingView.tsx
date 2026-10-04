@@ -37,6 +37,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   const [matchStatus, setMatchStatus] = useState<'idle' | 'searching' | 'matched'>('idle');
   const [searchTimer, setSearchTimer] = useState(0);
   const [matchedPartner, setMatchedPartner] = useState<any>(null);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
 
   const [p1Topic, setP1Topic] = useState<Part1Topic>(() => getRandomPart1Topic());
@@ -321,10 +322,15 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
         });
       }, 1000);
       
+      setConnectionError(null);
       const targetRoom = isDirectInvite ? roomId : '';
       const socket = new WebSocket(`wss://todo-mini-app-cwkd.onrender.com/ws/matchmake?user_id=${userId}&user_name=${encodeURIComponent(userName)}&gender=${userGender || 'male'}&filter_gender=${filterGender}&room_id=${targetRoom}`);
       wsRef.current = socket;
       setWs(socket);
+
+      socket.onerror = () => {
+        setConnectionError("Server bilan aloqa o'rnatilmadi. Render serveri uyg'onmoqda (30-40 soniya ketishi mumkin).");
+      };
 
       socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
@@ -860,6 +866,26 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
                 <span>00:{searchTimer < 10 ? `0${searchTimer}` : searchTimer}</span>
               </div>
             </div>
+
+            {connectionError && (
+              <div className="p-3.5 bg-amber-50 border border-amber-200/80 rounded-2xl text-amber-900 text-xs font-medium space-y-2 text-left animate-in fade-in">
+                <p className="flex items-center gap-1.5 font-bold text-amber-950">
+                  <span>⚠️</span> {connectionError}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConnectionError(null);
+                    setSearchTimer(0);
+                    handleCancelSearch();
+                    setTimeout(() => setMatchStatus('searching'), 200);
+                  }}
+                  className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shadow-sm"
+                >
+                  🔄 Qayta ulanish
+                </button>
+              </div>
+            )}
 
             <button
               onClick={handleCancelSearch}

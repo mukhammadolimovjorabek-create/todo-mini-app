@@ -4,10 +4,11 @@ import asyncio
 import logging
 import asyncpg
 from datetime import datetime
+from dotenv import load_dotenv
 from aiohttp import web, ClientSession
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart, Command, ChatMemberUpdatedFilter, KICKED, MEMBER
-from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramRetryAfter
 from aiogram.types import (
     WebAppInfo, 
     InlineKeyboardMarkup, 
@@ -26,14 +27,19 @@ USERS_FILE = os.path.join(BASE_DIR, "users.json")
 BANNER_PATH = os.path.join(BASE_DIR, "welcome_banner.jpg")
 
 # Load environment variables
+load_dotenv(os.path.join(BASE_DIR, ".env"))
+
 def get_bot_token():
+    env_token = os.getenv("BOT_TOKEN", "")
+    if env_token:
+        return env_token
     env_path = os.path.join(BASE_DIR, ".env")
     if os.path.exists(env_path):
         with open(env_path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.startswith("BOT_TOKEN="):
                     return line.strip().split("=", 1)[1]
-    return os.getenv("BOT_TOKEN", "")
+    return ""
 
 BOT_TOKEN = get_bot_token()
 WEB_APP_URL = os.getenv("WEB_APP_URL", "https://todo-mini-app-eight.vercel.app")
@@ -234,20 +240,25 @@ async def cmd_start(message: types.Message):
 
     referrer_id = None
     if len(parts) > 1 and parts[1].startswith("ref_"):
-        referrer_id = parts[1].replace("ref_", "").strip()
+        raw_ref = parts[1].replace("ref_", "").strip()
+        if raw_ref.isdigit():
+            referrer_id = raw_ref
         
     is_new, total_visitors = await save_user(user_id, user_info)
     
     if referrer_id and db_pool:
-        async with db_pool.acquire() as conn:
-            inviter = await conn.fetchrow("SELECT first_name FROM users WHERE user_id = $1", int(referrer_id))
-            inviter_name = inviter['first_name'] if inviter else "Do'stingiz"
-        
-        kb = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="✅ Ha, qabul qilaman", callback_data=f"accept_ref:{referrer_id}")],
-            [InlineKeyboardButton(text="❌ Yo'q", callback_data="decline_ref")]
-        ])
-        await message.answer(f"{inviter_name} sizni do'stlar qatoriga va musobaqalashishga chaqiryapti. Qabul qilasizmi?", reply_markup=kb)
+        try:
+            async with db_pool.acquire() as conn:
+                inviter = await conn.fetchrow("SELECT first_name FROM users WHERE user_id = $1", int(referrer_id))
+                inviter_name = inviter['first_name'] if inviter else "Do'stingiz"
+            
+            kb = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="✅ Ha, qabul qilaman", callback_data=f"accept_ref:{referrer_id}")],
+                [InlineKeyboardButton(text="❌ Yo'q", callback_data="decline_ref")]
+            ])
+            await message.answer(f"{inviter_name} sizni do'stlar qatoriga va musobaqalashishga chaqiryapti. Qabul qilasizmi?", reply_markup=kb)
+        except Exception as e:
+            logging.error(f"Referrer tekshirishda xatolik: {e}")
 
     app_url = f"{WEB_APP_URL}?ref={referrer_id}" if referrer_id else WEB_APP_URL
 
@@ -342,11 +353,18 @@ async def delete_message_for_all(message_ids: list[int]):
             try:
                 await bot.delete_message(chat_id=chat_id, message_id=msg_id)
                 deleted_count += 1
+            except TelegramRetryAfter as e:
+                await asyncio.sleep(e.retry_after + 0.1)
+                try:
+                    await bot.delete_message(chat_id=chat_id, message_id=msg_id)
+                    deleted_count += 1
+                except Exception:
+                    pass
             except (TelegramBadRequest, TelegramForbiddenError):
                 pass
             except Exception as e:
                 logging.debug(f"Xabar o'chirishda xatolik ({chat_id}, {msg_id}): {e}")
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0.02)
             
     return deleted_count, len(all_chat_ids)
 
@@ -506,16 +524,86 @@ async def handle_unblock_callback(callback: types.CallbackQuery):
     await callback.message.reply(f"✅ <b>Foydalanuvchi qulfdan chiqarildi!</b>", parse_mode="HTML")
     await callback.answer("Qulf ochildi!")
 
-# ----------------- MAIN RUNNER -----------------
-
-
-async def api_unfriend(request):
-    data = await request.json()
-    user_id = data.get("user_id")
-    friend_id = data.get("friend_id")
+@dp.callback_query(F.data.startswith("accept_ref:"))
+async def handle_accept_ref(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    ref_parts = callback.data.split(":")
+    if len(ref_parts) < 2 or not ref_parts[1].isdigit():
+        await callback.answer("Taklif topilmadi.", show_alert=True)
+        return
+        
+    inviter_id = int(ref_parts[1])
+    
+    # 1. Update DB or users.json
     if db_pool:
         async with db_pool.acquire() as conn:
-            await conn.execute("UPDATE users SET referred_by = NULL, is_accepted = FALSE WHERE (user_id = $1 AND referred_by = $2) OR (user_id = $3 AND referred_by = $4)", int(user_id), str(friend_id), int(friend_id), str(user_id))
+            await conn.execute("UPDATE users SET referred_by = $1, is_accepted = TRUE WHERE user_id = $2", str(inviter_id), user_id)
+    else:
+        users = await load_users()
+        user_str = str(user_id)
+        if user_str in users:
+            users[user_str]["referred_by"] = str(inviter_id)
+            users[user_str]["is_accepted"] = True
+            with open(USERS_FILE, "w", encoding="utf-8") as f:
+                json.dump(users, f, ensure_ascii=False, indent=2)
+                
+    # 2. Xabar berish: taklif qilganga
+    try:
+        inviter_text = f"🎉 <b>{callback.from_user.first_name}</b> sizning do'stlik taklifingizni qabul qildi va do'stlaringiz safiga qo'shildi!"
+        await bot.send_message(chat_id=inviter_id, text=inviter_text, parse_mode="HTML")
+    except Exception:
+        pass
+        
+    app_url = f"{WEB_APP_URL}?ref={inviter_id}"
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🚀 Ilovaga kirish", web_app=WebAppInfo(url=app_url))]])
+    
+    await callback.message.edit_text("✅ <b>Do'stlik taklifi qabul qilindi!</b>\n\nEndi siz do'stingiz bilan musobaqalashishingiz va uning natijalarini ko'rishingiz mumkin.", parse_mode="HTML", reply_markup=kb)
+    await callback.answer("Taklif qabul qilindi!")
+
+@dp.callback_query(F.data == "decline_ref")
+async def handle_decline_ref(callback: types.CallbackQuery):
+    app_url = WEB_APP_URL
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🚀 Ilovani ochish", web_app=WebAppInfo(url=app_url))]])
+    await callback.message.edit_text("❌ Do'stlik taklifi rad etildi.", parse_mode="HTML", reply_markup=kb)
+    await callback.answer("Rad etildi.")
+
+# ----------------- MAIN RUNNER -----------------
+
+async def api_unfriend(request):
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+    user_id = data.get("user_id")
+    friend_id = data.get("friend_id")
+    if not user_id or not friend_id:
+        return web.json_response({"error": "user_id and friend_id required"}, status=400)
+        
+    try:
+        uid_int = int(user_id)
+        fid_int = int(friend_id)
+    except (ValueError, TypeError):
+        return web.json_response({"error": "invalid id format"}, status=400)
+
+    if db_pool:
+        async with db_pool.acquire() as conn:
+            await conn.execute("UPDATE users SET referred_by = NULL, is_accepted = FALSE WHERE (user_id = $1 AND referred_by = $2) OR (user_id = $3 AND referred_by = $4)", uid_int, str(fid_int), fid_int, str(uid_int))
+    else:
+        users = await load_users()
+        u1, u2 = str(user_id), str(friend_id)
+        changed = False
+        if u1 in users and str(users[u1].get("referred_by")) == u2:
+            users[u1]["referred_by"] = None
+            users[u1]["is_accepted"] = False
+            changed = True
+        if u2 in users and str(users[u2].get("referred_by")) == u1:
+            users[u2]["referred_by"] = None
+            users[u2]["is_accepted"] = False
+            changed = True
+        if changed:
+            with open(USERS_FILE, "w", encoding="utf-8") as f:
+                json.dump(users, f, ensure_ascii=False, indent=2)
+
     resp = web.json_response({"success": True})
     resp.headers["Access-Control-Allow-Origin"] = "*"
     return resp
@@ -589,6 +677,30 @@ async def api_rate_partner(request):
                         )
                     except Exception:
                         pass
+    else:
+        users = await load_users()
+        target_str = str(target_id)
+        if target_str in users:
+            cur_likes = users[target_str].get("likes", 0) or 0
+            cur_dislikes = users[target_str].get("dislikes", 0) or 0
+            if action == "like":
+                users[target_str]["likes"] = cur_likes + 1
+            elif action == "dislike":
+                users[target_str]["dislikes"] = cur_dislikes + 1
+                cur_dislikes += 1
+                net_dislikes = max(0, cur_dislikes - cur_likes)
+                if net_dislikes >= 10:
+                    users[target_str]["is_unblocked"] = False
+                    try:
+                        await bot.send_message(
+                            chat_id=target_id, 
+                            text="⚠️ <b>Diqqat!</b> Siz 10 ta sof 'dislike' oldingiz. Speaking bo'limi siz uchun cheklandi.\n\nQulfni ochish uchun adminga murojaat qiling yoki to'lov qiling.", 
+                            parse_mode="HTML"
+                        )
+                    except Exception:
+                        pass
+            with open(USERS_FILE, "w", encoding="utf-8") as f:
+                json.dump(users, f, ensure_ascii=False, indent=2)
                         
     resp = web.json_response({"success": True})
     resp.headers["Access-Control-Allow-Origin"] = "*"
@@ -749,7 +861,10 @@ async def ws_matchmake(request):
     try:
         async for msg in ws:
             if msg.type == web.WSMsgType.TEXT:
-                data = msg.json()
+                try:
+                    data = msg.json()
+                except Exception:
+                    continue
                 active_room_id = me['active_room']
                 if active_room_id and active_room_id in active_rooms:
                     for p in active_rooms[active_room_id]:
