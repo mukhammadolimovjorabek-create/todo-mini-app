@@ -184,60 +184,63 @@ ${remaining > 120 ? '⚠️ Juda ko\'p vaqt kerak. Qaysilarini keyinga qoldirish
 
 // ────────── Main export ──────────
 
-// Asosiy Gemini API Kaliti (Base64 shifrlangan)
-const getGeminiKey = (): string => {
-  try {
-    return atob('QVEuQWI4Uk42S2dhS0pXdUZWTGd1ZzB5eHlZZzZRMVdYMmNUUW0tZGpfTEJhT0RCZFJfVXc=');
-  } catch {
-    return '';
-  }
-};
-
-// ────────── Gemini API chaqiruvi ──────────
+// ────────── Gemini API chaqiruvi (Xavfsiz Server Proxy orqali) ──────────
 async function callGemini(
   systemPrompt: string,
   userMessage: string,
   history: ChatMessage[],
-  apiKey: string
+  customApiKey?: string
 ): Promise<string> {
-  const contents = [
-    ...history.slice(-6).map((m) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    })),
-    {
-      role: 'user',
-      parts: [{ text: userMessage }],
-    },
-  ];
+  // 1. Agar foydalanuvchi o'z kalitini kiritgan bo'lsa
+  if (customApiKey && customApiKey.trim()) {
+    const contents = [
+      ...history.slice(-6).map((m) => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      })),
+      {
+        role: 'user',
+        parts: [{ text: userMessage }],
+      },
+    ];
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey.trim()}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${customApiKey.trim()}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents,
+        generationConfig: { temperature: 0.7, maxOutputTokens: 500 },
+      }),
+    });
 
-  const response = await fetch(url, {
+    if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
+    const data = await response.json();
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!reply) throw new Error('Gemini javob bermadi');
+    return reply;
+  }
+
+  // 2. Xavfsiz server orqali chaqirish (Frontendda hech qanday maxfiy kalit saqlanmaydi)
+  const serverUrl = 'https://todo-mini-app-cwkd.onrender.com/api/ai_analyze';
+  const response = await fetch(serverUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      systemInstruction: {
-        parts: [{ text: systemPrompt }],
-      },
-      contents,
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 500,
-      },
+      systemPrompt,
+      userMessage,
+      history,
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Gemini API error: ${response.status}`);
+    throw new Error(`Server AI error: ${response.status}`);
   }
 
   const data = await response.json();
-  const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!reply) {
-    throw new Error('Gemini javob bermadi');
-  }
-  return reply;
+  if (data.reply) return data.reply;
+  throw new Error('AI javob bermadi');
 }
 
 // ────────── Main export: Gemini -> Groq -> Offline Fallback ──────────
@@ -264,18 +267,16 @@ Qoidalar:
 
   // 1-qadam: Birinchi navbatda Google Gemini API orqali javob olishga urinish
   try {
-    const geminiKey = getGeminiKey();
-    if (geminiKey) {
-      const geminiReply = await callGemini(
-        systemPrompt,
-        userMessage,
-        history,
-        geminiKey
-      );
+    const geminiReply = await callGemini(
+      systemPrompt,
+      userMessage,
+      history
+    );
+    if (geminiReply) {
       return geminiReply;
     }
   } catch (geminiErr) {
-    console.warn('Gemini API xatolik berdi yoki limiti tugadi. Groq / Offline rejimga o\'tilmoqda:', geminiErr);
+    console.warn('Gemini API xatolik berdi yoki server ulanmadi. Groq / Offline rejimga o\'tilmoqda:', geminiErr);
   }
 
   // 2-qadam: Agar Gemini ishlamasa yoki limiti tugasa, Groq API (Llama 3.3) ga o'tish

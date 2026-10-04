@@ -889,10 +889,23 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
                       Bog'landi 🟢
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
-                    <span className="text-indigo-600 font-bold">👍 {matchedPartner.likes || 0}</span>
-                    <span className="text-rose-500 font-bold">👎 {matchedPartner.dislikes || 0}</span>
-                  </p>
+                  {(() => {
+                    const l = Number(matchedPartner.likes || 0);
+                    const d = Number(matchedPartner.dislikes || 0);
+                    const netLikes = Math.max(0, l - d);
+                    const netDislikes = Math.max(0, d - l);
+                    return (
+                      <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2 font-medium">
+                        <span className="text-indigo-600 font-bold flex items-center gap-1">
+                          👍 {netLikes} ta like
+                        </span>
+                        <span className="text-slate-300">•</span>
+                        <span className="text-rose-500 font-bold flex items-center gap-1">
+                          👎 {netDislikes} ta dislike
+                        </span>
+                      </p>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -1384,11 +1397,20 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
             <button
               onClick={async () => {
                   if (matchedPartner && selectedSticker) {
-                      await fetch(`https://todo-mini-app-cwkd.onrender.com/api/rate_partner`, {
-                          method: 'POST',
-                          headers: {'Content-Type': 'application/json'},
-                          body: JSON.stringify({ partner_id: matchedPartner.id, action: selectedSticker })
-                      });
+                      try {
+                        await fetch(`https://todo-mini-app-cwkd.onrender.com/api/rate_partner`, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ 
+                              partner_id: matchedPartner.id, 
+                              rater_id: userId,
+                              action: selectedSticker,
+                              reason: dislikeReason
+                            })
+                        });
+                      } catch (err) {
+                        console.error('Rating error:', err);
+                      }
                   }
                   handleFinishRating();
               }}

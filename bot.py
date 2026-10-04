@@ -4,9 +4,10 @@ import asyncio
 import logging
 import asyncpg
 from datetime import datetime
-from aiohttp import web
+from aiohttp import web, ClientSession
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart, Command, ChatMemberUpdatedFilter, KICKED, MEMBER
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.types import (
     WebAppInfo, 
     InlineKeyboardMarkup, 
@@ -65,9 +66,13 @@ async def init_db():
                     joined_at TIMESTAMP,
                     last_active TIMESTAMP,
                     referred_by TEXT,
+                    likes INT DEFAULT 0,
                     dislikes INT DEFAULT 0,
                     is_unblocked BOOLEAN DEFAULT FALSE
-                )
+                );
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS likes INT DEFAULT 0;
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS dislikes INT DEFAULT 0;
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS is_unblocked BOOLEAN DEFAULT FALSE;
             """)
         logging.info("Connected to PostgreSQL Database.")
     else:
@@ -86,6 +91,7 @@ async def load_users():
                     "joined_at": row['joined_at'].strftime("%Y-%m-%d %H:%M:%S") if row['joined_at'] else "",
                     "last_active": row['last_active'].strftime("%Y-%m-%d %H:%M:%S") if row['last_active'] else "",
                     "referred_by": row['referred_by'],
+                    "likes": row['likes'] if 'likes' in row else 0,
                     "dislikes": row['dislikes'],
                     "is_unblocked": row['is_unblocked']
                 }
@@ -323,6 +329,127 @@ async def cmd_manual_unblock(message: types.Message):
         pass
     await message.answer(f"✅ {target} qulfdan chiqarildi!")
 
+# ----------------- ADMIN XABARLARNI TOZALASH FUNKSIYALARI -----------------
+async def delete_message_for_all(message_ids: list[int]):
+    """Barcha ma'lumotlar bazasidagi foydalanuvchilar chatidan berilgan xabarlarni o'chiradi."""
+    users = await load_users()
+    deleted_count = 0
+    
+    all_chat_ids = set([int(uid) for uid in users.keys() if str(uid).isdigit()] + [ADMIN_ID])
+    
+    for chat_id in all_chat_ids:
+        for msg_id in message_ids:
+            try:
+                await bot.delete_message(chat_id=chat_id, message_id=msg_id)
+                deleted_count += 1
+            except (TelegramBadRequest, TelegramForbiddenError):
+                pass
+            except Exception as e:
+                logging.debug(f"Xabar o'chirishda xatolik ({chat_id}, {msg_id}): {e}")
+            await asyncio.sleep(0.01)
+            
+    return deleted_count, len(all_chat_ids)
+
+@dp.message(F.chat.id == ADMIN_ID, Command("del", "delete"))
+async def cmd_admin_delete(message: types.Message):
+    target_ids = []
+    
+    # 1. Agar xabarga javob (reply) qilib yozilgan bo'lsa
+    if message.reply_to_message:
+        target_ids.append(message.reply_to_message.message_id)
+        
+    # 2. Agar parametr sifatida ID berilgan bo'lsa: /del 1234
+    parts = (message.text or "").split()[1:]
+    for p in parts:
+        if p.isdigit():
+            target_ids.append(int(p))
+            
+    if not target_ids:
+        help_text = (
+            "🗑 <b>XABARLARNI BARCHA CHATLARDAN O'CHIRISH:</b>\n\n"
+            "1️⃣ <b>Reply orqali:</b> O'chirmoqchi bo'lgan xabarga <b>Javob (Reply)</b> qilib <code>/del</code> deb yozing.\n"
+            "2️⃣ <b>ID orqali:</b> <code>/del 1234</code>\n"
+            "3️⃣ <b>Oraliq bo'yicha:</b> <code>/del_range 1000 1020</code>\n"
+            "4️⃣ <b>Oxirgi N ta xabarni tozalash:</b> <code>/del_last 3</code>"
+        )
+        await message.answer(help_text, parse_mode="HTML")
+        return
+        
+    status_msg = await message.answer(f"⏳ {len(target_ids)} ta xabar barcha chatlardan o'chirilmoqda...")
+    deleted_count, chats_count = await delete_message_for_all(target_ids)
+    
+    try:
+        await bot.delete_message(chat_id=ADMIN_ID, message_id=status_msg.message_id)
+        await bot.delete_message(chat_id=ADMIN_ID, message_id=message.message_id)
+    except Exception:
+        pass
+        
+    report = (
+        "✅ <b>XABARLAR TOZALANDI!</b>\n\n"
+        f"🗑 <b>O'chirilgan xabarlar:</b> {deleted_count} ta\n"
+        f"👥 <b>Tekshirilgan foydalanuvchilar:</b> {chats_count} ta chat"
+    )
+    await bot.send_message(chat_id=ADMIN_ID, text=report, parse_mode="HTML")
+
+@dp.message(F.chat.id == ADMIN_ID, Command("del_range"))
+async def cmd_admin_delete_range(message: types.Message):
+    parts = (message.text or "").split()
+    if len(parts) < 3 or not parts[1].isdigit() or not parts[2].isdigit():
+        await message.answer("Format: <code>/del_range 1050 1070</code>", parse_mode="HTML")
+        return
+        
+    start_id = int(parts[1])
+    end_id = int(parts[2])
+    if start_id > end_id:
+        start_id, end_id = end_id, start_id
+        
+    if end_id - start_id > 100:
+        await message.answer("⚠️ Bir vaqtning o'zida maksimal 100 ta xabarni tozalash mumkin.")
+        return
+        
+    msg_ids = list(range(start_id, end_id + 1))
+    status_msg = await message.answer(f"⏳ {start_id} dan {end_id} gacha bo'lgan {len(msg_ids)} ta xabar barcha chatlardan o'chirilmoqda...")
+    deleted_count, chats_count = await delete_message_for_all(msg_ids)
+    
+    try:
+        await bot.delete_message(chat_id=ADMIN_ID, message_id=status_msg.message_id)
+    except Exception:
+        pass
+        
+    report = (
+        "✅ <b>Oraliqdagi xabarlar tozalandi!</b>\n\n"
+        f"🔢 <b>Oraliq:</b> {start_id} — {end_id}\n"
+        f"🗑 <b>O'chirildi:</b> {deleted_count} ta\n"
+        f"👥 <b>Chatlar:</b> {chats_count} ta"
+    )
+    await message.answer(report, parse_mode="HTML")
+
+@dp.message(F.chat.id == ADMIN_ID, Command("del_last"))
+async def cmd_admin_delete_last(message: types.Message):
+    parts = (message.text or "").split()
+    count = 1
+    if len(parts) > 1 and parts[1].isdigit():
+        count = min(int(parts[1]), 20)
+        
+    current_id = message.message_id
+    msg_ids = [current_id - i for i in range(1, count + 1)]
+    status_msg = await message.answer(f"⏳ Oxirgi {count} ta xabar barcha chatlardan o'chirilmoqda...")
+    deleted_count, chats_count = await delete_message_for_all(msg_ids)
+    
+    try:
+        await bot.delete_message(chat_id=ADMIN_ID, message_id=status_msg.message_id)
+        await bot.delete_message(chat_id=ADMIN_ID, message_id=message.message_id)
+    except Exception:
+        pass
+        
+    report = (
+        f"✅ <b>Oxirgi {count} ta xabar tozalandi!</b>\n\n"
+        f"🗑 <b>O'chirildi:</b> {deleted_count} ta\n"
+        f"👥 <b>Chatlar:</b> {chats_count} ta"
+    )
+    await bot.send_message(chat_id=ADMIN_ID, text=report, parse_mode="HTML")
+
+
 @dp.message(F.chat.id == ADMIN_ID, F.reply_to_message)
 async def handle_admin_reply(message: types.Message):
     if not message.text or message.text.startswith("/"):
@@ -393,8 +520,10 @@ async def api_unfriend(request):
     resp.headers["Access-Control-Allow-Origin"] = "*"
     return resp
 
+import time
+recent_ratings = {}
+
 async def api_rate_partner(request):
-    # Enable CORS for preflight options
     if request.method == 'OPTIONS':
         resp = web.Response()
         resp.headers['Access-Control-Allow-Origin'] = '*'
@@ -402,25 +531,126 @@ async def api_rate_partner(request):
         resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
         return resp
         
-    data = await request.json()
-    target_id = data.get("partner_id")
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+        
+    target_id_raw = data.get("partner_id")
+    rater_id_raw = data.get("rater_id") or "anon"
     action = data.get("action")
+    
+    if not target_id_raw or action not in ["like", "dislike"]:
+        resp = web.json_response({"error": "partner_id and action required"}, status=400)
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        return resp
+        
+    try:
+        target_id = int(target_id_raw)
+    except (ValueError, TypeError):
+        resp = web.json_response({"error": "invalid partner_id"}, status=400)
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        return resp
+        
+    # Rate limit: 5 daqiqa ichida qayta baholash cheklanadi (soxta spam dislikes ning oldini oladi)
+    rate_key = f"{rater_id_raw}:{target_id}"
+    now_ts = time.time()
+    last_ts = recent_ratings.get(rate_key, 0)
+    if now_ts - last_ts < 300:
+        resp = web.json_response({"success": False, "message": "Allaqachon baholangan"}, status=200)
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        return resp
+        
+    recent_ratings[rate_key] = now_ts
+    if len(recent_ratings) > 1000:
+        recent_ratings.clear()
+        recent_ratings[rate_key] = now_ts
+        
     if db_pool:
         async with db_pool.acquire() as conn:
             if action == "like":
-                await conn.execute("UPDATE users SET likes = likes + 1 WHERE user_id = $1", int(target_id))
+                await conn.execute("UPDATE users SET likes = COALESCE(likes, 0) + 1 WHERE user_id = $1", target_id)
             elif action == "dislike":
-                await conn.execute("UPDATE users SET dislikes = dislikes + 1 WHERE user_id = $1", int(target_id))
-                row = await conn.fetchrow("SELECT dislikes FROM users WHERE user_id = $1", int(target_id))
-                if row and row['dislikes'] >= 10:
-                    await conn.execute("UPDATE users SET is_unblocked = FALSE WHERE user_id = $1", int(target_id))
+                await conn.execute("UPDATE users SET dislikes = COALESCE(dislikes, 0) + 1 WHERE user_id = $1", target_id)
+                
+            row = await conn.fetchrow("SELECT likes, dislikes FROM users WHERE user_id = $1", target_id)
+            if row:
+                cur_likes = row['likes'] or 0
+                cur_dislikes = row['dislikes'] or 0
+                # Aniq mantiq: agar 5 ta like va 5 ta dislike bo'lsa net_dislikes = 0
+                net_dislikes = max(0, cur_dislikes - cur_likes)
+                if net_dislikes >= 10:
+                    await conn.execute("UPDATE users SET is_unblocked = FALSE WHERE user_id = $1", target_id)
                     try:
-                        await bot.send_message(chat_id=int(target_id), text="⚠️ Siz juda ko'p 'dislike' oldingiz. Ilova siz uchun pullik bo'ldi. Qulfni ochish uchun adminga murojaat qiling.")
-                    except:
+                        await bot.send_message(
+                            chat_id=target_id, 
+                            text="⚠️ <b>Diqqat!</b> Siz 10 ta sof 'dislike' oldingiz. Speaking bo'limi siz uchun cheklandi.\n\nQulfni ochish uchun adminga murojaat qiling yoki to'lov qiling.", 
+                            parse_mode="HTML"
+                        )
+                    except Exception:
                         pass
+                        
     resp = web.json_response({"success": True})
     resp.headers["Access-Control-Allow-Origin"] = "*"
     return resp
+
+async def api_ai_analyze(request):
+    if request.method == 'OPTIONS':
+        resp = web.Response()
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        resp.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return resp
+        
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+        
+    system_prompt = data.get("systemPrompt", "")
+    user_message = data.get("userMessage", "")
+    history = data.get("history", [])
+    
+    gemini_key = os.getenv("ENGLISH_GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY", "")
+    if not gemini_key:
+        resp = web.json_response({"error": "No server API key"}, status=503)
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        return resp
+        
+    contents = []
+    for m in history[-6:]:
+        contents.append({
+            "role": "model" if m.get("role") == "assistant" else "user",
+            "parts": [{"text": m.get("content", "")}]
+        })
+    contents.append({
+        "role": "user",
+        "parts": [{"text": user_message}]
+    })
+    
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key.strip()}"
+    async with ClientSession() as session:
+        try:
+            async with session.post(url, json={
+                "systemInstruction": {"parts": [{"text": system_prompt}]},
+                "contents": contents,
+                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 500}
+            }, timeout=15) as response:
+                if response.status == 200:
+                    resp_json = await response.json()
+                    reply = resp_json.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                    resp = web.json_response({"reply": reply})
+                    resp.headers["Access-Control-Allow-Origin"] = "*"
+                    return resp
+                else:
+                    resp = web.json_response({"error": f"Gemini error {response.status}"}, status=502)
+                    resp.headers["Access-Control-Allow-Origin"] = "*"
+                    return resp
+        except Exception as e:
+            resp = web.json_response({"error": str(e)}, status=500)
+            resp.headers["Access-Control-Allow-Origin"] = "*"
+            return resp
+
 
 import uuid
 waiting_pool = []
@@ -444,8 +674,10 @@ async def ws_matchmake(request):
             async with db_pool.acquire() as conn:
                 row = await conn.fetchrow("SELECT first_name, username, likes, dislikes FROM users WHERE user_id = $1", user_id_int)
                 if row:
-                    user_data["likes"] = row['likes'] or 0
-                    user_data["dislikes"] = row['dislikes'] or 0
+                    raw_likes = row['likes'] or 0
+                    raw_dislikes = row['dislikes'] or 0
+                    user_data["likes"] = max(0, raw_likes - raw_dislikes)
+                    user_data["dislikes"] = max(0, raw_dislikes - raw_likes)
                     if not user_name or user_name == "Foydalanuvchi" or user_name == "Siz":
                         user_data["name"] = row['first_name'] or user_name
         except Exception as e:
@@ -602,6 +834,8 @@ def main():
     app.router.add_options("/api/unfriend", api_unfriend)
     app.router.add_post("/api/rate_partner", api_rate_partner)
     app.router.add_options("/api/rate_partner", api_rate_partner)
+    app.router.add_post("/api/ai_analyze", api_ai_analyze)
+    app.router.add_options("/api/ai_analyze", api_ai_analyze)
     app.router.add_get("/ws/matchmake", ws_matchmake)
     
     if WEBHOOK_URL:
