@@ -38,8 +38,9 @@ export function speakEnglishText(
   };
 
   const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-  const baseUrl = isLocal ? 'http://localhost:8000' : 'https://todo-mini-app-cwkd.onrender.com';
-  const ttsUrl = `${baseUrl}/api/tts?text=${encodeURIComponent(text)}&voice=en-GB-RyanNeural`;
+  // On Vercel, /api/tts is handled by the serverless function. On local dev, it connects to local bot server.
+  const baseUrl = isLocal ? 'http://localhost:8000' : '';
+  const ttsUrl = `${baseUrl}/api/tts?text=${encodeURIComponent(text)}&lang=en-GB&voice=en-GB-RyanNeural`;
 
   const audio = new Audio(ttsUrl);
   currentAudio = audio;
