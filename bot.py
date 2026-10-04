@@ -274,13 +274,17 @@ async def cmd_start(message: types.Message):
     app_url = f"{WEB_APP_URL}?ref={referrer_id}" if referrer_id else WEB_APP_URL
 
     inline_kb = InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="🚀 Ilovani ochish", web_app=WebAppInfo(url=app_url))]]
+        inline_keyboard=[[InlineKeyboardButton(text="🎙️ Mashqni boshlash (Mini App)", web_app=WebAppInfo(url=app_url))]]
     )
     
     caption_text = (
         f"Assalomu alaykum, <b>{message.from_user.first_name}</b>! 👋\n\n"
-        "🎯 <b>Smart To-Do & AI</b> platformasiga xush kelibsiz!\n"
-        "👇 <i>Boshlash uchun quyidagi tugmani bosing:</i>"
+        "🌟 <b>SpeakMate | IELTS & English Practice</b> platformasiga xush kelibsiz!\n\n"
+        "Bu yerda siz:\n"
+        "🎙️ <b>Jonli Speaking sherik</b> bilan real vaqtda audio suhbat qilasiz (Part 1, 2, 3)\n"
+        "✍️ <b>AI Writing Checker</b> orqali insho va matnlaringizni tekshirib, xatolarni tahlil qilasiz\n"
+        "🏆 <b>Do'stlar ligasi</b>da musobaqalashib, ball to'playsiz\n\n"
+        "👇 <i>Hoziroq mashqni boshlash uchun quyidagi tugmani bosing:</i>"
     )
     
     if os.path.exists(BANNER_PATH):
