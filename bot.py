@@ -274,17 +274,18 @@ async def cmd_start(message: types.Message):
     app_url = f"{WEB_APP_URL}?ref={referrer_id}" if referrer_id else WEB_APP_URL
 
     inline_kb = InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="🎙️ Mashqni boshlash (Mini App)", web_app=WebAppInfo(url=app_url))]]
+        inline_keyboard=[[InlineKeyboardButton(text="🚀 Ilovani ochish (Mini App)", web_app=WebAppInfo(url=app_url))]]
     )
     
     caption_text = (
         f"Assalomu alaykum, <b>{message.from_user.first_name}</b>! 👋\n\n"
-        "🌟 <b>SpeakMate | IELTS & English Practice</b> platformasiga xush kelibsiz!\n\n"
-        "Bu yerda siz:\n"
-        "🎙️ <b>Jonli Speaking sherik</b> bilan real vaqtda audio suhbat qilasiz (Part 1, 2, 3)\n"
-        "✍️ <b>AI Writing Checker</b> orqali insho va matnlaringizni tekshirib, xatolarni tahlil qilasiz\n"
-        "🏆 <b>Do'stlar ligasi</b>da musobaqalashib, ball to'playsiz\n\n"
-        "👇 <i>Hoziroq mashqni boshlash uchun quyidagi tugmani bosing:</i>"
+        "🌟 <b>EduOdyssey | IELTS • Multilevel (CEFR) • Smart To-Do</b> platformasiga xush kelibsiz!\n\n"
+        "Bitta ilovada barcha imkoniyatlar:\n"
+        "📋 <b>Smart To-Do & Odatlar</b> — kunlik vazifalar, streak va tangalar\n"
+        "🎙️ <b>Jonli Speaking Hamkori</b> — real vaqtda audio muloqot va mavzular (Part 1, 2, 3)\n"
+        "🎓 <b>IELTS & Milliy Multilevel (CEFR)</b> — to'liq mock testlar, reading va writing\n"
+        "🏆 <b>Do'stlar Musobaqasi</b> — do'stlaringiz bilan duel va reyting\n\n"
+        "👇 <i>Boshlash uchun quyidagi tugmani bosing:</i>"
     )
     
     if os.path.exists(BANNER_PATH):

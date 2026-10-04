@@ -13,6 +13,7 @@ import {
 import { getSeenQuestions, markQuestionSeen, saveTestResult } from '../utils/storage';
 import { evaluateCandidateSpeech, type SpeechEvaluationResult } from '../utils/ieltsScoring';
 import { triggerHaptic } from '../../utils/telegram';
+import { speakEnglishText } from '../../utils/speechVoice';
 import type { TestResultItem } from '../types';
 
 interface Props {
@@ -67,40 +68,11 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
   };
 
   const speakText = (text: string, onEnd?: () => void) => {
-    if (!speechEnabled || !('speechSynthesis' in window)) {
+    if (!speechEnabled) {
       if (onEnd) onEnd();
       return;
     }
-    let ended = false;
-    const safeEnd = () => {
-      if (!ended) {
-        ended = true;
-        if (onEnd) onEnd();
-      }
-    };
-
-    const safetyTimer = setTimeout(() => {
-      safeEnd();
-    }, Math.max(2500, Math.min(8000, text.length * 80)));
-
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.95;
-      utterance.onend = () => {
-        clearTimeout(safetyTimer);
-        safeEnd();
-      };
-      utterance.onerror = () => {
-        clearTimeout(safetyTimer);
-        safeEnd();
-      };
-      window.speechSynthesis.speak(utterance);
-    } catch {
-      clearTimeout(safetyTimer);
-      safeEnd();
-    }
+    speakEnglishText(text, { rate: 0.95, pitch: 1.0, onEnd });
   };
 
   const isListeningWantedRef = useRef<boolean>(false);
