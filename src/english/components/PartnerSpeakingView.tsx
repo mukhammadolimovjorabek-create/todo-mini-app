@@ -21,12 +21,66 @@ interface Props {
 type GenderFilter = 'any' | 'female' | 'male';
 type RoomPart = 'part1' | 'part2' | 'part3';
 
-// Sample partner pool for realistic matching simulation based on gender preference
+// Universal 16-bit PCM WAV Encoder (compatible with 100% of iOS, Android, and Desktop browsers)
+function encodeWAV(chunks: Float32Array[], inputSampleRate: number, targetSampleRate = 16000): Blob {
+  let totalLength = 0;
+  for (const c of chunks) totalLength += c.length;
+  const merged = new Float32Array(totalLength);
+  let offset = 0;
+  for (const c of chunks) {
+    merged.set(c, offset);
+    offset += c.length;
+  }
 
+  // Downsample to 16kHz for crisp voice clarity and compact payload
+  let samples = merged;
+  if (inputSampleRate !== targetSampleRate) {
+    const ratio = inputSampleRate / targetSampleRate;
+    const newLength = Math.round(merged.length / ratio);
+    samples = new Float32Array(newLength);
+    let sampleOffset = 0;
+    for (let i = 0; i < newLength; i++) {
+      const nextOffset = Math.round((i + 1) * ratio);
+      let sum = 0;
+      let count = 0;
+      for (let j = sampleOffset; j < nextOffset && j < merged.length; j++) {
+        sum += merged[j];
+        count++;
+      }
+      samples[i] = count > 0 ? sum / count : 0;
+      sampleOffset = nextOffset;
+    }
+  }
 
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
 
+  const writeString = (v: DataView, o: number, str: string) => {
+    for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i));
+  };
 
-export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGender = 'male' }) => {
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeString(view, 8, 'WAVE');
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // Mono
+  view.setUint32(24, targetSampleRate, true);
+  view.setUint32(28, targetSampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(view, 36, 'data');
+  view.setUint32(40, samples.length * 2, true);
+
+  let pcmOffset = 44;
+  for (let i = 0; i < samples.length; i++, pcmOffset += 2) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(pcmOffset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+
+  return new Blob([buffer], { type: 'audio/wav' });
+}export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGender = 'male' }) => {
   const telegramUser = getTelegramUser();
   const userId = telegramUser?.id || 'me';
   const isDev = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('dev');
@@ -81,6 +135,57 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   const recordTimerRef = useRef<any>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Cross-platform audio references
+  const persistentStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
+  const mediaStreamSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const pcmChunksRef = useRef<Float32Array[]>([]);
+
+  // Unlock mobile audio playback upon any user gesture
+  const unlockAudioContext = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+          audioContextRef.current = new AudioCtx();
+        }
+        if (audioContextRef.current.state === 'suspended') {
+          audioContextRef.current.resume();
+        }
+      }
+      const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==');
+      silentAudio.play().catch(() => {});
+    } catch {}
+  };
+
+  // Reusable microphone stream: requested ONCE, kept active/muted so Telegram never prompts again!
+  const getAudioStream = async (): Promise<MediaStream> => {
+    if (persistentStreamRef.current && persistentStreamRef.current.active) {
+      persistentStreamRef.current.getAudioTracks().forEach(t => { t.enabled = true; });
+      return persistentStreamRef.current;
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      }
+    });
+    persistentStreamRef.current = stream;
+    return stream;
+  };
+
+  // Cleanup microphone tracks when component unmounts
+  useEffect(() => {
+    return () => {
+      if (persistentStreamRef.current) {
+        persistentStreamRef.current.getTracks().forEach((track) => track.stop());
+        persistentStreamRef.current = null;
+      }
+    };
+  }, []);
+
   // Check URL params for unblock query (?unblocked=1)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -133,7 +238,6 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
 
   const getSupportedMimeType = () => {
     if (typeof MediaRecorder === 'undefined') return '';
-    // Priority: audio/mp4 (universal on iOS & modern Android), then webm/opus
     const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg', 'audio/aac'];
     for (const t of types) {
       if (MediaRecorder.isTypeSupported(t)) return t;
@@ -144,35 +248,38 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   const startRecording = async () => {
     try {
       triggerHaptic('medium');
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioChunksRef.current = [];
-      const mimeType = getSupportedMimeType();
-      const options = mimeType ? { mimeType } : undefined;
-      const mediaRecorder = options ? new MediaRecorder(stream, options) : new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
+      unlockAudioContext();
+      const stream = await getAudioStream();
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          audioChunksRef.current.push(e.data);
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        const recordedType = mediaRecorder.mimeType || mimeType || 'audio/mp4';
-        const audioBlob = new Blob(audioChunksRef.current, { type: recordedType });
-        const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = () => {
-          const base64Audio = reader.result as string;
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: 'voice_note', audio: base64Audio }));
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        try {
+          const ctx = new AudioCtx();
+          audioContextRef.current = ctx;
+          if (ctx.state === 'suspended') {
+            await ctx.resume();
           }
-        };
-        audioChunksRef.current = [];
-        stream.getTracks().forEach((track) => track.stop());
-      };
+          const source = ctx.createMediaStreamSource(stream);
+          mediaStreamSourceRef.current = source;
+          const processor = ctx.createScriptProcessor(4096, 1, 1);
+          scriptProcessorRef.current = processor;
+          pcmChunksRef.current = [];
 
-      mediaRecorder.start(250);
+          processor.onaudioprocess = (e) => {
+            const input = e.inputBuffer.getChannelData(0);
+            pcmChunksRef.current.push(new Float32Array(input));
+          };
+
+          source.connect(processor);
+          processor.connect(ctx.destination);
+        } catch (webAudioErr) {
+          console.warn("WebAudio processor fallback to MediaRecorder:", webAudioErr);
+          startMediaRecorderFallback(stream);
+        }
+      } else {
+        startMediaRecorderFallback(stream);
+      }
+
       setIsRecording(true);
       setRecordDuration(0);
       recordTimerRef.current = setInterval(() => {
@@ -184,14 +291,91 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     }
   };
 
+  const startMediaRecorderFallback = (stream: MediaStream) => {
+    audioChunksRef.current = [];
+    const mimeType = getSupportedMimeType();
+    const options = mimeType ? { mimeType } : undefined;
+    const mediaRecorder = options ? new MediaRecorder(stream, options) : new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) audioChunksRef.current.push(e.data);
+    };
+    mediaRecorder.start(250);
+  };
+
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      triggerHaptic('medium');
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      if (recordTimerRef.current) {
-        clearInterval(recordTimerRef.current);
+    if (!isRecording) return;
+    triggerHaptic('medium');
+    setIsRecording(false);
+    if (recordTimerRef.current) {
+      clearInterval(recordTimerRef.current);
+    }
+
+    // MUTE tracks instead of stopping them so permission is remembered without re-prompts!
+    if (persistentStreamRef.current) {
+      persistentStreamRef.current.getAudioTracks().forEach(t => { t.enabled = false; });
+    }
+
+    if (scriptProcessorRef.current && audioContextRef.current) {
+      try {
+        scriptProcessorRef.current.disconnect();
+        mediaStreamSourceRef.current?.disconnect();
+        const sampleRate = audioContextRef.current.sampleRate || 44100;
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
+
+        const wavBlob = encodeWAV(pcmChunksRef.current, sampleRate, 16000);
+        pcmChunksRef.current = [];
+        const reader = new FileReader();
+        reader.readAsDataURL(wavBlob);
+        reader.onloadend = () => {
+          const base64Audio = reader.result as string;
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'voice_note', audio: base64Audio }));
+          }
+        };
+      } catch (e) {
+        console.error("WAV encode error:", e);
       }
+    } else if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.onstop = () => {
+        const mimeType = getSupportedMimeType();
+        const recordedType = mediaRecorderRef.current?.mimeType || mimeType || 'audio/mp4';
+        const audioBlob = new Blob(audioChunksRef.current, { type: recordedType });
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = () => {
+          const base64Audio = reader.result as string;
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'voice_note', audio: base64Audio }));
+          }
+        };
+        audioChunksRef.current = [];
+      };
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  const playIncomingAudio = async (audioUri: string) => {
+    try {
+      unlockAudioContext();
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current = null;
+      }
+      const audio = new Audio(audioUri);
+      currentAudioRef.current = audio;
+      audio.onended = () => {
+        setIsPartnerSpeaking(false);
+      };
+      audio.onerror = () => {
+        setIsPartnerSpeaking(false);
+      };
+      await audio.play();
+      setIsPartnerSpeaking(true);
+    } catch (e) {
+      console.log('Autoplay was blocked or audio error:', e);
+      setIsPartnerSpeaking(false);
     }
   };
 
@@ -203,6 +387,11 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     }
     if (currentAudioRef.current) {
       currentAudioRef.current.pause();
+    }
+    // Release persistent microphone tracks only on session exit
+    if (persistentStreamRef.current) {
+      persistentStreamRef.current.getTracks().forEach((track) => track.stop());
+      persistentStreamRef.current = null;
     }
     setIsPartnerSpeaking(false);
     setMatchStatus('idle');
@@ -231,28 +420,12 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
           setMatchedPartner(data.partner);
           setMatchStatus('matched');
           triggerHaptic('heavy');
+          unlockAudioContext();
         } else if (data.type === 'voice_note') {
           if (data.audio) {
             setLastAudioUrl(data.audio);
             triggerHaptic('heavy');
-            try {
-              if (currentAudioRef.current) {
-                currentAudioRef.current.pause();
-              }
-              const audio = new Audio(data.audio);
-              currentAudioRef.current = audio;
-              audio.onended = () => {
-                setIsPartnerSpeaking(false);
-              };
-              audio.play().then(() => {
-                setIsPartnerSpeaking(true);
-              }).catch((e) => {
-                console.log('Autoplay blocked, showing manual play button:', e);
-                setIsPartnerSpeaking(false);
-              });
-            } catch (err) {
-              setIsPartnerSpeaking(false);
-            }
+            playIncomingAudio(data.audio);
           }
         } else if (data.type === 'chat_message') {
           if (data.text === 'TURN_SWITCH') {
@@ -345,6 +518,10 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
 
   const handleLeaveRoom = () => {
     triggerHaptic('medium');
+    if (persistentStreamRef.current) {
+      persistentStreamRef.current.getTracks().forEach((track) => track.stop());
+      persistentStreamRef.current = null;
+    }
     setSelectedSticker(null);
     setDislikeReason('');
     setShowRatingModal(true);

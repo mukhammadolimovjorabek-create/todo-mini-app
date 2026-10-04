@@ -105,7 +105,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
 
   const isListeningWantedRef = useRef<boolean>(false);
   const accumulatedTextRef = useRef<string>('');
-  const hasMicPermissionRef = useRef<boolean>(false);
   const [isManualInput, setIsManualInput] = useState<boolean>(false);
 
   const startListening = async () => {
@@ -116,17 +115,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
     }
 
     isListeningWantedRef.current = true;
-
-    // Prompt microphone permission ONLY ONCE and immediately release tracks so SpeechRecognition has access!
-    if (!hasMicPermissionRef.current && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop());
-        hasMicPermissionRef.current = true;
-      } catch (err) {
-        console.warn("Microphone permission prompt warning:", err);
-      }
-    }
 
     try {
       if (recognitionRef.current) {
@@ -217,6 +205,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName }) =>
     setSelectedPart(part);
     setTranscriptHistory([]);
     setLiveTranscript('');
+    accumulatedTextRef.current = '';
     setFeedback(null);
     setTestStartTime(getFormattedTime());
     setPrepNotes('');

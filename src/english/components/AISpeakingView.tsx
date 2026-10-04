@@ -125,10 +125,9 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
 
   const isListeningWantedRef = useRef<boolean>(false);
   const accumulatedTextRef = useRef<string>('');
-  const hasMicPermissionRef = useRef<boolean>(false);
   const [isManualInput, setIsManualInput] = useState<boolean>(false);
 
-  // Start Recognition automatically with cached permission and hardware release
+  // Start Recognition directly using native SpeechRecognition
   const startListening = async () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -137,17 +136,6 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     }
 
     isListeningWantedRef.current = true;
-
-    // Prompt microphone permission ONLY ONCE and immediately release tracks so SpeechRecognition can access hardware!
-    if (!hasMicPermissionRef.current && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((t) => t.stop());
-        hasMicPermissionRef.current = true;
-      } catch (err) {
-        console.warn("Microphone permission prompt warning:", err);
-      }
-    }
 
     try {
       if (recognitionRef.current) {
@@ -265,6 +253,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     triggerHaptic('heavy');
     setTranscriptHistory([]);
     setLiveTranscript('');
+    accumulatedTextRef.current = '';
     setFeedback(null);
     setTestStartTime(getFormattedTime());
     setStep('active_test');
@@ -413,6 +402,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     ];
     setTranscriptHistory(newHistory);
     setLiveTranscript('');
+    accumulatedTextRef.current = '';
 
     if (selectedPart === 'part1') {
       if (p1Topic && p1Index + 1 < Math.min(p1Topic.questions.length, 4)) {
@@ -453,6 +443,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       ];
       setTranscriptHistory(newHistory);
       setLiveTranscript('');
+      accumulatedTextRef.current = '';
 
       if (p1Topic && mockP1Idx + 1 < 3) {
         const nextIdx = mockP1Idx + 1;

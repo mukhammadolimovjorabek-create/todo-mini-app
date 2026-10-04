@@ -427,7 +427,7 @@ waiting_pool = []
 active_rooms = {}
 
 async def ws_matchmake(request):
-    ws = web.WebSocketResponse()
+    ws = web.WebSocketResponse(max_msg_size=16 * 1024 * 1024)
     await ws.prepare(request)
     
     user_id = request.query.get("user_id") or "guest"
