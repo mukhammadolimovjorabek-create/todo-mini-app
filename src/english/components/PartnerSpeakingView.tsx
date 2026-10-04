@@ -60,7 +60,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   const [filterGender, setFilterGender] = useState<GenderFilter>('any');
   const [matchStatus, setMatchStatus] = useState<'idle' | 'searching' | 'matched'>('idle');
   const [searchTimer, setSearchTimer] = useState(0);
-  const [matchedPartner, setMatchedPartner] = useState<MatchedPartner | null>(null);
+  const [matchedPartner, setMatchedPartner] = useState<any>(null);
 
   // Active Room state
   const [activePart, setActivePart] = useState<RoomPart>('part1');
@@ -90,6 +90,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   // Real room ID for Telegram direct pairing
   const [roomId] = useState(() => 'room_' + Math.floor(100000 + Math.random() * 900000));
   const [copiedInvite, setCopiedInvite] = useState(false);
+  const [ws, setWs] = useState<WebSocket | null>(null);
 
   // Check URL params for unblock query (?unblocked=1)
   useEffect(() => {
@@ -131,34 +132,55 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     }
   };
 
-  // Search interval
+  // WebSocket Search logic
   useEffect(() => {
     let interval: any;
     if (matchStatus === 'searching') {
       interval = setInterval(() => {
-        setSearchTimer((prev: number) => prev + 1);
+        setSearchTimer((prev: number) => {
+          if (prev >= 60) {
+            handleCancelSearch();
+            return 0;
+          }
+          return prev + 1;
+        });
       }, 1000);
-
-      // Simulate match after 3.5 seconds
-      const timeout = setTimeout(() => {
-        let pool = [...MALE_PARTNERS, ...FEMALE_PARTNERS];
-        if (filterGender === 'male') {
-          pool = MALE_PARTNERS;
-        } else if (filterGender === 'female') {
-          pool = FEMALE_PARTNERS;
+      
+      const socket = new WebSocket(`wss://todo-mini-app-cwkd.onrender.com/ws/matchmake?user_id=${userId}`);
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'match_found') {
+          setMatchedPartner(data.partner);
+          setMatchStatus('matched');
+          triggerHaptic('heavy');
+        } else if (data.type === 'chat_message') {
+          if (data.text === 'CONSENT') {
+            setPartnerConsented(true);
+            triggerHaptic('success');
+          } else if (data.text === 'TURN_SWITCH') {
+            setSpeakerTurn(prev => prev === 'me' ? 'partner' : 'me');
+            triggerHaptic('light');
+          } else if (data.text.startsWith('PART_')) {
+            setActivePart(data.text.replace('PART_', '').toLowerCase() as any);
+            triggerHaptic('light');
+          }
+        } else if (data.type === 'partner_left') {
+          handleEndSession();
         }
-        const picked = pool[Math.floor(Math.random() * pool.length)];
-        setMatchedPartner(picked);
-        setMatchStatus('matched');
-        triggerHaptic('heavy');
-      }, 3500);
-
+      };
+      socket.onclose = () => {
+        setWs(null);
+      };
+      setWs(socket);
+      
       return () => {
         clearInterval(interval);
-        clearTimeout(timeout);
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
       };
     }
-  }, [matchStatus, filterGender]);
+  }, [matchStatus, userId]);
 
   // Part 2 Timer
   useEffect(() => {
@@ -188,6 +210,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
 
   const handleCancelSearch = () => {
     triggerHaptic('light');
+    if (ws) ws.close();
     setMatchStatus('idle');
     setSearchTimer(0);
   };
@@ -195,11 +218,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   const handleShareConsent = () => {
     triggerHaptic('medium');
     setHasSharedConsent(true);
-    // Partner consents shortly after
-    setTimeout(() => {
-      setPartnerConsented(true);
-      triggerHaptic('heavy');
-    }, 900);
+    if (ws) ws.send(JSON.stringify({ type: 'chat_message', text: 'CONSENT' }));
   };
 
   const handleRequestUnlock = async () => {

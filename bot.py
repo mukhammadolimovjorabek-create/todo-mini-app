@@ -436,8 +436,8 @@ async def ws_matchmake(request):
         return ws
         
     async with db_pool.acquire() as conn:
-        row = await conn.fetchrow("SELECT first_name, likes, dislikes FROM users WHERE user_id = $1", int(user_id))
-        user_data = {"name": row['first_name'] if row else "Foydalanuvchi", "likes": row['likes'] if row else 0, "dislikes": row['dislikes'] if row else 0}
+        row = await conn.fetchrow("SELECT first_name, username, likes, dislikes FROM users WHERE user_id = $1", int(user_id))
+        user_data = {"name": row['first_name'] if row else "Foydalanuvchi", "username": row['username'] if row else "", "likes": row['likes'] if row else 0, "dislikes": row['dislikes'] if row else 0}
             
     me = {'ws': ws, 'user_id': user_id, 'data': user_data, 'room_id': None}
     
@@ -450,8 +450,8 @@ async def ws_matchmake(request):
             p['room_id'] = room_id
             active_rooms[room_id] = [me, p]
             
-            await me['ws'].send_json({"type": "match_found", "partner": {"id": p['user_id'], "name": p['data']['name'], "likes": p['data']['likes'], "dislikes": p['data']['dislikes']}})
-            await p['ws'].send_json({"type": "match_found", "partner": {"id": me['user_id'], "name": me['data']['name'], "likes": me['data']['likes'], "dislikes": me['data']['dislikes']}})
+            await me['ws'].send_json({"type": "match_found", "partner": {"id": p['user_id'], "name": p['data']['name'], "username": p['data']['username'], "likes": p['data']['likes'], "dislikes": p['data']['dislikes']}})
+            await p['ws'].send_json({"type": "match_found", "partner": {"id": me['user_id'], "name": me['data']['name'], "username": me['data']['username'], "likes": me['data']['likes'], "dislikes": me['data']['dislikes']}})
             matched = True
             break
             
