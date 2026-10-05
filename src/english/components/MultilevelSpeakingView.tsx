@@ -123,35 +123,24 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
   const isExamActiveRef = useRef<boolean>(false);
   const [isManualInput, setIsManualInput] = useState<boolean>(false);
 
-  // Pre-request microphone permission once during direct user tap and release tracks immediately
-  // so hardware mic is NOT blocked from SpeechRecognition
-  const requestMicPermission = async (): Promise<boolean> => {
-    try {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((track) => track.stop());
-        return true;
-      }
-    } catch (e) {
-      console.warn("Microphone permission prompt:", e);
-    }
-    return false;
-  };
-
   const stopListening = () => {
     isListeningWantedRef.current = false;
     setIsRecording(false);
     if (recognitionRef.current) {
-      const rec = recognitionRef.current;
-      recognitionRef.current = null;
-      try { rec.abort(); } catch {}
-      try { rec.stop(); } catch {}
+      try {
+        recognitionRef.current.stop();
+      } catch {}
     }
   };
 
   const stopAndCleanupRecognition = () => {
     isExamActiveRef.current = false;
-    stopListening();
+    isListeningWantedRef.current = false;
+    setIsRecording(false);
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch {}
+      recognitionRef.current = null;
+    }
   };
 
   useEffect(() => {
@@ -168,98 +157,104 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     }
 
     isListeningWantedRef.current = true;
-    setIsRecording(true);
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setIsManualInput(true);
+      setIsTimerRunning(true);
       return;
     }
 
-    // Clean up previous recognition instance before creating a fresh one
-    if (recognitionRef.current) {
-      const prev = recognitionRef.current;
-      recognitionRef.current = null;
-      try { prev.abort(); } catch {}
+    // Reuse existing persistent instance if available!
+    let recognition = recognitionRef.current;
+    if (!recognition) {
+      try {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+          if (isListeningWantedRef.current) {
+            setIsRecording(true);
+            setIsTimerRunning(true); // Countdown starts only when mic is ACTUALLY active!
+          }
+        };
+
+        recognition.onresult = (event: any) => {
+          if (!isListeningWantedRef.current) {
+            return;
+          }
+
+          let pieceFinal = '';
+          let pieceInterim = '';
+          for (let i = 0; i < event.results.length; ++i) {
+            const item = event.results[i];
+            const text = item[0]?.transcript || '';
+            if (item.isFinal) {
+              pieceFinal += text + ' ';
+            } else {
+              pieceInterim += text;
+            }
+          }
+
+          // Clean single combination - NO repeated arrays!
+          const combined = [sessionBaseTextRef.current, pieceFinal, pieceInterim]
+            .filter(Boolean)
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          currentTurnSpeechRef.current = combined;
+          setLiveTranscript(combined);
+        };
+
+        recognition.onerror = (event: any) => {
+          console.warn("Speech recognition error:", event.error);
+          if (event.error === 'no-speech') {
+            return;
+          }
+          if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+            isListeningWantedRef.current = false;
+            setIsRecording(false);
+            setIsManualInput(true);
+            setIsTimerRunning(true);
+            return;
+          }
+        };
+
+        recognition.onend = () => {
+          // If candidate paused before their turn expired, carry over their recognized words to base
+          if (isListeningWantedRef.current) {
+            sessionBaseTextRef.current = currentTurnSpeechRef.current;
+            try {
+              recognition.start();
+            } catch {
+              setTimeout(() => {
+                if (isListeningWantedRef.current) {
+                  try { recognition.start(); } catch {}
+                }
+              }, 300);
+            }
+          } else {
+            setIsRecording(false);
+          }
+        };
+
+        recognitionRef.current = recognition;
+      } catch (err) {
+        console.error("Speech recognition start failed:", err);
+        setIsManualInput(true);
+        setIsTimerRunning(true);
+        return;
+      }
     }
 
     try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'en-US';
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = () => {
-        if (isListeningWantedRef.current) {
-          setIsRecording(true);
-        }
-      };
-
-      recognition.onresult = (event: any) => {
-        if (!isListeningWantedRef.current) {
-          return;
-        }
-
-        let pieceFinal = '';
-        let pieceInterim = '';
-        for (let i = 0; i < event.results.length; ++i) {
-          const item = event.results[i];
-          const text = item[0]?.transcript || '';
-          if (item.isFinal) {
-            pieceFinal += text + ' ';
-          } else {
-            pieceInterim += text;
-          }
-        }
-
-        // Clean single combination - NO repeated arrays!
-        const combined = [sessionBaseTextRef.current, pieceFinal, pieceInterim]
-          .filter(Boolean)
-          .join(' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-
-        currentTurnSpeechRef.current = combined;
-        setLiveTranscript(combined);
-      };
-
-      recognition.onerror = (event: any) => {
-        console.warn("Speech recognition error:", event.error);
-        if (event.error === 'no-speech') {
-          return;
-        }
-        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          isListeningWantedRef.current = false;
-          setIsRecording(false);
-          setIsManualInput(true);
-          return;
-        }
-      };
-
-      recognition.onend = () => {
-        // If candidate paused before their turn expired, carry over their recognized words to base
-        if (isListeningWantedRef.current) {
-          sessionBaseTextRef.current = currentTurnSpeechRef.current;
-          try {
-            recognition.start();
-          } catch {
-            setTimeout(() => {
-              if (isListeningWantedRef.current) {
-                try { recognition.start(); } catch {}
-              }
-            }, 150);
-          }
-        } else {
-          setIsRecording(false);
-        }
-      };
-
       recognition.start();
-      recognitionRef.current = recognition;
-    } catch (err) {
-      console.error("Speech recognition start failed:", err);
-      setIsManualInput(true);
+    } catch {
+      // Already running or starting
     }
   };
 
@@ -273,12 +268,9 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
   };
 
   // Start selected Part
-  const handleStartExam = async (part: PartSelection) => {
+  const handleStartExam = (part: PartSelection) => {
     triggerHaptic('heavy');
-    // Pre-request mic permission once directly on user tap
-    await requestMicPermission();
     isExamActiveRef.current = true;
-    // Mic is strictly OFF while examiner speaks the question!
     stopListening();
 
     setSelectedPart(part);
@@ -303,7 +295,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
 
       setTimeout(() => {
         speakText(`Welcome to Multilevel Speaking Part 1. Question one: ${item.questions[0]}`, () => {
-          setIsTimerRunning(true);
           startListening();
         });
       }, 300);
@@ -413,7 +404,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       setCurrentPhase('speak');
       setCountdown(120); // Official: 2 minutes speaking
       speakText("Your preparation time is up. Please discuss the topic now. You have two minutes.", () => {
-        setIsTimerRunning(true);
         startListening();
       });
       return;
@@ -458,7 +448,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         setP1_1Idx(nextIdx);
         setCountdown(30);
         speakText(p1_1Item.questions[nextIdx], () => {
-          setIsTimerRunning(true);
           startListening();
         });
       } else {
@@ -491,7 +480,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         setMockP1_1Idx(nextIdx);
         setCountdown(30);
         speakText(p1_1Item.questions[nextIdx], () => {
-          setIsTimerRunning(true);
           startListening();
         });
       } else {
@@ -506,7 +494,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       setMockPhase('p1_2_speak');
       setCountdown(120);
       speakText("Preparation is up. Speak now for two minutes.", () => {
-        setIsTimerRunning(true);
         startListening();
       });
     } else if (mockPhase === 'p1_2_speak') {
@@ -529,7 +516,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       setMockPhase('p2_speak');
       setCountdown(120);
       speakText("Preparation is up. Speak now for two minutes.", () => {
-        setIsTimerRunning(true);
         startListening();
       });
     } else if (mockPhase === 'p2_speak') {
@@ -552,7 +538,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       setMockPhase('p3_speak');
       setCountdown(120);
       speakText("Preparation is up. Speak now for two minutes.", () => {
-        setIsTimerRunning(true);
         startListening();
       });
     } else if (mockPhase === 'p3_speak') {

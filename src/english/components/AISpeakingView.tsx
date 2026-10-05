@@ -141,33 +141,24 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
 
   // Pre-request microphone permission once during direct user tap and release tracks immediately
   // so hardware mic is NOT blocked from SpeechRecognition
-  const requestMicPermission = async (): Promise<boolean> => {
-    try {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((track) => track.stop());
-        return true;
-      }
-    } catch (e) {
-      console.warn("Microphone permission prompt:", e);
-    }
-    return false;
-  };
-
   const stopListening = () => {
     isListeningWantedRef.current = false;
     setIsRecording(false);
     if (recognitionRef.current) {
-      const rec = recognitionRef.current;
-      recognitionRef.current = null;
-      try { rec.abort(); } catch {}
-      try { rec.stop(); } catch {}
+      try {
+        recognitionRef.current.stop();
+      } catch {}
     }
   };
 
   const stopAndCleanupRecognition = () => {
     isExamActiveRef.current = false;
-    stopListening();
+    isListeningWantedRef.current = false;
+    setIsRecording(false);
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch {}
+      recognitionRef.current = null;
+    }
   };
 
   useEffect(() => {
@@ -184,95 +175,102 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     }
 
     isListeningWantedRef.current = true;
-    setIsRecording(true);
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setIsManualInput(true);
+      setIsTimerRunning(true);
       return;
     }
 
-    if (recognitionRef.current) {
-      const prev = recognitionRef.current;
-      recognitionRef.current = null;
-      try { prev.abort(); } catch {}
+    // Reuse existing persistent instance if available!
+    let recognition = recognitionRef.current;
+    if (!recognition) {
+      try {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+          if (isListeningWantedRef.current) {
+            setIsRecording(true);
+            setIsTimerRunning(true); // Countdown starts only when mic is ACTUALLY active!
+          }
+        };
+
+        recognition.onresult = (event: any) => {
+          if (!isListeningWantedRef.current) {
+            return;
+          }
+
+          let pieceFinal = '';
+          let pieceInterim = '';
+          for (let i = 0; i < event.results.length; ++i) {
+            const item = event.results[i];
+            const text = item[0]?.transcript || '';
+            if (item.isFinal) {
+              pieceFinal += text + ' ';
+            } else {
+              pieceInterim += text;
+            }
+          }
+
+          const combined = [sessionBaseTextRef.current, pieceFinal, pieceInterim]
+            .filter(Boolean)
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          currentTurnSpeechRef.current = combined;
+          setLiveTranscript(combined);
+        };
+
+        recognition.onerror = (event: any) => {
+          console.warn("Speech recognition error:", event.error);
+          if (event.error === 'no-speech') {
+            return;
+          }
+          if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+            isListeningWantedRef.current = false;
+            setIsRecording(false);
+            setIsManualInput(true);
+            setIsTimerRunning(true);
+            return;
+          }
+        };
+
+        recognition.onend = () => {
+          if (isListeningWantedRef.current) {
+            sessionBaseTextRef.current = currentTurnSpeechRef.current;
+            try {
+              recognition.start();
+            } catch {
+              setTimeout(() => {
+                if (isListeningWantedRef.current) {
+                  try { recognition.start(); } catch {}
+                }
+              }, 300);
+            }
+          } else {
+            setIsRecording(false);
+          }
+        };
+
+        recognitionRef.current = recognition;
+      } catch (err) {
+        console.error("Speech recognition creation failed:", err);
+        setIsManualInput(true);
+        setIsTimerRunning(true);
+        return;
+      }
     }
 
     try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'en-US';
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = () => {
-        if (isListeningWantedRef.current) {
-          setIsRecording(true);
-        }
-      };
-
-      recognition.onresult = (event: any) => {
-        if (!isListeningWantedRef.current) {
-          return;
-        }
-
-        let pieceFinal = '';
-        let pieceInterim = '';
-        for (let i = 0; i < event.results.length; ++i) {
-          const item = event.results[i];
-          const text = item[0]?.transcript || '';
-          if (item.isFinal) {
-            pieceFinal += text + ' ';
-          } else {
-            pieceInterim += text;
-          }
-        }
-
-        const combined = [sessionBaseTextRef.current, pieceFinal, pieceInterim]
-          .filter(Boolean)
-          .join(' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-
-        currentTurnSpeechRef.current = combined;
-        setLiveTranscript(combined);
-      };
-
-      recognition.onerror = (event: any) => {
-        console.warn("Speech recognition error:", event.error);
-        if (event.error === 'no-speech') {
-          return;
-        }
-        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          isListeningWantedRef.current = false;
-          setIsRecording(false);
-          setIsManualInput(true);
-          return;
-        }
-      };
-
-      recognition.onend = () => {
-        if (isListeningWantedRef.current) {
-          sessionBaseTextRef.current = currentTurnSpeechRef.current;
-          try {
-            recognition.start();
-          } catch {
-            setTimeout(() => {
-              if (isListeningWantedRef.current) {
-                try { recognition.start(); } catch {}
-              }
-            }, 150);
-          }
-        } else {
-          setIsRecording(false);
-        }
-      };
-
       recognition.start();
-      recognitionRef.current = recognition;
-    } catch (err) {
-      console.error("Speech recognition start failed:", err);
-      setIsManualInput(true);
+    } catch {
+      // Already running or starting
     }
   };
 
@@ -313,12 +311,9 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
   };
 
   // Step 2: Confirm Topic -> Start Locked Exam
-  const handleStartExam = async () => {
+  const handleStartExam = () => {
     triggerHaptic('heavy');
-    // Pre-request mic permission once directly on user gesture so mobile WebView doesn't prompt on every question!
-    await requestMicPermission();
     isExamActiveRef.current = true;
-    // Mic is strictly OFF while examiner reads question!
     stopListening();
 
     setTranscriptHistory([]);
@@ -343,7 +338,6 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
         speakText(
           `Welcome to IELTS Speaking Part 1. Topic: ${topic.topic}. First question: ${topic.questions[0]}`,
           () => {
-            setIsTimerRunning(true);
             startListening();
           }
         );
@@ -377,7 +371,6 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
         speakText(
           `We are now in Part 3. Let's discuss ${topic.topic} in depth. First question: ${topic.questions[0]}`,
           () => {
-            setIsTimerRunning(true);
             startListening();
           }
         );
@@ -404,7 +397,6 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
         speakText(
           `Welcome ${userName} to your Full IELTS Speaking Mock Test. We will begin Part 1 with ${p1.topic}. ${p1.questions[0]}`,
           () => {
-            setIsTimerRunning(true);
             startListening();
           }
         );
@@ -485,7 +477,6 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
         setP1Index(nextIdx);
         setCountdown(TIME_LIMITS.part1Question);
         speakText(p1Topic.questions[nextIdx], () => {
-          setIsTimerRunning(true);
           startListening();
         });
       } else {
@@ -499,7 +490,6 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
         setP3Index(nextIdx);
         setCountdown(TIME_LIMITS.part3Question);
         speakText(p3Topic.questions[nextIdx], () => {
-          setIsTimerRunning(true);
           startListening();
         });
       } else {
@@ -527,7 +517,6 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
         setMockP1Idx(nextIdx);
         setCountdown(TIME_LIMITS.part1Question);
         speakText(p1Topic.questions[nextIdx], () => {
-          setIsTimerRunning(true);
           startListening();
         });
       } else {
@@ -554,7 +543,6 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       setMockP3Idx(0);
       setCountdown(TIME_LIMITS.part3Question);
       speakText(`Thank you. Now let's move to Part 3. We will discuss ${p3Topic?.topic} in depth. ${p3Topic?.questions[0]}`, () => {
-        setIsTimerRunning(true);
         startListening();
       });
     } else if (mockPhase === 'p3') {
@@ -574,7 +562,6 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
         setMockP3Idx(nextIdx);
         setCountdown(TIME_LIMITS.part3Question);
         speakText(p3Topic.questions[nextIdx], () => {
-          setIsTimerRunning(true);
           startListening();
         });
       } else {
