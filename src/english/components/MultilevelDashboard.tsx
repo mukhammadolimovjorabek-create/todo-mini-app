@@ -214,8 +214,16 @@ export const MultilevelDashboard: React.FC<Props> = ({ onBack, userName, initial
             <div className="space-y-3">
               {/* 1. CEFR AI Examiner */}
               <button
-                onClick={() => {
+                onClick={async () => {
                   triggerHaptic('heavy');
+                  try {
+                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                      stream.getTracks().forEach((track) => track.stop());
+                    }
+                  } catch (err) {
+                    console.warn("Microphone permission prompt:", err);
+                  }
                   setShowSpeakingModal(false);
                   setActiveView('speaking');
                 }}
@@ -239,8 +247,16 @@ export const MultilevelDashboard: React.FC<Props> = ({ onBack, userName, initial
 
               {/* 2. Sherik qidirish */}
               <button
-                onClick={() => {
+                onClick={async () => {
                   triggerHaptic('heavy');
+                  try {
+                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                      stream.getTracks().forEach((track) => track.stop());
+                    }
+                  } catch (err) {
+                    console.warn("Microphone permission prompt:", err);
+                  }
                   setShowSpeakingModal(false);
                   setActiveView('partner_speaking');
                 }}

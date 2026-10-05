@@ -250,8 +250,16 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
               <div className="space-y-3">
                 {/* 1. AI Examiner */}
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     triggerHaptic('heavy');
+                    try {
+                      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        stream.getTracks().forEach((track) => track.stop());
+                      }
+                    } catch (err) {
+                      console.warn("Microphone permission prompt:", err);
+                    }
                     setShowSpeakingModal(false);
                     setActiveView('ai_speaking');
                   }}
@@ -271,8 +279,16 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
 
                 {/* 2. Sherik qidirish */}
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     triggerHaptic('heavy');
+                    try {
+                      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        stream.getTracks().forEach((track) => track.stop());
+                      }
+                    } catch (err) {
+                      console.warn("Microphone permission prompt:", err);
+                    }
                     setShowSpeakingModal(false);
                     setActiveView('partner_speaking');
                   }}

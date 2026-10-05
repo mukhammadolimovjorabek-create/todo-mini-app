@@ -78,8 +78,8 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
 
   // Recognition reference
   const recognitionRef = useRef<any>(null);
-  const committedTextRef = useRef<string>('');
-  const currentSessionFinalRef = useRef<string>('');
+  const currentTurnSpeechRef = useRef<string>('');
+  const sessionBaseTextRef = useRef<string>('');
   const liveTranscriptRef = useRef<string>('');
 
   useEffect(() => {
@@ -154,15 +154,20 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     return false;
   };
 
-  const stopAndCleanupRecognition = () => {
-    isExamActiveRef.current = false;
+  const stopListening = () => {
     isListeningWantedRef.current = false;
     setIsRecording(false);
     if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch {}
-      try { recognitionRef.current.stop(); } catch {}
+      const rec = recognitionRef.current;
       recognitionRef.current = null;
+      try { rec.abort(); } catch {}
+      try { rec.stop(); } catch {}
     }
+  };
+
+  const stopAndCleanupRecognition = () => {
+    isExamActiveRef.current = false;
+    stopListening();
   };
 
   useEffect(() => {
@@ -172,7 +177,15 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     };
   }, []);
 
-  const initSpeechRecognition = () => {
+  const startListening = () => {
+    // If examiner is still speaking, mic must remain OFF
+    if (isExaminerSpeaking) {
+      return;
+    }
+
+    isListeningWantedRef.current = true;
+    setIsRecording(true);
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setIsManualInput(true);
@@ -180,8 +193,9 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     }
 
     if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch {}
+      const prev = recognitionRef.current;
       recognitionRef.current = null;
+      try { prev.abort(); } catch {}
     }
 
     try {
@@ -198,30 +212,30 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       };
 
       recognition.onresult = (event: any) => {
-        // Discard speech transcribed during examiner TTS or prep periods
         if (!isListeningWantedRef.current) {
           return;
         }
 
-        let sessionFinal = '';
-        let sessionInterim = '';
+        let pieceFinal = '';
+        let pieceInterim = '';
         for (let i = 0; i < event.results.length; ++i) {
-          const piece = event.results[i][0]?.transcript || '';
-          if (event.results[i].isFinal) {
-            sessionFinal += piece + ' ';
+          const item = event.results[i];
+          const text = item[0]?.transcript || '';
+          if (item.isFinal) {
+            pieceFinal += text + ' ';
           } else {
-            sessionInterim += piece;
+            pieceInterim += text;
           }
         }
-        currentSessionFinalRef.current = sessionFinal;
-        const fullText = [committedTextRef.current, sessionFinal, sessionInterim]
+
+        const combined = [sessionBaseTextRef.current, pieceFinal, pieceInterim]
           .filter(Boolean)
           .join(' ')
           .replace(/\s+/g, ' ')
           .trim();
-        if (fullText) {
-          setLiveTranscript(fullText);
-        }
+
+        currentTurnSpeechRef.current = combined;
+        setLiveTranscript(combined);
       };
 
       recognition.onerror = (event: any) => {
@@ -230,50 +244,24 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
           return;
         }
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          isExamActiveRef.current = false;
           isListeningWantedRef.current = false;
           setIsRecording(false);
           setIsManualInput(true);
           return;
         }
-        if (event.error === 'network') {
-          console.warn("Network issue with speech recognition");
-        }
       };
 
       recognition.onend = () => {
-        // Persist any finalized speech
-        if (isListeningWantedRef.current && currentSessionFinalRef.current) {
-          committedTextRef.current = [committedTextRef.current, currentSessionFinalRef.current]
-            .filter(Boolean)
-            .join(' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-          currentSessionFinalRef.current = '';
-        }
-
-        // Keep mic active in standby throughout the exam session so permission is never re-requested
-        if (isExamActiveRef.current) {
+        if (isListeningWantedRef.current) {
+          sessionBaseTextRef.current = currentTurnSpeechRef.current;
           try {
             recognition.start();
-            if (isListeningWantedRef.current) {
-              setIsRecording(true);
-            }
           } catch {
             setTimeout(() => {
-              if (isExamActiveRef.current) {
-                try {
-                  recognition.start();
-                  if (isListeningWantedRef.current) {
-                    setIsRecording(true);
-                  }
-                } catch {
-                  if (isListeningWantedRef.current) {
-                    setIsRecording(false);
-                  }
-                }
+              if (isListeningWantedRef.current) {
+                try { recognition.start(); } catch {}
               }
-            }, 250);
+            }, 150);
           }
         } else {
           setIsRecording(false);
@@ -286,37 +274,6 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       console.error("Speech recognition start failed:", err);
       setIsManualInput(true);
     }
-  };
-
-  const startListening = () => {
-    isListeningWantedRef.current = true;
-    setIsRecording(true);
-
-    if (!recognitionRef.current) {
-      initSpeechRecognition();
-    } else {
-      try {
-        recognitionRef.current.start();
-      } catch {
-        // Recognition already active in warm standby
-      }
-    }
-  };
-
-  const stopListening = () => {
-    isListeningWantedRef.current = false;
-    setIsRecording(false);
-    if (currentSessionFinalRef.current) {
-      committedTextRef.current = [committedTextRef.current, currentSessionFinalRef.current]
-        .filter(Boolean)
-        .join(' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-      currentSessionFinalRef.current = '';
-    }
-    // Note: We DO NOT call recognitionRef.current.stop() here.
-    // Keeping recognition alive in warm-standby prevents Telegram WebView from
-    // requesting mic permission again between questions.
   };
 
   const toggleListening = () => {
@@ -361,12 +318,13 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     // Pre-request mic permission once directly on user gesture so mobile WebView doesn't prompt on every question!
     await requestMicPermission();
     isExamActiveRef.current = true;
-    initSpeechRecognition();
+    // Mic is strictly OFF while examiner reads question!
+    stopListening();
 
     setTranscriptHistory([]);
     setLiveTranscript('');
-    committedTextRef.current = '';
-    currentSessionFinalRef.current = '';
+    currentTurnSpeechRef.current = '';
+    sessionBaseTextRef.current = '';
     setFeedback(null);
     setTestStartTime(getFormattedTime());
     setStep('active_test');
@@ -509,20 +467,17 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       ? (p2Topic?.cueCard || '')
       : (p3Topic?.questions[p3Index] || '');
 
-    const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscriptRef.current]
-      .filter(Boolean)
-      .join(' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    const currentAnswer = (isManualInput ? liveTranscript : (currentTurnSpeechRef.current || liveTranscript)).trim();
 
     const newHistory = [
       ...transcriptHistory,
       { question: currentQ, answer: currentAnswer || "(Nomzod belgilangan vaqtda javob bermadi)" }
     ];
-    committedTextRef.current = '';
-    currentSessionFinalRef.current = '';
+    currentTurnSpeechRef.current = '';
+    sessionBaseTextRef.current = '';
     setTranscriptHistory(newHistory);
     setLiveTranscript('');
+    setIsManualInput(false);
 
     if (selectedPart === 'part1') {
       if (p1Topic && p1Index + 1 < Math.min(p1Topic.questions.length, 4)) {
@@ -557,17 +512,13 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
   const handleFullMockStep = () => {
     if (mockPhase === 'p1') {
       const currentQ = p1Topic?.questions[mockP1Idx] || '';
-      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscriptRef.current]
-        .filter(Boolean)
-        .join(' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+      const currentAnswer = (isManualInput ? liveTranscript : (currentTurnSpeechRef.current || liveTranscript)).trim();
       const newHistory = [
         ...transcriptHistory,
         { question: `[Part 1] ${currentQ}`, answer: currentAnswer || "(Part 1 javobi berilmadi)" }
       ];
-      committedTextRef.current = '';
-      currentSessionFinalRef.current = '';
+      currentTurnSpeechRef.current = '';
+      sessionBaseTextRef.current = '';
       setTranscriptHistory(newHistory);
       setLiveTranscript('');
 
@@ -588,17 +539,13 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
         });
       }
     } else if (mockPhase === 'p2_speak') {
-      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscriptRef.current]
-        .filter(Boolean)
-        .join(' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+      const currentAnswer = (isManualInput ? liveTranscript : (currentTurnSpeechRef.current || liveTranscript)).trim();
       const newHistory = [
         ...transcriptHistory,
         { question: `[Part 2 Cue Card] ${p2Topic?.cueCard}`, answer: currentAnswer || "(Part 2 nutqi berilmadi)" }
       ];
-      committedTextRef.current = '';
-      currentSessionFinalRef.current = '';
+      currentTurnSpeechRef.current = '';
+      sessionBaseTextRef.current = '';
       setTranscriptHistory(newHistory);
       setLiveTranscript('');
 
@@ -612,17 +559,13 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       });
     } else if (mockPhase === 'p3') {
       const currentQ = p3Topic?.questions[mockP3Idx] || '';
-      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscriptRef.current]
-        .filter(Boolean)
-        .join(' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+      const currentAnswer = (isManualInput ? liveTranscript : (currentTurnSpeechRef.current || liveTranscript)).trim();
       const newHistory = [
         ...transcriptHistory,
         { question: `[Part 3] ${currentQ}`, answer: currentAnswer || "(Part 3 javobi berilmadi)" }
       ];
-      committedTextRef.current = '';
-      currentSessionFinalRef.current = '';
+      currentTurnSpeechRef.current = '';
+      sessionBaseTextRef.current = '';
       setTranscriptHistory(newHistory);
       setLiveTranscript('');
 
@@ -1178,8 +1121,8 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
                     value={liveTranscript}
                     onChange={(e) => {
                       setLiveTranscript(e.target.value);
-                      committedTextRef.current = e.target.value;
-                      currentSessionFinalRef.current = '';
+                      currentTurnSpeechRef.current = e.target.value;
+                      sessionBaseTextRef.current = '';
                     }}
                     placeholder="Javobingizni shu yerda yozishingiz yoki tahrirlashingiz mumkin..."
                     rows={3}

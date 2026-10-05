@@ -126,33 +126,37 @@ export function evaluateMultilevelSpeech(
   // Word length ratio (capped at 1.5)
   const lengthRatio = Math.min(1.5, totalWords / targetWords);
 
+  // Proportional thresholds based on targetWords for accurate part scoring
+  const lowThreshold = Math.max(12, Math.round(targetWords * 0.32));
+  const midThreshold = Math.max(22, Math.round(targetWords * 0.65));
+
   // ── 1. Fluency & Coherence (max 20 ball) ──
-  let fluency = Math.round(lengthRatio * 11);
+  let fluency = Math.round(lengthRatio * 12);
   if (connectorsFound.length >= 1) fluency += 2;
   if (connectorsFound.length >= 3) fluency += 3;
   if (connectorsFound.length >= 5) fluency += 2;
   if (totalWords >= targetWords) fluency += 2;
-  if (totalWords < 20) fluency = Math.min(fluency, 4);
-  else if (totalWords < 40) fluency = Math.min(fluency, 8);
+  if (totalWords < lowThreshold) fluency = Math.min(fluency, 5);
+  else if (totalWords < midThreshold) fluency = Math.min(fluency, 11);
   fluency = Math.min(20, Math.max(2, fluency));
 
   // ── 2. Lexical Resource (max 20 ball) ──
-  let lexical = Math.round(lengthRatio * 10);
-  if (ttr > 0.5) lexical += 2;
+  let lexical = Math.round(lengthRatio * 11);
+  if (ttr > 0.45) lexical += 2;
   if (vocabFound.length >= 1) lexical += 3;
   if (vocabFound.length >= 3) lexical += 3;
   if (vocabFound.length >= 5) lexical += 2;
-  if (totalWords < 20) lexical = Math.min(lexical, 4);
-  else if (totalWords < 40) lexical = Math.min(lexical, 8);
+  if (totalWords < lowThreshold) lexical = Math.min(lexical, 5);
+  else if (totalWords < midThreshold) lexical = Math.min(lexical, 11);
   lexical = Math.min(20, Math.max(2, lexical));
 
   // ── 3. Grammatical Range & Accuracy (max 20 ball) ──
-  let grammar = Math.round(lengthRatio * 10);
+  let grammar = Math.round(lengthRatio * 11);
   if (grammarFound.length >= 1) grammar += 3;
-  if (grammarFound.length >= 3) grammar += 4;
+  if (grammarFound.length >= 3) grammar += 3;
   if (grammarFound.length >= 5) grammar += 3;
-  if (totalWords < 20) grammar = Math.min(grammar, 4);
-  else if (totalWords < 40) grammar = Math.min(grammar, 8);
+  if (totalWords < lowThreshold) grammar = Math.min(grammar, 5);
+  else if (totalWords < midThreshold) grammar = Math.min(grammar, 11);
   grammar = Math.min(20, Math.max(2, grammar));
 
   // ── 4. Pronunciation & Task Achievement (max 15 ball) ──
