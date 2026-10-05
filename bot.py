@@ -1048,10 +1048,15 @@ async def on_app_cleanup(app: web.Application):
         await db_pool.close()
     await bot.session.close()
 
+async def api_health(request):
+    return web.Response(text="OK", status=200)
+
 def main():
     logging.basicConfig(level=logging.INFO)
     
     app = web.Application(middlewares=[cors_middleware])
+    app.router.add_get("/", api_health)
+    app.router.add_get("/health", api_health)
     app.router.add_get("/api/friends", api_get_friends)
     app.router.add_post("/api/unfriend", api_unfriend)
     app.router.add_options("/api/unfriend", api_unfriend)
