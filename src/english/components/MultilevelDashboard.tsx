@@ -13,12 +13,13 @@ import {
 interface Props {
   onBack: () => void;
   userName: string;
+  initialView?: ActiveView;
 }
 
 type ActiveView = 'menu' | 'speaking' | 'writing' | 'partner_speaking';
 
-export const MultilevelDashboard: React.FC<Props> = ({ onBack, userName }) => {
-  const [activeView, setActiveView] = useState<ActiveView>('menu');
+export const MultilevelDashboard: React.FC<Props> = ({ onBack, userName, initialView = 'menu' }) => {
+  const [activeView, setActiveView] = useState<ActiveView>(initialView);
   const [showSpeakingModal, setShowSpeakingModal] = useState(false);
 
   if (activeView === 'speaking') {

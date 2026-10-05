@@ -17,8 +17,9 @@ interface Props {
 type WritingTab = 'task1' | 'task2';
 
 interface WritingBandBreakdown {
-  overallBand: number;
+  totalScore: number;
   cefrLevel: string;
+  cefrTitle: string;
   taskResponse: number;
   coherenceCohesion: number;
   lexicalResource: number;
@@ -108,35 +109,70 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
     triggerHaptic('heavy');
 
     setTimeout(() => {
-      // Dynamic criteria evaluation
-      let baseScore = 5.0;
-      if (wordCount >= minWordsRequired) baseScore += 1.5;
-      else if (wordCount >= minWordsRequired * 0.7) baseScore += 0.8;
+      // ── OFFICIAL DTM 75-BALL MULTILEVEL WRITING SCORING ──
+      const lengthRatio = Math.min(1.4, wordCount / minWordsRequired);
 
       const complexWords = [
         'furthermore', 'moreover', 'consequently', 'nevertheless', 'specifically',
         'significant', 'perspective', 'demonstrate', 'illustrate', 'substantially',
-        'moreover', 'although', 'whereas', 'however', 'fundamentally'
+        'although', 'whereas', 'however', 'fundamentally', 'in conclusion', 'in addition'
       ];
       const foundComplex = complexWords.filter((w) => essayText.toLowerCase().includes(w));
-      const lexicalScore = Math.min(8.5, Number((baseScore + foundComplex.length * 0.35).toFixed(1)));
 
       const sentences = essayText.split(/[.!?]+/).filter(Boolean);
       const avgLen = sentences.length > 0 ? wordCount / sentences.length : 0;
-      const grammarScore = avgLen >= 10 && avgLen <= 26 ? Math.min(8.5, baseScore + 0.6) : Math.max(5.0, baseScore - 0.4);
 
-      const cohesionScore = Math.min(8.5, Number((baseScore + (foundComplex.length > 2 ? 0.8 : 0.2)).toFixed(1)));
-      const taskScore = wordCount >= minWordsRequired ? Math.min(8.5, baseScore + 0.7) : Math.max(4.5, baseScore - 0.6);
+      // 1. Task Fulfillment / Achievement (max 20 ball)
+      let taskScore = Math.round(lengthRatio * 13);
+      if (wordCount >= minWordsRequired) taskScore += 4;
+      else if (wordCount >= minWordsRequired * 0.8) taskScore += 2;
+      if (sentences.length >= 4) taskScore += 3;
+      taskScore = Math.min(20, Math.max(3, taskScore));
 
-      const overall = Number(((taskScore + cohesionScore + lexicalScore + grammarScore) / 4).toFixed(1));
+      // 2. Coherence & Cohesion (max 20 ball)
+      let cohesionScore = Math.round(lengthRatio * 11);
+      if (foundComplex.length >= 1) cohesionScore += 3;
+      if (foundComplex.length >= 3) cohesionScore += 4;
+      if (foundComplex.length >= 5) cohesionScore += 2;
+      cohesionScore = Math.min(20, Math.max(3, cohesionScore));
 
-      let cefr = 'B1 (Threshold)';
-      if (overall >= 7.5) cefr = 'C1 (Advanced)';
-      else if (overall >= 6.0) cefr = 'B2 (Vantage)';
+      // 3. Lexical Resource (max 20 ball)
+      const wordsArray = essayText.toLowerCase().replace(/[^a-z0-9'\s-]/g, ' ').split(/\s+/).filter(Boolean);
+      const uniqueWords = new Set(wordsArray);
+      const ttr = wordsArray.length > 0 ? uniqueWords.size / wordsArray.length : 0;
+      let lexicalScore = Math.round(lengthRatio * 10);
+      if (ttr > 0.5) lexicalScore += 3;
+      if (foundComplex.length >= 1) lexicalScore += 4;
+      if (foundComplex.length >= 3) lexicalScore += 3;
+      lexicalScore = Math.min(20, Math.max(3, lexicalScore));
+
+      // 4. Grammatical Range & Accuracy (max 15 ball)
+      let grammarScore = Math.round(lengthRatio * 8);
+      if (avgLen >= 10 && avgLen <= 26) grammarScore += 4;
+      else grammarScore += 1;
+      if (sentences.length >= 3) grammarScore += 3;
+      grammarScore = Math.min(15, Math.max(2, grammarScore));
+
+      // Total 75-ball score
+      const totalScore = Math.min(75, Math.max(0, taskScore + cohesionScore + lexicalScore + grammarScore));
+
+      let cefr = 'A2 (Sertifikat berilmaydi)';
+      let cefrTitle = `${totalScore} / 75 ball • A2 (Sertifikat berilmaydi)`;
+      if (totalScore >= 65) {
+        cefr = 'C1 (Oliy daraja)';
+        cefrTitle = `${totalScore} / 75 ball • C1 (Oliy daraja)`;
+      } else if (totalScore >= 50) {
+        cefr = 'B2 (Yetakchi / Yuqori daraja)';
+        cefrTitle = `${totalScore} / 75 ball • B2 (Yuqori daraja)`;
+      } else if (totalScore >= 30) {
+        cefr = 'B1 (O\'rta daraja)';
+        cefrTitle = `${totalScore} / 75 ball • B1 (O'rta daraja)`;
+      }
 
       const evaluation: WritingBandBreakdown = {
-        overallBand: overall,
+        totalScore,
         cefrLevel: cefr,
+        cefrTitle,
         taskResponse: taskScore,
         coherenceCohesion: cohesionScore,
         lexicalResource: lexicalScore,
@@ -189,7 +225,7 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
         testType: activeTab === 'task1' ? 'writing_task1' : 'writing_task2',
         title,
         topic: topicTitle,
-        overallBand: evaluation.overallBand,
+        overallBand: evaluation.totalScore,
         criteriaScores: {
           c1Name: 'Task Response',
           c1Score: evaluation.taskResponse,
@@ -599,39 +635,48 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
           </button>
         </div>
 
-        {/* ── EVALUATION RESULTS CARD ── */}
+        {/* ── EVALUATION RESULTS CARD: OFFICIAL 75-BALL DTM TIZIMI ── */}
         {result && (
           <div className="bg-white rounded-[2rem] p-5 border border-teal-200 shadow-lg space-y-4 animate-in fade-in duration-300">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <span className="text-[10px] font-black uppercase text-teal-700">Natija va Daraja</span>
-                <h3 className="text-lg font-black text-slate-900">{result.cefrLevel}</h3>
+            {/* Result Card: Official 75-Point Scale */}
+            <div
+              className="rounded-[2.2rem] p-6 text-white text-center shadow-xl relative overflow-hidden"
+              style={{ background: 'linear-gradient(135deg, #091f1a 0%, #0e3b32 60%, #155e51 100%)' }}
+            >
+              <div className="inline-flex items-center space-x-1.5 bg-[#c4f82a]/15 text-[#c4f82a] border border-[#c4f82a]/30 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider mb-2">
+                <Sparkles size={12} />
+                <span>MILLIY SERTIFIKAT (75 BALLIK TIZIM)</span>
               </div>
-              <div className="text-right">
-                <span className="text-2xl font-black text-teal-600 font-mono">
-                  {result.overallBand.toFixed(1)}
-                </span>
-                <span className="block text-[9px] text-slate-400 font-bold uppercase">Umumiy Ball</span>
-              </div>
-            </div>
 
-            {/* Criteria Grid */}
-            <div className="grid grid-cols-4 gap-2 text-center">
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                <span className="text-sm font-black text-slate-900 block font-mono">{result.taskResponse.toFixed(1)}</span>
-                <span className="text-[9px] text-slate-500 font-bold">Task Resp.</span>
+              <div className="my-2">
+                <span className="text-5xl font-black text-[#c4f82a] tracking-tight">
+                  {result.totalScore}
+                </span>
+                <span className="text-xl font-bold text-teal-200"> / 75 ball</span>
               </div>
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                <span className="text-sm font-black text-slate-900 block font-mono">{result.coherenceCohesion.toFixed(1)}</span>
-                <span className="text-[9px] text-slate-500 font-bold">Coherence</span>
-              </div>
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                <span className="text-sm font-black text-slate-900 block font-mono">{result.lexicalResource.toFixed(1)}</span>
-                <span className="text-[9px] text-slate-500 font-bold">Lexical</span>
-              </div>
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                <span className="text-sm font-black text-slate-900 block font-mono">{result.grammaticalRange.toFixed(1)}</span>
-                <span className="text-[9px] text-slate-500 font-bold">Grammar</span>
+
+              <h3 className="text-lg font-black text-white mt-1">
+                {result.cefrTitle}
+              </h3>
+
+              {/* 4 Criteria Out of 20, 20, 20, 15 */}
+              <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-4 gap-1.5 text-center">
+                <div className="bg-white/5 p-2 rounded-xl">
+                  <p className="text-sm font-black text-[#c4f82a]">{result.taskResponse} <span className="text-[9px] text-teal-300">/20</span></p>
+                  <p className="text-[9px] text-teal-200 font-bold">Task Resp.</p>
+                </div>
+                <div className="bg-white/5 p-2 rounded-xl">
+                  <p className="text-sm font-black text-amber-300">{result.coherenceCohesion} <span className="text-[9px] text-teal-300">/20</span></p>
+                  <p className="text-[9px] text-teal-200 font-bold">Coherence</p>
+                </div>
+                <div className="bg-white/5 p-2 rounded-xl">
+                  <p className="text-sm font-black text-emerald-300">{result.lexicalResource} <span className="text-[9px] text-teal-300">/20</span></p>
+                  <p className="text-[9px] text-teal-200 font-bold">Lexical</p>
+                </div>
+                <div className="bg-white/5 p-2 rounded-xl">
+                  <p className="text-sm font-black text-pink-300">{result.grammaticalRange} <span className="text-[9px] text-teal-300">/15</span></p>
+                  <p className="text-[9px] text-teal-200 font-bold">Grammar</p>
+                </div>
               </div>
             </div>
 

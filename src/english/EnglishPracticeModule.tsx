@@ -43,6 +43,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
     } catch {}
     return 'menu';
   });
+  const [multilevelInitialView, setMultilevelInitialView] = useState<'menu' | 'speaking' | 'writing' | 'partner_speaking'>('menu');
   const [results, setResults] = useState<TestResultItem[]>(() => getTestResults());
   const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
 
@@ -53,6 +54,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
   const handleReturnFromExam = () => {
     setSelectedExam(null);
     setIeltsInitialView('menu');
+    setMultilevelInitialView('menu');
     setResults(getTestResults()); // Refresh test results history
   };
 
@@ -87,6 +89,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
           />
         )}
         <MultilevelDashboard
+          initialView={multilevelInitialView}
           onBack={handleReturnFromExam}
           userName={currentName}
         />
@@ -256,6 +259,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
             tabIndex={0}
             onClick={() => {
               triggerHaptic('medium');
+              setMultilevelInitialView('menu');
               setSelectedExam('multilevel');
             }}
             className="bg-[#181630] border border-emerald-500/35 hover:border-emerald-400/60 rounded-[2.2rem] p-6 shadow-xl relative overflow-hidden space-y-4 text-white group cursor-pointer transition-all active:scale-[0.99]"
@@ -291,13 +295,37 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
 
             {/* Sub-section Pills */}
             <div className="flex flex-wrap gap-2 pt-1 relative z-10">
-              <span className="text-[10px] font-extrabold text-emerald-200 bg-emerald-950/50 px-3 py-1.5 rounded-xl border border-emerald-500/30">
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic('medium');
+                  setMultilevelInitialView('speaking');
+                  setSelectedExam('multilevel');
+                }}
+                className="text-[10px] font-extrabold text-emerald-200 bg-emerald-950/50 hover:bg-emerald-800/60 px-3 py-1.5 rounded-xl border border-emerald-500/30 cursor-pointer transition-all active:scale-95"
+              >
                 🎙️ Multilevel Speaking Sinovlari
               </span>
-              <span className="text-[10px] font-extrabold text-emerald-200 bg-emerald-950/50 px-3 py-1.5 rounded-xl border border-emerald-500/30">
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic('medium');
+                  setMultilevelInitialView('writing');
+                  setSelectedExam('multilevel');
+                }}
+                className="text-[10px] font-extrabold text-emerald-200 bg-emerald-950/50 hover:bg-emerald-800/60 px-3 py-1.5 rounded-xl border border-emerald-500/30 cursor-pointer transition-all active:scale-95"
+              >
                 ✉️ Task 1: Xatlar (20 daq)
               </span>
-              <span className="text-[10px] font-extrabold text-emerald-200 bg-emerald-950/50 px-3 py-1.5 rounded-xl border border-emerald-500/30">
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic('medium');
+                  setMultilevelInitialView('writing');
+                  setSelectedExam('multilevel');
+                }}
+                className="text-[10px] font-extrabold text-emerald-200 bg-emerald-950/50 hover:bg-emerald-800/60 px-3 py-1.5 rounded-xl border border-emerald-500/30 cursor-pointer transition-all active:scale-95"
+              >
                 📝 Task 2: Insho (40 daq)
               </span>
             </div>
