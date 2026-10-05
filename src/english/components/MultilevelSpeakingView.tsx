@@ -64,6 +64,11 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
   const recognitionRef = useRef<any>(null);
   const committedTextRef = useRef<string>('');
   const currentSessionFinalRef = useRef<string>('');
+  const liveTranscriptRef = useRef<string>('');
+
+  useEffect(() => {
+    liveTranscriptRef.current = liveTranscript;
+  }, [liveTranscript]);
 
   const getFormattedTime = () => {
     const now = new Date();
@@ -455,7 +460,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       ? (p2Item?.title || '')
       : (p3Item?.statement || '');
 
-    const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+    const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscriptRef.current]
       .filter(Boolean)
       .join(' ')
       .replace(/\s+/g, ' ')
@@ -495,7 +500,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
   const handleFullMockProgression = () => {
     if (mockPhase === 'p1_1') {
       const currentQ = p1_1Item?.questions[mockP1_1Idx] || '';
-      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscriptRef.current]
         .filter(Boolean)
         .join(' ')
         .replace(/\s+/g, ' ')
@@ -533,7 +538,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         startListening();
       });
     } else if (mockPhase === 'p1_2_speak') {
-      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscriptRef.current]
         .filter(Boolean)
         .join(' ')
         .replace(/\s+/g, ' ')
@@ -560,7 +565,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         startListening();
       });
     } else if (mockPhase === 'p2_speak') {
-      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscriptRef.current]
         .filter(Boolean)
         .join(' ')
         .replace(/\s+/g, ' ')
@@ -587,7 +592,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         startListening();
       });
     } else if (mockPhase === 'p3_speak') {
-      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscriptRef.current]
         .filter(Boolean)
         .join(' ')
         .replace(/\s+/g, ' ')

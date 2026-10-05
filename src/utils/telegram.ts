@@ -62,3 +62,8 @@ export const getTelegramUser = (): TelegramUser => {
     username: 'roam_learner',
   };
 };
+
+export const getTelegramInitData = (): string => {
+  const tg = getTelegramWebApp();
+  return tg?.initData || '';
+};

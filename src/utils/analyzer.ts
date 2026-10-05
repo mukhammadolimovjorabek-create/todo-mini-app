@@ -1,6 +1,8 @@
 import type { ChatMessage } from './aiService';
 import { loadTasks, getLast7Days, today } from './storage';
 import type { Task } from '../types';
+import { API_BASE_URL } from '../config';
+import { getTelegramInitData } from './telegram';
 
 // ────────── helpers ──────────
 
@@ -223,10 +225,14 @@ async function callGemini(
   }
 
   // 2. Xavfsiz server orqali chaqirish (Frontendda hech qanday maxfiy kalit saqlanmaydi)
-  const serverUrl = 'https://todo-mini-app-cwkd.onrender.com/api/ai_analyze';
+  const serverUrl = `${API_BASE_URL}/api/ai_analyze`;
+  const initData = getTelegramInitData();
   const response = await fetch(serverUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(initData ? { 'X-Telegram-Init-Data': initData } : {}),
+    },
     body: JSON.stringify({
       systemPrompt,
       userMessage,

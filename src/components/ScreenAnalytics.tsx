@@ -22,7 +22,8 @@ import { getLast7Days, loadTasks, getCategoryColor, getCategoryLabel, shortDay, 
 import { calculateUserPoints, getGlobalRank } from '../utils/points';
 import { loadFriends, type InvitedFriend } from '../utils/friends';
 import type { DayStats, TaskCategory } from '../types';
-import { triggerHaptic, getTelegramUser } from '../utils/telegram';
+import { triggerHaptic, getTelegramUser, getTelegramInitData } from '../utils/telegram';
+import { API_BASE_URL } from '../config';
 
 const CATEGORIES: TaskCategory[] = ['work', 'personal', 'health', 'learning', 'other'];
 
@@ -64,9 +65,13 @@ export const ScreenAnalytics: React.FC = () => {
   const handleUnfriend = async (friendId: string) => {
     try {
       const user = getTelegramUser();
-      await fetch('https://todo-mini-app-cwkd.onrender.com/api/unfriend', {
+      const initData = getTelegramInitData();
+      await fetch(`${API_BASE_URL}/api/unfriend`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(initData ? { 'X-Telegram-Init-Data': initData } : {}),
+        },
         body: JSON.stringify({ user_id: user?.id, friend_id: friendId })
       });
       setFriendsList(prev => prev.filter(f => f.id !== friendId));
@@ -109,8 +114,10 @@ export const ScreenAnalytics: React.FC = () => {
         const userId = user?.id;
         if (!userId) return;
         
-        // Localhostdagi Python bot API dan do'stlarni olish
-        const res = await fetch(`https://todo-mini-app-cwkd.onrender.com/api/friends?user_id=${userId}`);
+        const initData = getTelegramInitData();
+        const res = await fetch(`${API_BASE_URL}/api/friends?user_id=${userId}`, {
+          headers: initData ? { 'X-Telegram-Init-Data': initData } : {},
+        });
         const data = await res.json();
         
         if (data.friends && Array.isArray(data.friends)) {

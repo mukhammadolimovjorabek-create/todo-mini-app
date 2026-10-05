@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Search, Users, RotateCcw, Clock, ShieldAlert, ChevronRight, Share2, Check, Sparkles } from 'lucide-react';
 import { getRandomPart1Topic, getRandomPart2Topic, getRandomPart3Topic, type Part1Topic, type Part2CueCard, type Part3Topic } from '../data/speakingBank';
-import { triggerHaptic, getTelegramWebApp, getTelegramUser } from '../../utils/telegram';
+import { triggerHaptic, getTelegramWebApp, getTelegramUser, getTelegramInitData } from '../../utils/telegram';
+import { API_BASE_URL, WS_BASE_URL } from '../../config';
 import {
   getDislikesCount,
   setDislikesCount,
@@ -147,7 +148,10 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
 
     // Sync from server authority
     if (userId && userId !== 'me') {
-      fetch(`https://todo-mini-app-cwkd.onrender.com/api/user_status?user_id=${userId}`)
+      const initData = getTelegramInitData();
+      fetch(`${API_BASE_URL}/api/user_status?user_id=${userId}`, {
+        headers: initData ? { 'X-Telegram-Init-Data': initData } : {},
+      })
         .then(res => res.json())
         .then(data => {
           if (data && typeof data.dislikes === 'number') {
@@ -324,9 +328,10 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
         });
       }, 1000);
       
-      setConnectionError(null);
       const targetRoom = isDirectInvite ? roomId : '';
-      const socket = new WebSocket(`wss://todo-mini-app-cwkd.onrender.com/ws/matchmake?user_id=${userId}&user_name=${encodeURIComponent(userName)}&gender=${userGender || 'male'}&filter_gender=${filterGender}&room_id=${targetRoom}`);
+      const initData = getTelegramInitData();
+      const wsUrl = `${WS_BASE_URL}/ws/matchmake?user_id=${userId}&user_name=${encodeURIComponent(userName)}&gender=${userGender || 'male'}&filter_gender=${filterGender}&room_id=${targetRoom}${initData ? `&init_data=${encodeURIComponent(initData)}` : ''}`;
+      const socket = new WebSocket(wsUrl);
       wsRef.current = socket;
       setWs(socket);
 
@@ -1245,16 +1250,20 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
               onClick={async () => {
                   if (matchedPartner && selectedSticker) {
                       try {
-                        await fetch(`https://todo-mini-app-cwkd.onrender.com/api/rate_partner`, {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({ 
-                              partner_id: matchedPartner.id, 
-                              rater_id: userId,
-                              action: selectedSticker,
-                              reason: dislikeReason
-                            })
-                        });
+                         const initData = getTelegramInitData();
+                         await fetch(`${API_BASE_URL}/api/rate_partner`, {
+                             method: 'POST',
+                             headers: {
+                               'Content-Type': 'application/json',
+                               ...(initData ? { 'X-Telegram-Init-Data': initData } : {}),
+                             },
+                             body: JSON.stringify({ 
+                               partner_id: matchedPartner.id, 
+                               rater_id: userId,
+                               action: selectedSticker,
+                               reason: dislikeReason
+                             })
+                         });
                       } catch (err) {
                         console.error('Rating error:', err);
                       }

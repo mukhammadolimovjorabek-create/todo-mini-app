@@ -1,4 +1,6 @@
 import type { Task, DayStats, TaskCategory, TaskPriority, TaskScope } from '../types';
+import { API_BASE_URL } from '../config';
+import { getTelegramUser, getTelegramInitData } from './telegram';
 
 const TASKS_KEY = 'todo_tasks_v2';
 const STATS_KEY = 'todo_stats_v2';
@@ -42,8 +44,67 @@ export const loadTasks = (): Task[] => {
   }
 };
 
+let syncTimeout: any = null;
+
+export const triggerCloudSync = () => {
+  if (typeof window === 'undefined') return;
+  if (syncTimeout) clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(async () => {
+    try {
+      const user = getTelegramUser();
+      if (!user?.id) return;
+      const initData = getTelegramInitData();
+      const allTasks = loadTasks();
+      const stats = loadStats();
+      await fetch(`${API_BASE_URL}/api/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(initData ? { 'X-Telegram-Init-Data': initData } : {}),
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          data: {
+            tasks: allTasks,
+            stats,
+            updatedAt: Date.now(),
+          },
+        }),
+      });
+    } catch {
+      // Background sync silently ignores network drops
+    }
+  }, 2500);
+};
+
+export const restoreFromCloud = async (): Promise<boolean> => {
+  try {
+    const user = getTelegramUser();
+    if (!user?.id) return false;
+    const initData = getTelegramInitData();
+    const res = await fetch(`${API_BASE_URL}/api/sync?user_id=${user.id}`, {
+      headers: initData ? { 'X-Telegram-Init-Data': initData } : {},
+    });
+    const json = await res.json();
+    if (json.success && json.data) {
+      if (Array.isArray(json.data.tasks) && json.data.tasks.length > 0) {
+        const localTasks = loadTasks();
+        if (localTasks.length === 0) {
+          localStorage.setItem(TASKS_KEY, JSON.stringify(json.data.tasks));
+          if (json.data.stats) {
+            localStorage.setItem(STATS_KEY, JSON.stringify(json.data.stats));
+          }
+          return true;
+        }
+      }
+    }
+  } catch {}
+  return false;
+};
+
 export const saveTasks = (tasks: Task[]) => {
   localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+  triggerCloudSync();
 };
 
 export const addTask = (
@@ -121,6 +182,7 @@ export const updateStats = () => {
   const stats = loadStats().filter((s) => s.date !== todayStr);
   stats.push({ date: todayStr, total: activeTasks.length, done: activeTasks.filter((t) => t.done).length });
   localStorage.setItem(STATS_KEY, JSON.stringify(stats.slice(-30)));
+  triggerCloudSync();
 };
 
 export const getLast7Days = (): DayStats[] => {

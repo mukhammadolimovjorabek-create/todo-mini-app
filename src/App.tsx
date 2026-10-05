@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { ScreenType, TelegramUser } from './types';
 import { getTelegramWebApp, getTelegramUser } from './utils/telegram';
-import { getActiveTasks, getCustomProfile } from './utils/storage';
+import { getActiveTasks, getCustomProfile, restoreFromCloud } from './utils/storage';
 import { ScreenHome } from './components/ScreenHome';
 import { ScreenAI } from './components/ScreenAI';
 import { ScreenAnalytics } from './components/ScreenAnalytics';
@@ -56,6 +56,14 @@ export function App() {
 
     updateStatsFromStorage();
   }, [screen]);
+
+  useEffect(() => {
+    restoreFromCloud().then((restored) => {
+      if (restored) {
+        updateStatsFromStorage();
+      }
+    });
+  }, []);
 
   // Ism va bosh harf (Custom profile ustun turadi)
   const currentName = customProfile.displayName || user.first_name || 'Siz';

@@ -80,6 +80,11 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
   const recognitionRef = useRef<any>(null);
   const committedTextRef = useRef<string>('');
   const currentSessionFinalRef = useRef<string>('');
+  const liveTranscriptRef = useRef<string>('');
+
+  useEffect(() => {
+    liveTranscriptRef.current = liveTranscript;
+  }, [liveTranscript]);
 
   const getFormattedTime = () => {
     const now = new Date();
@@ -488,7 +493,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       ? (p2Topic?.cueCard || '')
       : (p3Topic?.questions[p3Index] || '');
 
-    const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+    const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscriptRef.current]
       .filter(Boolean)
       .join(' ')
       .replace(/\s+/g, ' ')
@@ -536,7 +541,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
   const handleFullMockStep = () => {
     if (mockPhase === 'p1') {
       const currentQ = p1Topic?.questions[mockP1Idx] || '';
-      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscriptRef.current]
         .filter(Boolean)
         .join(' ')
         .replace(/\s+/g, ' ')
@@ -567,7 +572,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
         });
       }
     } else if (mockPhase === 'p2_speak') {
-      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscriptRef.current]
         .filter(Boolean)
         .join(' ')
         .replace(/\s+/g, ' ')
@@ -591,7 +596,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       });
     } else if (mockPhase === 'p3') {
       const currentQ = p3Topic?.questions[mockP3Idx] || '';
-      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscript]
+      const currentAnswer = [committedTextRef.current, currentSessionFinalRef.current, liveTranscriptRef.current]
         .filter(Boolean)
         .join(' ')
         .replace(/\s+/g, ' ')
