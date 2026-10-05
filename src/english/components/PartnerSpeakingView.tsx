@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Search, Users, RotateCcw, Clock, ShieldAlert, ChevronRight, Share2, Check, Lock, AlertTriangle, Send, Sparkles } from 'lucide-react';
+import { ArrowLeft, Search, Users, RotateCcw, Clock, ShieldAlert, ChevronRight, Share2, Check, Sparkles } from 'lucide-react';
 import { getRandomPart1Topic, getRandomPart2Topic, getRandomPart3Topic, type Part1Topic, type Part2CueCard, type Part3Topic } from '../data/speakingBank';
 import { triggerHaptic, getTelegramWebApp, getTelegramUser } from '../../utils/telegram';
 import {
@@ -7,9 +7,6 @@ import {
   setDislikesCount,
   recordDislike,
   recordLike,
-  isUserLocked,
-  unlockUser,
-  notifyAdminForUnlock,
 } from '../utils/reputation';
 
 interface Props {
@@ -26,12 +23,8 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   const userId = telegramUser?.id || 'me';
   const isDev = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('dev');
 
-  // Reputation & Lock states
+  // Reputation state
   const [dislikes, setDislikes] = useState<number>(() => getDislikesCount(userId));
-  const [isLocked, setIsLocked] = useState<boolean>(() => isUserLocked(userId));
-  const [isNotifyingAdmin, setIsNotifyingAdmin] = useState(false);
-  const [adminNotified, setAdminNotified] = useState(false);
-  const [unlockedToast, setUnlockedToast] = useState(false);
 
   const [filterGender, setFilterGender] = useState<GenderFilter>('any');
   const [matchStatus, setMatchStatus] = useState<'idle' | 'searching' | 'matched'>('idle');
@@ -130,11 +123,6 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('unblocked') === '1' || urlParams.get('unblock') === 'true') {
-      unlockUser(userId);
-      setDislikes(0);
-      setIsLocked(false);
-      setUnlockedToast(true);
-      setTimeout(() => setUnlockedToast(false), 5000);
       try {
         const cleanUrl = window.location.pathname;
         window.history.replaceState({}, '', cleanUrl);
@@ -152,21 +140,19 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     }
   }, [urlRoom]);
 
-  // Keep lock state synced
+  // Keep reputation state synced
   useEffect(() => {
     const current = getDislikesCount(userId);
     setDislikes(current);
-    setIsLocked(current >= 10);
 
     // Sync from server authority
     if (userId && userId !== 'me') {
       fetch(`https://todo-mini-app-cwkd.onrender.com/api/user_status?user_id=${userId}`)
         .then(res => res.json())
         .then(data => {
-          if (data && typeof data.net_dislikes === 'number') {
-            setDislikes(data.net_dislikes);
-            setIsLocked(Boolean(data.is_locked));
-            setDislikesCount(userId, data.net_dislikes);
+          if (data && typeof data.dislikes === 'number') {
+            setDislikes(data.dislikes);
+            setDislikesCount(userId, data.dislikes);
           }
         })
         .catch(err => {
@@ -350,12 +336,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
 
       socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (data.type === 'locked') {
-          setIsLocked(true);
-          setDislikes(10);
-          setMatchStatus('idle');
-          triggerHaptic('heavy');
-        } else if (data.type === 'match_found') {
+        if (data.type === 'match_found') {
           setMatchedPartner(data.partner);
           setMatchStatus('matched');
           triggerHaptic('heavy');
@@ -449,19 +430,6 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     setSearchTimer(0);
   };
 
-
-  const handleRequestUnlock = async () => {
-    setIsNotifyingAdmin(true);
-    triggerHaptic('heavy');
-    await notifyAdminForUnlock({
-      id: userId,
-      name: telegramUser?.first_name || userName || 'Foydalanuvchi',
-      username: telegramUser?.username,
-    });
-    setIsNotifyingAdmin(false);
-    setAdminNotified(true);
-  };
-
   const handleLeaveRoom = () => {
     triggerHaptic('medium');
     if (wsRef.current) {
@@ -495,133 +463,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     setMatchStatus('idle');
   };
 
-  // ── RENDER LOCKED STATE IF USER HAS >= 10 DISLIKES ──
-  if (isLocked) {
-    return (
-      <div className="english-root min-h-screen bg-[#0a0818] text-slate-100 flex flex-col pb-10">
-        {/* Header */}
-        <div className="px-5 pt-6 pb-4 bg-[#110e24]/90 backdrop-blur-md border-b border-rose-950/40 flex items-center justify-between sticky top-0 z-20">
-          <button
-            onClick={onBack}
-            className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 text-slate-300 flex items-center justify-center hover:bg-white/10 transition-all active:scale-95"
-            title="Orqaga"
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <div className="text-center">
-            <span className="text-[10px] font-black uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
-              Qulflangan
-            </span>
-            <h2 className="text-base font-black text-white">Sherik bilan Speaking</h2>
-          </div>
-          <div className="w-9" />
-        </div>
-
-        {/* Lock Body */}
-        <div className="p-5 flex-1 max-w-md mx-auto w-full flex flex-col justify-center space-y-5 animate-in fade-in duration-300">
-          {/* Animated Lock Shield */}
-          <div className="relative w-28 h-28 mx-auto flex items-center justify-center">
-            <div className="absolute inset-0 rounded-full bg-rose-500/20 animate-ping" />
-            <div className="absolute inset-2 rounded-full border border-rose-500/40 animate-pulse" />
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-rose-600 to-red-700 text-white flex items-center justify-center shadow-2xl shadow-rose-600/40 border border-rose-400/30">
-              <Lock size={36} className="text-white" />
-            </div>
-          </div>
-
-          <div className="text-center space-y-2">
-            <h3 className="text-xl font-black text-white tracking-tight">
-              Suhbat bo'limi qulflangan! 🔒
-            </h3>
-            <p className="text-xs text-rose-300/90 font-medium leading-relaxed bg-rose-950/30 p-3.5 rounded-2xl border border-rose-800/40 text-left">
-              ⚠️ <strong className="text-rose-200">Sababi:</strong> Siz <b>10 ta shikoyat/dislike</b> oldingiz (odob-axloq qoidalarini buzganlik, kontakt so'rash yoki noo'rin xatti-harakatlar uchun).
-            </p>
-          </div>
-
-          {/* Pricing Card */}
-          <div className="bg-gradient-to-br from-[#171330] to-[#1e173e] rounded-3xl p-5 border border-rose-500/30 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-                  Qulfni ochish to'lovi
-                </span>
-                <span className="text-2xl font-black text-[#c4f82a] tracking-tight">
-                  6,700 so'm
-                </span>
-              </div>
-              <span className="text-xs font-bold bg-white/10 text-white px-3 py-1 rounded-full border border-white/10">
-                1 martalik to'lov
-              </span>
-            </div>
-
-            <p className="text-[11px] text-slate-300/80 leading-relaxed">
-              To'lov qilib adminga chekni yuborganingizdan so'ng hisobingizdagi barcha jarimalar 0 ga tushiriladi va speaking tizimi darhol ochiladi.
-            </p>
-
-            {/* Notification Sent or Action Button */}
-            {adminNotified ? (
-              <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-2xl p-4 space-y-2 text-emerald-200 text-xs">
-                <div className="flex items-center space-x-2 font-bold">
-                  <Check size={16} className="text-emerald-400" />
-                  <span>Adminga xabarnoma yuborildi!</span>
-                </div>
-                <p className="text-[11px] text-emerald-300/90 leading-relaxed">
-                  Admin tez orada bot orqali sizga karta yoki telefon raqamini yuboradi. To'lov chekini botga rasm sifatida tashlasangiz, dostup beriladi.
-                </p>
-              </div>
-            ) : (
-              <button
-                onClick={handleRequestUnlock}
-                disabled={isNotifyingAdmin}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 active:scale-95 text-white font-black text-sm shadow-lg shadow-rose-600/30 flex items-center justify-center space-x-2 transition-all disabled:opacity-50"
-              >
-                {isNotifyingAdmin ? (
-                  <>
-                    <RotateCcw className="animate-spin" size={18} />
-                    <span>Adminga yuborilmoqda...</span>
-                  </>
-                ) : (
-                  <>
-                    <Send size={18} />
-                    <span>To'lov qilish / Adminga murojaat</span>
-                  </>
-                )}
-              </button>
-            )}
-
-            <button
-              onClick={() => {
-                const refreshed = getDislikesCount(userId);
-                setDislikes(refreshed);
-                setIsLocked(refreshed >= 10);
-                triggerHaptic('light');
-              }}
-              className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-bold transition-all flex items-center justify-center space-x-1.5"
-            >
-              <RotateCcw size={14} />
-              <span>Qulf holatini qayta tekshirish</span>
-            </button>
-          </div>
-
-            {/* Discreet Testing controls for developers only */}
-            {isDev && (
-              <div className="pt-2 text-center space-y-1">
-                <button
-                  onClick={() => {
-                    unlockUser(userId);
-                    setDislikes(0);
-                    setIsLocked(false);
-                    triggerHaptic('heavy');
-                  }}
-                  className="text-[10px] text-slate-500 hover:text-slate-300 underline transition-colors"
-                >
-                  🛠️ Dev Test: Qulfni ochish (Reset)
-                </button>
-              </div>
-            )}
-        </div>
-      </div>
-    );
-  }
+  // Users are never locked out
 
   return (
     <div className="english-root min-h-screen bg-slate-50 flex flex-col text-slate-900 pb-10">
@@ -663,37 +505,11 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
         )}
       </div>
 
-      {/* Unlocked Toast Banner */}
-      {unlockedToast && (
-        <div className="mx-5 mt-4 bg-emerald-600 text-white p-4 rounded-2xl shadow-lg flex items-center space-x-3 animate-in slide-in-from-top duration-300">
-          <Check size={20} className="shrink-0 text-emerald-200" />
-          <div>
-            <h4 className="text-xs font-black">Qulf ochildi! 🎉</h4>
-            <p className="text-[11px] text-emerald-100">
-              Admin to'lovingizni tasdiqladi. Barcha taqiqlar olib tashlandi, bemalol speaking mashq qilishingiz mumkin!
-            </p>
-          </div>
-        </div>
-      )}
 
       <div className="p-5 flex-1 max-w-lg mx-auto w-full space-y-5">
         {/* ── STATE 1: IDLE / SETUP SEARCH ── */}
         {matchStatus === 'idle' && (
           <div className="space-y-5 animate-in fade-in duration-300">
-            {/* Warning if user has any strikes */}
-            {dislikes > 0 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 flex items-center justify-between text-amber-900 animate-in fade-in duration-200">
-                <div className="flex items-center space-x-2">
-                  <AlertTriangle size={16} className="text-amber-600 shrink-0" />
-                  <span className="text-xs font-semibold">
-                    Sizda <b>{dislikes}/10</b> ta shikoyat bor. 10 taga yetsa qulflanadi.
-                  </span>
-                </div>
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-lg">
-                  Ehtiyot bo'ling
-                </span>
-              </div>
-            )}
 
             {/* Banner card */}
             <div
@@ -836,26 +652,12 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
                     onClick={() => {
                       const u = recordDislike(userId);
                       setDislikes(u);
-                      if (u >= 10) setIsLocked(true);
                       triggerHaptic('heavy');
                     }}
                     className="px-2 py-0.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-[10px]"
-                    title="Dislike berish (+1 jarima)"
+                    title="Dislike berish"
                   >
-                    +1 👎 ({dislikes}/10)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDislikesCount(userId, 10);
-                      setDislikes(10);
-                      setIsLocked(true);
-                      triggerHaptic('heavy');
-                    }}
-                    className="px-2 py-0.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-black text-[10px]"
-                    title="10 ta dislike bilan qulflash"
-                  >
-                    🔒 Qulflash (10 ta)
+                    +1 👎 ({dislikes})
                   </button>
                 </div>
               </div>
@@ -939,16 +741,14 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
                   {(() => {
                     const l = Number(matchedPartner.likes || 0);
                     const d = Number(matchedPartner.dislikes || 0);
-                    const netLikes = Math.max(0, l - d);
-                    const netDislikes = Math.max(0, d - l);
                     return (
                       <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-2 font-medium">
                         <span className="text-indigo-600 font-bold flex items-center gap-1">
-                          👍 {netLikes} ta like
+                          👍 {l} ta like
                         </span>
                         <span className="text-slate-300">•</span>
                         <span className="text-rose-500 font-bold flex items-center gap-1">
-                          👎 {netDislikes} ta dislike
+                          👎 {d} ta dislike
                         </span>
                       </p>
                     );

@@ -134,6 +134,28 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     return false;
   };
 
+  const releaseMediaStream = () => {
+    if (mediaStreamRef.current) {
+      try {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      } catch (err) {
+        console.warn("Error stopping audio tracks:", err);
+      }
+      mediaStreamRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      isListeningWantedRef.current = false;
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch {}
+      }
+      releaseMediaStream();
+      window.speechSynthesis?.cancel();
+    };
+  }, []);
+
   const startListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -587,6 +609,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     setIsEvaluating(true);
     triggerHaptic('heavy');
     window.speechSynthesis?.cancel();
+    releaseMediaStream();
 
     setTimeout(() => {
       const evalResult = evaluateMultilevelSpeech(history, evaluatedType);
@@ -813,6 +836,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
                     triggerHaptic('heavy');
                     window.speechSynthesis?.cancel();
                     stopListening();
+                    releaseMediaStream();
                     setShowExitConfirmModal(false);
                     setStep('menu');
                   }}

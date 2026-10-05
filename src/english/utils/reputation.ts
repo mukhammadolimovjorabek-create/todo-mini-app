@@ -43,10 +43,10 @@ export const recordLike = (userId: number | string): number => {
 };
 
 /**
- * User is blocked if they have accumulated 10 or more dislikes
+ * User is never blocked
  */
-export const isUserLocked = (userId: number | string): boolean => {
-  return getDislikesCount(userId) >= 10;
+export const isUserLocked = (_userId: number | string): boolean => {
+  return false;
 };
 
 /**

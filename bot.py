@@ -44,7 +44,8 @@ def get_bot_token():
 BOT_TOKEN = get_bot_token()
 WEB_APP_URL = os.getenv("WEB_APP_URL", "https://todo-mini-app-eight.vercel.app")
 DATABASE_URL = os.getenv("DATABASE_URL")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL") or RENDER_EXTERNAL_URL
 PORT = int(os.getenv("PORT", 8000))
 
 bot = Bot(token=BOT_TOKEN)
@@ -79,6 +80,7 @@ async def init_db():
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS likes INT DEFAULT 0;
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS dislikes INT DEFAULT 0;
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_unblocked BOOLEAN DEFAULT FALSE;
+                ALTER TABLE users ADD COLUMN IF NOT EXISTS is_accepted BOOLEAN DEFAULT FALSE;
             """)
         logging.info("Connected to PostgreSQL Database.")
     else:
@@ -224,30 +226,12 @@ async def cmd_start(message: types.Message):
 
     if len(parts) > 1 and parts[1].startswith("unlock"):
         await save_user(user_id, user_info)
-        username_txt = f"(@{message.from_user.username})" if message.from_user.username else ""
         user_reply = (
             f"Assalomu alaykum, <b>{message.from_user.first_name}</b>! 👋\n\n"
-            "🔒 <b>Sherik bilan suhbat bo'limi qulfini ochish</b>\n\n"
-            "⚠️ Siz 10 ta shikoyat/dislike olganingiz sababli speaking bo'limi cheklangan.\n"
-            "💰 Qulfni ochish to'lovi: <b>6,700 so'm</b>\n\n"
-            "Admin tez orada sizga karta yoki telefon raqamini yuboradi. "
-            "To'lov qilgach, to'lov chekini (skrinshot) shu yerga <b>rasm ko'rinishida</b> yuboring."
+            "✅ <b>Sizning hisobingiz to'liq faol!</b>\n\n"
+            "Barcha bo'limlar, jumladan Jonli Speaking Hamkori bo'limi hech qanday to'lovlarsiz ochiq."
         )
         await message.answer(user_reply, parse_mode="HTML")
-
-        admin_alert = (
-            f"🚨 <b>BLOKLANGAN FOYDALANUVCHI TO'LOV QILMOQCHI!</b>\n\n"
-            f"👤 <b>Ismi:</b> {message.from_user.first_name} {username_txt}\n"
-            f"🆔 <b>ID:</b> <code>{user_id}</code>\n"
-            f"⚠️ <b>Sabab:</b> 10 ta shikoyat/dislike to'plangan\n"
-            f"💰 <b>To'lov summasi:</b> <b>6,700 so'm</b>\n\n"
-            f"👇 <i>Ushbu xabarga <b>Javob (Reply)</b> qilib karta yoki raqam yuboring.</i>"
-        )
-        try:
-            await bot.send_message(chat_id=ADMIN_ID, text=admin_alert, parse_mode="HTML")
-        except Exception:
-            pass
-        return
 
     referrer_id = None
     if len(parts) > 1 and parts[1].startswith("ref_"):
@@ -323,6 +307,7 @@ async def cmd_start(message: types.Message):
 @dp.message(Command("stats"))
 async def show_stats(message: types.Message):
     if message.from_user.id != ADMIN_ID:
+        await message.answer("📊 Ushbu hisobot faqat bot administratori uchun mo'ljallangan.")
         return
     users = await load_users()
     total_visitors = len(users)
@@ -332,11 +317,11 @@ async def show_stats(message: types.Message):
     left_users = sum(1 for u in users.values() if u.get("status") == "left")
     
     report_text = (
-        "📊 <b>BOT HISOBOTI</b>\n"
-        f"🆕 Bugun: {today_new}\n"
-        f"👥 Faol: {active_users}\n"
-        f"🚪 Chiqib ketganlar: {left_users}\n"
-        f"📈 Jami: {total_visitors}"
+        "📊 <b>BOT HISOBOTI</b>\n\n"
+        f"🆕 <b>Bugun:</b> {today_new}\n"
+        f"👥 <b>Faol:</b> {active_users}\n"
+        f"🚪 <b>Chiqib ketganlar:</b> {left_users}\n"
+        f"📈 <b>Jami:</b> {total_visitors}"
     )
     await message.answer(report_text, parse_mode="HTML")
 
@@ -674,23 +659,6 @@ async def api_rate_partner(request):
                 await conn.execute("UPDATE users SET likes = COALESCE(likes, 0) + 1 WHERE user_id = $1", target_id)
             elif action == "dislike":
                 await conn.execute("UPDATE users SET dislikes = COALESCE(dislikes, 0) + 1 WHERE user_id = $1", target_id)
-                
-            row = await conn.fetchrow("SELECT likes, dislikes FROM users WHERE user_id = $1", target_id)
-            if row:
-                cur_likes = row['likes'] or 0
-                cur_dislikes = row['dislikes'] or 0
-                # Aniq mantiq: agar 5 ta like va 5 ta dislike bo'lsa net_dislikes = 0
-                net_dislikes = max(0, cur_dislikes - cur_likes)
-                if net_dislikes >= 10:
-                    await conn.execute("UPDATE users SET is_unblocked = FALSE WHERE user_id = $1", target_id)
-                    try:
-                        await bot.send_message(
-                            chat_id=target_id, 
-                            text="⚠️ <b>Diqqat!</b> Siz 10 ta sof 'dislike' oldingiz. Speaking bo'limi siz uchun cheklandi.\n\nQulfni ochish uchun adminga murojaat qiling yoki to'lov qiling.", 
-                            parse_mode="HTML"
-                        )
-                    except Exception:
-                        pass
     else:
         users = await load_users()
         target_str = str(target_id)
@@ -701,18 +669,6 @@ async def api_rate_partner(request):
                 users[target_str]["likes"] = cur_likes + 1
             elif action == "dislike":
                 users[target_str]["dislikes"] = cur_dislikes + 1
-                cur_dislikes += 1
-                net_dislikes = max(0, cur_dislikes - cur_likes)
-                if net_dislikes >= 10:
-                    users[target_str]["is_unblocked"] = False
-                    try:
-                        await bot.send_message(
-                            chat_id=target_id, 
-                            text="⚠️ <b>Diqqat!</b> Siz 10 ta sof 'dislike' oldingiz. Speaking bo'limi siz uchun cheklandi.\n\nQulfni ochish uchun adminga murojaat qiling yoki to'lov qiling.", 
-                            parse_mode="HTML"
-                        )
-                    except Exception:
-                        pass
             await write_users_file(users)
                         
     resp = web.json_response({"success": True})
@@ -800,12 +756,8 @@ async def ws_matchmake(request):
             async with db_pool.acquire() as conn:
                 row = await conn.fetchrow("SELECT first_name, username, likes, dislikes, is_unblocked FROM users WHERE user_id = $1", user_id_int)
                 if row:
-                    raw_likes = row['likes'] or 0
-                    raw_dislikes = row['dislikes'] or 0
-                    user_data["likes"] = max(0, raw_likes - raw_dislikes)
-                    user_data["dislikes"] = max(0, raw_dislikes - raw_likes)
-                    if row['is_unblocked'] is not None:
-                        is_unblocked = row['is_unblocked']
+                    user_data["likes"] = row['likes'] or 0
+                    user_data["dislikes"] = row['dislikes'] or 0
                     if not user_name or user_name == "Foydalanuvchi" or user_name == "Siz":
                         user_data["name"] = row['first_name'] or user_name
         except Exception as e:
@@ -814,24 +766,12 @@ async def ws_matchmake(request):
         try:
             users = await load_users()
             udata = users.get(str(user_id), {})
-            raw_likes = udata.get('likes', 0) or 0
-            raw_dislikes = udata.get('dislikes', 0) or 0
-            user_data["likes"] = max(0, raw_likes - raw_dislikes)
-            user_data["dislikes"] = max(0, raw_dislikes - raw_likes)
-            is_unblocked = udata.get('is_unblocked', True)
+            user_data["likes"] = udata.get('likes', 0) or 0
+            user_data["dislikes"] = udata.get('dislikes', 0) or 0
             if not user_name or user_name == "Foydalanuvchi" or user_name == "Siz":
                 user_data["name"] = udata.get('first_name') or user_name
         except Exception as e:
             logging.error(f"Error fetching user info from JSON for WS: {e}")
-
-    # Agar 10 ta net dislike to'plangan bo'lsa va unblock qilinmagan bo'lsa - WS ulanishni to'xtatish
-    if user_data["dislikes"] >= 10 and not is_unblocked:
-        try:
-            await ws.send_json({"type": "locked", "message": "User is locked due to reports"})
-            await ws.close()
-        except Exception:
-            pass
-        return ws
             
     me = {
         'ws': ws,
@@ -984,26 +924,31 @@ async def api_user_status(request):
     if not user_id:
         return web.json_response({"error": "user_id required"}, status=400)
     
-    users = await load_users()
-    udata = users.get(str(user_id), {})
-    cur_likes = udata.get("likes", 0) or 0
-    cur_dislikes = udata.get("dislikes", 0) or 0
-    is_unblocked = udata.get("is_unblocked", True)
-    if is_unblocked is None:
-        is_unblocked = True
+    cur_likes = 0
+    cur_dislikes = 0
+    if db_pool:
+        try:
+            async with db_pool.acquire() as conn:
+                row = await conn.fetchrow("SELECT likes, dislikes FROM users WHERE user_id = $1", int(user_id))
+                if row:
+                    cur_likes = row['likes'] or 0
+                    cur_dislikes = row['dislikes'] or 0
+        except Exception as e:
+            logging.error(f"DB error in api_user_status: {e}")
+    else:
+        users = await load_users()
+        udata = users.get(str(user_id), {})
+        cur_likes = udata.get("likes", 0) or 0
+        cur_dislikes = udata.get("dislikes", 0) or 0
         
-    net_likes = max(0, cur_likes - cur_dislikes)
-    net_dislikes = max(0, cur_dislikes - cur_likes)
-    is_locked = (net_dislikes >= 10) and (not is_unblocked)
-    
     resp = web.json_response({
         "user_id": str(user_id),
         "likes": cur_likes,
         "dislikes": cur_dislikes,
-        "net_likes": net_likes,
-        "net_dislikes": net_dislikes,
-        "is_unblocked": is_unblocked,
-        "is_locked": is_locked
+        "net_likes": cur_likes,
+        "net_dislikes": cur_dislikes,
+        "is_unblocked": True,
+        "is_locked": False
     })
     resp.headers["Access-Control-Allow-Origin"] = "*"
     return resp
@@ -1022,7 +967,7 @@ async def api_tts(request):
         resp.headers["Access-Control-Allow-Headers"] = "*"
         return resp
 
-    text = request.query.get("text", "").strip()
+    text = request.query.get("text", "").strip()[:500]
     voice = request.query.get("voice", "en-GB-RyanNeural").strip()
     if not text:
         return web.json_response({"error": "text required"}, status=400)
@@ -1080,18 +1025,28 @@ async def cors_middleware(request, handler):
     resp.headers["Access-Control-Allow-Headers"] = "*"
     return resp
 
-async def on_startup(bot: Bot):
+async def on_app_startup(app: web.Application):
     await init_db()
     if WEBHOOK_URL:
-        await bot.set_webhook(f"{WEBHOOK_URL}/webhook")
+        await bot.set_webhook(f"{WEBHOOK_URL}/webhook", drop_pending_updates=False)
         logging.info(f"Webhook set to {WEBHOOK_URL}/webhook")
     else:
-        await bot.delete_webhook()
+        await bot.delete_webhook(drop_pending_updates=False)
+        app['polling_task'] = asyncio.create_task(
+            dp.start_polling(bot, allowed_updates=["message", "chat_member", "my_chat_member", "callback_query"])
+        )
+        logging.info("Aiogram polling started in background task.")
 
-async def start_bot():
-    await on_startup(bot)
-    if not WEBHOOK_URL:
-        await dp.start_polling(bot, allowed_updates=["message", "chat_member", "my_chat_member", "callback_query"])
+async def on_app_cleanup(app: web.Application):
+    if 'polling_task' in app:
+        app['polling_task'].cancel()
+        try:
+            await app['polling_task']
+        except asyncio.CancelledError:
+            pass
+    if db_pool:
+        await db_pool.close()
+    await bot.session.close()
 
 def main():
     logging.basicConfig(level=logging.INFO)
@@ -1109,22 +1064,16 @@ def main():
     app.router.add_options("/api/tts", api_tts)
     app.router.add_get("/ws/matchmake", ws_matchmake)
     
+    app.on_startup.append(on_app_startup)
+    app.on_cleanup.append(on_app_cleanup)
+
     if WEBHOOK_URL:
-        dp.startup.register(on_startup)
         webhook_requests_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
         webhook_requests_handler.register(app, path="/webhook")
         setup_application(app, dp, bot=bot)
-        web.run_app(app, host="0.0.0.0", port=PORT)
-    else:
-        import threading
-        def run_polling():
-            asyncio.run(start_bot())
-            
-        t = threading.Thread(target=run_polling, daemon=True)
-        t.start()
-        
-        logging.info("Starting local API server on port 8000...")
-        web.run_app(app, host="0.0.0.0", port=8000)
+
+    logging.info(f"Starting server on port {PORT} (webhook={bool(WEBHOOK_URL)})...")
+    web.run_app(app, host="0.0.0.0", port=PORT)
 
 if __name__ == "__main__":
     main()

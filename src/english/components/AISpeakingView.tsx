@@ -150,6 +150,28 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     return false;
   };
 
+  const releaseMediaStream = () => {
+    if (mediaStreamRef.current) {
+      try {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      } catch (err) {
+        console.warn("Error stopping audio tracks:", err);
+      }
+      mediaStreamRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      isListeningWantedRef.current = false;
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch {}
+      }
+      releaseMediaStream();
+      window.speechSynthesis?.cancel();
+    };
+  }, []);
+
   // Start Recognition directly using native SpeechRecognition
   const startListening = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -605,6 +627,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     setIsEvaluating(true);
     triggerHaptic('heavy');
     window.speechSynthesis?.cancel();
+    releaseMediaStream();
 
     setTimeout(() => {
       const evalResult = evaluateCandidateSpeech(history, evaluatedType);
@@ -916,6 +939,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
                     triggerHaptic('heavy');
                     window.speechSynthesis?.cancel();
                     stopListening();
+                    releaseMediaStream();
                     setShowExitConfirmModal(false);
                     setStep('part_select');
                   }}
