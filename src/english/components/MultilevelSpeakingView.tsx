@@ -120,17 +120,16 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
   };
 
   const isListeningWantedRef = useRef<boolean>(false);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const isExamActiveRef = useRef<boolean>(false);
   const [isManualInput, setIsManualInput] = useState<boolean>(false);
 
-  // Pre-request microphone permission once during direct user tap
+  // Pre-request microphone permission once during direct user tap and release tracks immediately
+  // so hardware mic is NOT blocked from SpeechRecognition
   const requestMicPermission = async (): Promise<boolean> => {
     try {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        if (!mediaStreamRef.current) {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          mediaStreamRef.current = stream;
-        }
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((track) => track.stop());
         return true;
       }
     } catch (e) {
@@ -139,42 +138,37 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     return false;
   };
 
-  const releaseMediaStream = () => {
-    if (mediaStreamRef.current) {
-      try {
-        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-      } catch (err) {
-        console.warn("Error stopping audio tracks:", err);
-      }
-      mediaStreamRef.current = null;
+  const stopAndCleanupRecognition = () => {
+    isExamActiveRef.current = false;
+    isListeningWantedRef.current = false;
+    setIsRecording(false);
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch {}
+      try { recognitionRef.current.stop(); } catch {}
+      recognitionRef.current = null;
     }
   };
 
   useEffect(() => {
     return () => {
-      isListeningWantedRef.current = false;
-      if (recognitionRef.current) {
-        try { recognitionRef.current.stop(); } catch {}
-      }
-      releaseMediaStream();
+      stopAndCleanupRecognition();
       window.speechSynthesis?.cancel();
     };
   }, []);
 
-  const startListening = () => {
+  const initSpeechRecognition = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setIsManualInput(true);
       return;
     }
 
-    isListeningWantedRef.current = true;
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch {}
+      recognitionRef.current = null;
+    }
 
     try {
-      if (recognitionRef.current) {
-        try { recognitionRef.current.abort(); } catch {}
-      }
-
       const recognition = new SpeechRecognition();
       recognition.lang = 'en-US';
       recognition.continuous = true;
@@ -182,10 +176,17 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       recognition.maxAlternatives = 1;
 
       recognition.onstart = () => {
-        setIsRecording(true);
+        if (isListeningWantedRef.current) {
+          setIsRecording(true);
+        }
       };
 
       recognition.onresult = (event: any) => {
+        // Discard speech transcribed during examiner TTS or prep periods
+        if (!isListeningWantedRef.current) {
+          return;
+        }
+
         let sessionFinal = '';
         let sessionInterim = '';
         for (let i = 0; i < event.results.length; ++i) {
@@ -210,12 +211,10 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       recognition.onerror = (event: any) => {
         console.warn("Speech recognition error:", event.error);
         if (event.error === 'no-speech') {
-          // Normal pause while candidate thinks or stops talking.
-          // In Android WebView, no-speech triggers onend.
-          // By keeping isListeningWantedRef.current = true, onend will cleanly restart.
           return;
         }
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          isExamActiveRef.current = false;
           isListeningWantedRef.current = false;
           setIsRecording(false);
           setIsManualInput(true);
@@ -227,8 +226,8 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       };
 
       recognition.onend = () => {
-        // Persist any finalized speech from the ended recognition session
-        if (currentSessionFinalRef.current) {
+        // Persist any finalized speech
+        if (isListeningWantedRef.current && currentSessionFinalRef.current) {
           committedTextRef.current = [committedTextRef.current, currentSessionFinalRef.current]
             .filter(Boolean)
             .join(' ')
@@ -237,22 +236,28 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
           currentSessionFinalRef.current = '';
         }
 
-        // Keep mic active during the full 30s/120s timer
-        if (isListeningWantedRef.current) {
+        // Keep mic active in standby throughout the exam session so permission is never re-requested
+        if (isExamActiveRef.current) {
           try {
             recognition.start();
-            setIsRecording(true);
+            if (isListeningWantedRef.current) {
+              setIsRecording(true);
+            }
           } catch {
             setTimeout(() => {
-              if (isListeningWantedRef.current) {
+              if (isExamActiveRef.current) {
                 try {
                   recognition.start();
-                  setIsRecording(true);
+                  if (isListeningWantedRef.current) {
+                    setIsRecording(true);
+                  }
                 } catch {
-                  setIsRecording(false);
+                  if (isListeningWantedRef.current) {
+                    setIsRecording(false);
+                  }
                 }
               }
-            }, 300);
+            }, 250);
           }
         } else {
           setIsRecording(false);
@@ -261,15 +266,30 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
 
       recognition.start();
       recognitionRef.current = recognition;
-      setIsRecording(true);
     } catch (err) {
       console.error("Speech recognition start failed:", err);
       setIsManualInput(true);
     }
   };
 
+  const startListening = () => {
+    isListeningWantedRef.current = true;
+    setIsRecording(true);
+
+    if (!recognitionRef.current) {
+      initSpeechRecognition();
+    } else {
+      try {
+        recognitionRef.current.start();
+      } catch {
+        // Recognition already active in warm standby
+      }
+    }
+  };
+
   const stopListening = () => {
     isListeningWantedRef.current = false;
+    setIsRecording(false);
     if (currentSessionFinalRef.current) {
       committedTextRef.current = [committedTextRef.current, currentSessionFinalRef.current]
         .filter(Boolean)
@@ -278,12 +298,9 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         .trim();
       currentSessionFinalRef.current = '';
     }
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {}
-    }
-    setIsRecording(false);
+    // Note: We DO NOT call recognitionRef.current.stop() here.
+    // Keeping recognition alive in warm-standby prevents Telegram WebView from
+    // requesting mic permission again between questions.
   };
 
   const toggleListening = () => {
@@ -300,6 +317,8 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     triggerHaptic('heavy');
     // Pre-request mic permission once directly on user tap
     await requestMicPermission();
+    isExamActiveRef.current = true;
+    initSpeechRecognition();
 
     setSelectedPart(part);
     setTranscriptHistory([]);
@@ -614,7 +633,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     setIsEvaluating(true);
     triggerHaptic('heavy');
     window.speechSynthesis?.cancel();
-    releaseMediaStream();
+    stopAndCleanupRecognition();
 
     setTimeout(() => {
       const evalResult = evaluateMultilevelSpeech(history, evaluatedType);
@@ -840,8 +859,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
                   onClick={() => {
                     triggerHaptic('heavy');
                     window.speechSynthesis?.cancel();
-                    stopListening();
-                    releaseMediaStream();
+                    stopAndCleanupRecognition();
                     setShowExitConfirmModal(false);
                     setStep('menu');
                   }}
