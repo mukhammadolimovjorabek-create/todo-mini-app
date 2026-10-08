@@ -1135,20 +1135,17 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
 
             {/* Interactive Microphone Button (Foydalanuvchi ko'rib turishi va xohlasa qo'lda boshqarishi uchun) */}
             <div className="flex flex-col items-center justify-center py-1">
-              <button
-                type="button"
-                onClick={toggleListening}
+              <div
                 className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl ${
                   isRecording
                     ? 'bg-gradient-to-r from-rose-500 to-red-600 text-white animate-pulse shadow-rose-500/40 ring-4 ring-rose-200 scale-105'
-                    : 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-teal-500/30 hover:scale-105 active:scale-95'
+                    : 'bg-gradient-to-r from-slate-200 to-slate-300 text-slate-400'
                 }`}
-                title={isRecording ? "Mikrofonni to'xtatish" : "Mikrofonni yoqish"}
               >
                 {isRecording ? <Mic size={28} className="animate-bounce" /> : <MicOff size={26} />}
-              </button>
-              <span className={`text-[11px] font-bold mt-2 ${isRecording ? 'text-rose-600 font-black' : 'text-slate-500'}`}>
-                {isRecording ? "🎙️ Tinglanmoqda (To'xtatish uchun bosing)" : "🎙️ Gapirish uchun bosing (Yoki avtomatik tinglaydi)"}
+              </div>
+              <span className={`text-[11px] font-bold mt-2 ${isRecording ? 'text-rose-600 font-black' : 'text-slate-400'}`}>
+                {isRecording ? "🎙️ Tinglanmoqda..." : "🎙️ Mikrofon avtomatik yoqilishi kutilmoqda"}
               </span>
             </div>
 
