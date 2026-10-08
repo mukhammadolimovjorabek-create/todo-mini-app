@@ -1146,7 +1146,10 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
                   </p>
                   <button
                     type="button"
-                    onClick={() => setIsManualInput(true)}
+                    onClick={() => {
+                      setIsManualInput(true);
+                      setIsTimerRunning(true);
+                    }}
                     className="text-[10px] font-bold text-slate-500 hover:text-[#7052ff] underline pt-1 block mx-auto"
                   >
                     Mikrofon ishlamasa, yozish uchun bosing ✍️

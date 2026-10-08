@@ -1110,7 +1110,10 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
                   </p>
                   <button
                     type="button"
-                    onClick={() => setIsManualInput(true)}
+                    onClick={() => {
+                      setIsManualInput(true);
+                      setIsTimerRunning(true);
+                    }}
                     className="text-[10px] font-bold text-slate-500 hover:text-teal-700 underline pt-1 block mx-auto"
                   >
                     Mikrofon ishlamasa, yozish uchun bosing ✍️
