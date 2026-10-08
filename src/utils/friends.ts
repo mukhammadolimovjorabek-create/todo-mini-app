@@ -59,3 +59,10 @@ export const resetFriends = (): InvitedFriend[] => {
   localStorage.removeItem(FRIENDS_KEY);
   return [];
 };
+
+export const removeFriend = (friendId: string): InvitedFriend[] => {
+  const current = loadFriends();
+  const updated = current.filter(f => f.id !== friendId);
+  saveFriends(updated);
+  return updated;
+};

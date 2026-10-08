@@ -74,9 +74,19 @@ export const ScreenAnalytics: React.FC = () => {
         },
         body: JSON.stringify({ user_id: user?.id, friend_id: friendId })
       });
-      setFriendsList(prev => prev.filter(f => f.id !== friendId));
+      setFriendsList(prev => {
+        const next = prev.filter(f => f.id !== friendId);
+        localStorage.setItem("todo_friends_v1", JSON.stringify(next));
+        return next;
+      });
     } catch(e) {
       console.error(e);
+      // Fallback local update even if API fails
+      setFriendsList(prev => {
+        const next = prev.filter(f => f.id !== friendId);
+        localStorage.setItem("todo_friends_v1", JSON.stringify(next));
+        return next;
+      });
     }
   };
 
@@ -625,13 +635,29 @@ export const ScreenAnalytics: React.FC = () => {
                                 </div>
                               </div>
 
-                              <div className="text-right">
-                                <p className={`text-sm font-black ${item.isMe ? (isZero ? 'text-slate-300' : 'text-[#c4f82a]') : 'text-[#7052ff]'}`}>
-                                  {item.points}
-                                </p>
-                                <p className={`text-[9px] font-bold ${item.isMe ? 'text-white/60' : 'text-slate-400'}`}>
-                                  ball
-                                </p>
+                              <div className="flex items-center space-x-3 text-right">
+                                <div>
+                                  <p className={`text-sm font-black ${item.isMe ? (isZero ? 'text-slate-300' : 'text-[#c4f82a]') : 'text-[#7052ff]'}`}>
+                                    {item.points}
+                                  </p>
+                                  <p className={`text-[9px] font-bold ${item.isMe ? 'text-white/60' : 'text-slate-400'}`}>
+                                    ball
+                                  </p>
+                                </div>
+                                {!item.isMe && (
+                                  <button
+                                    onClick={() => handleUnfriend(item.id)}
+                                    className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                                    title="Do'stlikni bekor qilish"
+                                  >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M16 21v-2a4 4 0 0 0-4-4H5c-1.1 0-2 .9-2 2v2"></path>
+                                      <circle cx="8.5" cy="7" r="4"></circle>
+                                      <line x1="18" y1="8" x2="23" y2="13"></line>
+                                      <line x1="23" y1="8" x2="18" y2="13"></line>
+                                    </svg>
+                                  </button>
+                                )}
                               </div>
                             </div>
                           );
