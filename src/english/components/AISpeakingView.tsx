@@ -5,6 +5,7 @@ import { getSeenQuestions, markQuestionSeen, saveTestResult } from '../utils/sto
 import { evaluateCandidateSpeech, type SpeechEvaluationResult } from '../utils/ieltsScoring';
 import { triggerHaptic } from '../../utils/telegram';
 import { speakEnglishText } from '../../utils/speechVoice';
+import { startMicKeepAlive, stopMicKeepAlive } from '../../utils/micKeepAlive';
 import type { TestResultItem, TestType } from '../types';
 
 interface Props {
@@ -137,6 +138,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
 
   const isListeningWantedRef = useRef<boolean>(false);
   const isExamActiveRef = useRef<boolean>(false);
+  const keepAliveStreamRef = useRef<MediaStream | null>(null);
   const [isManualInput, setIsManualInput] = useState<boolean>(false);
 
   // Pre-request microphone permission once during direct user tap and release tracks immediately
@@ -159,6 +161,8 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       try { recognitionRef.current.abort(); } catch {}
       recognitionRef.current = null;
     }
+    stopMicKeepAlive(keepAliveStreamRef.current);
+    keepAliveStreamRef.current = null;
   };
 
   useEffect(() => {
@@ -311,9 +315,14 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
   };
 
   // Step 2: Confirm Topic -> Start Locked Exam
-  const handleStartExam = () => {
+  const handleStartExam = async () => {
     triggerHaptic('heavy');
     isExamActiveRef.current = true;
+    
+    if (!keepAliveStreamRef.current) {
+      keepAliveStreamRef.current = await startMicKeepAlive();
+    }
+
     stopListening();
 
     setTranscriptHistory([]);

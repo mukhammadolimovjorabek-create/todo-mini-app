@@ -1,0 +1,1 @@
+export const startMicKeepAlive = async () => { try { const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); return stream; } catch(e) { console.error(e); return null; } }; export const stopMicKeepAlive = (stream: MediaStream | null) => { if(stream) { stream.getTracks().forEach(t => t.stop()); } };

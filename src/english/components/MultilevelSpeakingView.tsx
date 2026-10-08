@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Volume2, VolumeX, Clock, Award, ChevronRight, RotateCcw, Mic, MicOff, Image as ImageIcon } from 'lucide-react';
+import { startMicKeepAlive, stopMicKeepAlive } from '../../utils/micKeepAlive';
 import {
   getRandomMultilevelPart1_1,
   getRandomMultilevelPart1_2,
@@ -121,6 +122,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
 
   const isListeningWantedRef = useRef<boolean>(false);
   const isExamActiveRef = useRef<boolean>(false);
+  const keepAliveStreamRef = useRef<MediaStream | null>(null);
   const [isManualInput, setIsManualInput] = useState<boolean>(false);
 
   const stopListening = () => {
@@ -141,6 +143,8 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       try { recognitionRef.current.abort(); } catch {}
       recognitionRef.current = null;
     }
+    stopMicKeepAlive(keepAliveStreamRef.current);
+    keepAliveStreamRef.current = null;
   };
 
   useEffect(() => {
@@ -268,9 +272,14 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
   };
 
   // Start selected Part
-  const handleStartExam = (part: PartSelection) => {
+  const handleStartExam = async (part: PartSelection) => {
     triggerHaptic('heavy');
     isExamActiveRef.current = true;
+    
+    if (!keepAliveStreamRef.current) {
+      keepAliveStreamRef.current = await startMicKeepAlive();
+    }
+    
     stopListening();
 
     setSelectedPart(part);
