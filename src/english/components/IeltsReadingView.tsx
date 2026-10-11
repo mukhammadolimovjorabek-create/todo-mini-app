@@ -693,12 +693,31 @@ const READING_PASSAGES: ReadingPassage[] = [
   },
 ];
 
+export const IELTS_READING_SCORE_TABLE = [
+  { min: 39, max: 40, band: '9.0', rangeStr: '39–40' },
+  { min: 37, max: 38, band: '8.5', rangeStr: '37–38' },
+  { min: 35, max: 36, band: '8.0', rangeStr: '35–36' },
+  { min: 33, max: 34, band: '7.5', rangeStr: '33–34' },
+  { min: 30, max: 32, band: '7.0', rangeStr: '30–32' },
+  { min: 27, max: 29, band: '6.5', rangeStr: '27–29' },
+  { min: 23, max: 26, band: '6.0', rangeStr: '23–26' },
+  { min: 19, max: 22, band: '5.5', rangeStr: '19–22' },
+  { min: 15, max: 18, band: '5.0', rangeStr: '15–18' },
+  { min: 13, max: 14, band: '4.5', rangeStr: '13–14' },
+  { min: 10, max: 12, band: '4.0', rangeStr: '10–12' },
+  { min: 8,  max: 9,  band: '3.5', rangeStr: '8–9' },
+  { min: 6,  max: 7,  band: '3.0', rangeStr: '6–7' },
+  { min: 4,  max: 5,  band: '2.5', rangeStr: '4–5' },
+  { min: 0,  max: 3,  band: 'None', rangeStr: '0–3' },
+];
+
 export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName }) => {
   const [selectedPassageIdx, setSelectedPassageIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState<number>(0);
   const [bandScore, setBandScore] = useState<number>(0);
+  const [showScaleModal, setShowScaleModal] = useState<boolean>(false);
 
   // Error Review States (User requested flow: "xatolarni ko'rish" and "tahlil qilish")
   const [showOnlyErrors, setShowOnlyErrors] = useState<boolean>(false);
@@ -781,7 +800,7 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
     if (rawScore >= 8) return 3.5;
     if (rawScore >= 6) return 3.0;
     if (rawScore >= 4) return 2.5;
-    return 2.0;
+    return 0; // 0–3 to'g'ri javob: None
   };
 
   const handleSubmit = () => {
@@ -929,6 +948,67 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
                 Ha, chiqish
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Official IELTS Reading Band Score Table ── */}
+      {showScaleModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-[2rem] p-5 max-w-sm w-full space-y-3.5 shadow-2xl border border-slate-100 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b pb-3 border-slate-100">
+              <div>
+                <h4 className="text-sm font-black text-slate-900">IELTS Reading Baholash Jadvali</h4>
+                <p className="text-[10px] text-slate-500 font-medium">Haqiqiy 40 ta savollik Academic shkala</p>
+              </div>
+              <button
+                onClick={() => setShowScaleModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs transition-all active:scale-95"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="overflow-y-auto space-y-1 pr-1 flex-1">
+              <div className="grid grid-cols-2 text-[10px] font-black uppercase text-slate-400 px-3 py-1 border-b border-slate-100">
+                <span>To'g'ri javob</span>
+                <span className="text-right">Band Score</span>
+              </div>
+              {IELTS_READING_SCORE_TABLE.map((item, idx) => {
+                const isCurrent = isSubmitted && ((item.band === 'None' && score <= 3) || (score >= item.min && score <= item.max));
+                return (
+                  <div
+                    key={idx}
+                    className={`grid grid-cols-2 items-center px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      isCurrent
+                        ? 'bg-[#7052ff] text-white shadow-sm font-black'
+                        : idx % 2 === 0
+                        ? 'bg-slate-50 text-slate-800'
+                        : 'bg-white text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-1.5">
+                      <span>{item.rangeStr}</span>
+                      {isCurrent && (
+                        <span className="text-[9px] bg-white text-[#7052ff] px-1.5 py-0.2 rounded-full font-black">
+                          Sizda
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right font-mono font-black text-sm">
+                      {item.band}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setShowScaleModal(false)}
+              className="w-full py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-all active:scale-95"
+            >
+              Yopish
+            </button>
           </div>
         </div>
       )}
@@ -1120,39 +1200,51 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
                   IELTS Reading Natijasi
                 </span>
                 <h4 className="text-xl font-black text-slate-900 mt-1">
-                  {score} / {currentPassage.questions.length} to'g'ri javob
+                  {score} / 40 to'g'ri javob
                 </h4>
                 <p className="text-xs text-slate-500">
-                  {score === currentPassage.questions.length ? 'Barcha savollarga to\'g\'ri javob berdingiz! 🏆' : `${currentPassage.questions.length - score} ta xato aniqlandi.`}
+                  {score === 40 ? 'Barcha savollarga to\'g\'ri javob berdingiz! 🏆' : `${40 - score} ta xato yoki belgilanmagan savol.`}
                 </p>
               </div>
 
               <div className="text-right bg-gradient-to-br from-[#7052ff] to-[#4e2bf5] text-white p-3.5 rounded-2xl shadow-md min-w-[90px]">
                 <span className="text-2xl font-black font-mono block">
-                  {bandScore.toFixed(1)}
+                  {bandScore === 0 ? 'None' : bandScore.toFixed(1)}
                 </span>
                 <span className="text-[9px] uppercase font-black text-purple-100">IELTS Band</span>
               </div>
             </div>
 
-            {/* User Requested: "xatolarni ko'rish degan button chiqadi" */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-              {score < currentPassage.questions.length && (
+            {/* Scale View & Error buttons */}
+            <div className="space-y-2 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {wrongQuestions.length > 0 && (
+                  <button
+                    onClick={handleViewErrors}
+                    className="py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs shadow-md transition-all flex items-center justify-center space-x-2 active:scale-95"
+                  >
+                    <Search size={15} />
+                    <span>🔍 Xatolarni ko'rish ({wrongQuestions.length} ta)</span>
+                  </button>
+                )}
+
                 <button
-                  onClick={handleViewErrors}
-                  className="py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs shadow-md transition-all flex items-center justify-center space-x-2 active:scale-95"
+                  onClick={handleReset}
+                  className="py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-all flex items-center justify-center space-x-2 active:scale-95"
                 >
-                  <Search size={15} />
-                  <span>🔍 Xatolarni ko'rish ({wrongQuestions.length} ta)</span>
+                  <RotateCcw size={15} />
+                  <span>Qaytadan topshirish</span>
                 </button>
-              )}
+              </div>
 
               <button
-                onClick={handleReset}
-                className="py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-all flex items-center justify-center space-x-2 active:scale-95"
+                onClick={() => {
+                  triggerHaptic('light');
+                  setShowScaleModal(true);
+                }}
+                className="w-full py-2.5 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-[#7052ff] font-black text-xs transition-all flex items-center justify-center space-x-1.5 active:scale-95 border border-indigo-100"
               >
-                <RotateCcw size={15} />
-                <span>Qaytadan topshirish</span>
+                <span>📊 Rasmiy IELTS Reading Baholash Jadvalini ko'rish</span>
               </button>
             </div>
           </div>

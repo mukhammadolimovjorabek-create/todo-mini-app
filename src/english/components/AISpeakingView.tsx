@@ -278,15 +278,6 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     }
   };
 
-  const toggleListening = () => {
-    triggerHaptic('medium');
-    if (isRecording) {
-      stopListening();
-    } else {
-      startListening();
-    }
-  };
-
   // Filter topics by domain
   const filterTopicByDomain = <T extends { topic: string; id: string }>(list: T[], domainId: string): T => {
     const seen = new Set(getSeenQuestions().map((s) => s.toLowerCase()));

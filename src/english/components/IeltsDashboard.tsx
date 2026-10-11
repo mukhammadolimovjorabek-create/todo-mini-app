@@ -32,7 +32,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
     const lastReading = results.find((r) => r.testType === 'reading');
     const lastWriting = results.find((r) => r.testType === 'writing_task1' || r.testType === 'writing_task2');
     return {
-      readingScore: lastReading?.overallBand ? lastReading.overallBand.toFixed(1) : null,
+      readingScore: lastReading?.overallBand !== undefined ? (lastReading.overallBand === 0 ? 'None' : lastReading.overallBand.toFixed(1)) : null,
       writingScore: lastWriting?.overallBand ? lastWriting.overallBand.toFixed(1) : null,
     };
   }, []);

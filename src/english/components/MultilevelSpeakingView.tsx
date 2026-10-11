@@ -262,15 +262,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     }
   };
 
-  const toggleListening = () => {
-    triggerHaptic('medium');
-    if (isRecording) {
-      stopListening();
-    } else {
-      startListening();
-    }
-  };
-
   // Start selected Part
   const handleStartExam = async (part: PartSelection) => {
     triggerHaptic('heavy');

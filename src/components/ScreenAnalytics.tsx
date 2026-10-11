@@ -61,7 +61,15 @@ export const ScreenAnalytics: React.FC = () => {
     setCatBreakdown(breakdown);
 
     // Aniq ballar tizimi (Yuqori=3, O'rta=2, Past=1, Streak=kuniga +2)
-            // @ts-ignore
+    const scoreData = calculateUserPoints();
+    setAllTime({
+      total: allTasks.length,
+      done,
+      streak: scoreData.streakDays,
+      points: scoreData.totalPoints,
+    });
+  }, [activeTab]);
+
   const handleUnfriend = async (friendId: string) => {
     try {
       const user = getTelegramUser();
@@ -89,15 +97,6 @@ export const ScreenAnalytics: React.FC = () => {
       });
     }
   };
-
-  const scoreData = calculateUserPoints();
-    setAllTime({
-      total: allTasks.length,
-      done,
-      streak: scoreData.streakDays,
-      points: scoreData.totalPoints,
-    });
-  }, [activeTab]);
 
   const maxDone = Math.max(...week.map((d) => d.done), 1);
   const weekTotal = week.reduce((a, b) => a + b.total, 0);
