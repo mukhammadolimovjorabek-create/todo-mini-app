@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Sparkles, CheckCircle2, RotateCcw, Award, AlertCircle, BarChart3, FileText, Clock } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle2, RotateCcw, Award, AlertCircle, BarChart3, FileText, Clock, TrendingUp } from 'lucide-react';
 import { triggerHaptic } from '../../utils/telegram';
 import { saveTestResult } from '../utils/storage';
+import { evaluateIeltsWriting, type WritingAnalysisResult } from '../utils/ieltsWritingScoring';
 import type { TestResultItem } from '../types';
 
 interface Props {
@@ -10,18 +11,6 @@ interface Props {
 }
 
 type WritingTaskTab = 'task1' | 'task2';
-
-interface WritingBandBreakdown {
-  overallBand: number;
-  taskResponse: number;
-  coherenceCohesion: number;
-  lexicalResource: number;
-  grammaticalRange: number;
-  wordCount: number;
-  strengths: string[];
-  improvements: string[];
-  recommendedVocabulary: { word: string; meaning: string; example: string }[];
-}
 
 // Sample Task 2 Prompts
 const SAMPLE_TASK2_PROMPTS = [
@@ -48,8 +37,8 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
   const [task2Text, setTask2Text] = useState('');
   const [task1Started, setTask1Started] = useState(false);
   const [task2Started, setTask2Started] = useState(false);
-  const [task1Result, setTask1Result] = useState<WritingBandBreakdown | null>(null);
-  const [task2Result, setTask2Result] = useState<WritingBandBreakdown | null>(null);
+  const [task1Result, setTask1Result] = useState<WritingAnalysisResult | null>(null);
+  const [task2Result, setTask2Result] = useState<WritingAnalysisResult | null>(null);
   const [task1TimeLeft, setTask1TimeLeft] = useState(20 * 60);
   const [task2TimeLeft, setTask2TimeLeft] = useState(40 * 60);
 
@@ -73,7 +62,7 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
     else setTask2Started(started);
   };
 
-  const setResult = (res: WritingBandBreakdown | null) => {
+  const setResult = (res: WritingAnalysisResult | null) => {
     if (activeTab === 'task1') setTask1Result(res);
     else setTask2Result(res);
   };
@@ -130,47 +119,7 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
     setIsEvaluating(true);
 
     setTimeout(() => {
-      const paragraphs = essayText.split(/\n+/).filter((p) => p.trim().length > 0).length;
-      let base = 6.0;
-      if (wordCount >= minWordsRequired) base += 0.5;
-      if (wordCount >= minWordsRequired + 40) base += 0.5;
-      if (paragraphs >= (activeTab === 'task1' ? 3 : 4)) base += 0.5;
-
-      const band = Math.min(8.5, Math.max(5.5, base));
-
-      const evaluation: WritingBandBreakdown = {
-        overallBand: band,
-        taskResponse: band,
-        coherenceCohesion: Math.min(9.0, band + (paragraphs >= 3 ? 0.5 : 0)),
-        lexicalResource: band,
-        grammaticalRange: Math.max(5.0, band - 0.5),
-        wordCount,
-        strengths: activeTab === 'task1' ? [
-          "Diagrammadagi asosiy tendensiyalar va eng yuqori/past ko'rsatkichlar (Key features) to'g'ri tanlangan.",
-          "Overview (umumiy xulosa) xatboshisi kiritilgan, bu Task Achievement bo'yicha 7.0+ talabidir.",
-          "Raqamlar va foizlar taqqoslama shaklda ifodalangan.",
-        ] : [
-          "Mavzuga doir asosiy argumentlar keltirilgan va fikr ketma-ketligi saqlangan.",
-          `${paragraphs} ta xatboshilarga ajratilgan, insho strukturasi aniq.`,
-          "Akademik uslubdagi kirish va xulosa shakllantirilgan.",
-        ],
-        improvements: [
-          wordCount < minWordsRequired
-            ? `So'zlar soni (${wordCount}) talab qilingan ${minWordsRequired} tadan kam. Bu Task Achievement balini tushiradi.`
-            : "Ko'rsatkichlar orasidagi ziddiyatlarni ifodalash uchun 'Whereas', 'In stark contrast' kabi bog'lovchilarni ko'paytiring.",
-          "Grammatik xilma-xillikni oshirish uchun passiv nisbat va murakkab gaplar qo'shing.",
-          "Sinonimlardan faolroq foydalaning (masalan, 'increase' o'rniga 'surge', 'rise substantially').",
-        ],
-        recommendedVocabulary: activeTab === 'task1' ? [
-          { word: 'Witness a surge', meaning: 'Keskin o\'sishni qayd etmoq', example: 'Solar energy witnessed a dramatic surge over the decade.' },
-          { word: 'Outperform', meaning: 'Ortda qoldirmoq', example: 'Wind power outperformed all other renewable sources by 2025.' },
-          { word: 'Plateau', meaning: 'Bir xil darajada barqarorlashmoq', example: 'Hydroelectric output plateaued after initial expansion.' },
-        ] : [
-          { word: 'Substantial', meaning: 'Sezilarli, muhim', example: 'There has been a substantial shift in consumer habits.' },
-          { word: 'Detrimental', meaning: 'Zararli, salbiy ta\'sirli', example: 'Excessive workload can have detrimental effects on health.' },
-          { word: 'Exacerbate', meaning: 'Kuchaytirmoq, og\'irlashtirmoq', example: 'Traffic congestion exacerbates urban pollution.' },
-        ],
-      };
+      const evaluation = evaluateIeltsWriting(essayText, activeTab);
 
       setResult(evaluation);
       setIsEvaluating(false);
@@ -205,7 +154,7 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
 
       saveTestResult(historyItem);
       triggerHaptic('heavy');
-    }, 1600);
+    }, 1200);
   };
 
   return (
@@ -610,6 +559,19 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
               </div>
             </div>
 
+            {/* Word Count Penalty Warning (British Council rule) */}
+            {result.wordCountPenaltyApplied && (
+              <div className="bg-rose-50 border border-rose-200 text-rose-800 p-4 rounded-3xl flex items-start space-x-3 text-xs shadow-sm">
+                <AlertCircle className="text-rose-600 shrink-0 mt-0.5" size={18} />
+                <div className="space-y-0.5">
+                  <span className="font-black block text-rose-900">So'zlar soni yetarli emas (Underlength Penalty)</span>
+                  <span className="leading-relaxed">
+                    Yozilgan so'zlar: <b>{result.wordCount} ta</b> (Talab: kamida <b>{result.minWordsRequired} ta</b>). Rasmiy British Council qoidasiga ko'ra, yetarli yozilmagan inshoning Task balli 5.0 dan oshirilmaydi.
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Strengths & Improvements */}
             <div className="bg-white rounded-3xl p-5 border border-slate-100 space-y-4 shadow-sm">
               <div>
@@ -643,14 +605,76 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
               </div>
             </div>
 
+            {/* Detected C1/C2 Academic Vocabulary (LexiBot style) */}
+            {result.detectedAcademicWords.length > 0 && (
+              <div className="bg-emerald-50/70 border border-emerald-200 rounded-3xl p-5 space-y-2.5 shadow-sm">
+                <div className="flex items-center space-x-1.5 text-emerald-900">
+                  <CheckCircle2 size={15} className="text-emerald-600" />
+                  <h4 className="text-xs font-black uppercase tracking-wider">
+                    Aniqlangan C1/C2 Akademik so'zlar ({result.detectedAcademicWords.length} ta):
+                  </h4>
+                </div>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {result.detectedAcademicWords.map((word, idx) => (
+                    <span key={idx} className="bg-white border border-emerald-200 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-xl shadow-xs">
+                      ✓ {word}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Word Repetition & Synonym Suggestions (LexiBot / BandMate style) */}
+            {result.repetitionWarnings.length > 0 && (
+              <div className="bg-amber-50/80 border border-amber-200 rounded-3xl p-5 space-y-2.5 shadow-sm">
+                <div className="flex items-center space-x-1.5 text-amber-900">
+                  <AlertCircle size={15} className="text-amber-600" />
+                  <h4 className="text-xs font-black uppercase tracking-wider">
+                    Ko'p takrorlangan so'zlar va sinonimlar:
+                  </h4>
+                </div>
+                <div className="space-y-2">
+                  {result.repetitionWarnings.map((rep, idx) => (
+                    <div key={idx} className="text-xs text-amber-950 bg-white p-3 rounded-2xl border border-amber-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 shadow-xs">
+                      <span>
+                        <b>'{rep.word}'</b> ({rep.count} marta takrorlangan)
+                      </span>
+                      <span className="text-[11px] text-[#7052ff] font-bold">
+                        Tavsiya: {rep.suggestedSynonyms.slice(0, 3).join(', ')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Band Milestone Roadmap (BandMate style: Next Band Steps) */}
+            {result.bandMilestoneAdvice.length > 0 && (
+              <div className="bg-gradient-to-br from-[#1b1542] to-[#2b186b] text-white rounded-3xl p-5 space-y-3 shadow-md">
+                <div className="flex items-center space-x-2 text-[#c4f82a]">
+                  <TrendingUp size={16} />
+                  <h4 className="text-xs font-black uppercase tracking-wider">
+                    Band {(Math.min(9.0, result.overallBand + 0.5)).toFixed(1)} ga chiqish qadamlari:
+                  </h4>
+                </div>
+                <div className="space-y-2 text-xs text-purple-100/90 leading-relaxed">
+                  {result.bandMilestoneAdvice.map((step, idx) => (
+                    <div key={idx} className="bg-white/5 p-2.5 rounded-xl border border-white/5 font-medium">
+                      {step}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Recommended High-Band Vocabulary */}
             <div className="bg-indigo-50/70 rounded-3xl p-5 border border-indigo-100 space-y-3">
               <h4 className="text-xs font-black uppercase tracking-wider text-[#7052ff]">
-                Band 8.0+ Lug'at Tavsiyasi:
+                Band 8.0+ Tavsiya etilgan Lug'atlar:
               </h4>
               <div className="space-y-2">
                 {result.recommendedVocabulary.map((v, i) => (
-                  <div key={i} className="bg-white p-3 rounded-xl border border-indigo-100/60">
+                  <div key={i} className="bg-white p-3 rounded-xl border border-indigo-100/60 shadow-xs">
                     <div className="flex items-center space-x-2">
                       <span className="text-xs font-black text-slate-900">{v.word}</span>
                       <span className="text-[10px] text-slate-500">— {v.meaning}</span>
