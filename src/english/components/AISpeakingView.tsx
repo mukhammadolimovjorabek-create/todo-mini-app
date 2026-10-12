@@ -4,7 +4,7 @@ import { speakingBank, getRandomPart2Topic, getRandomPart3Topic, type Part1Topic
 import { getSeenQuestions, markQuestionSeen, saveTestResult } from '../utils/storage';
 import { evaluateCandidateSpeech, type SpeechEvaluationResult } from '../utils/ieltsScoring';
 import { triggerHaptic } from '../../utils/telegram';
-import { speakEnglishText } from '../../utils/speechVoice';
+import { speakEnglishText, stopSpeaking } from '../../utils/speechVoice';
 import { createExamRecorder, transcribeAudio, resolvePendingAnswers } from '../utils/examRecorder';
 import type { TestResultItem, TestType } from '../types';
 
@@ -94,19 +94,43 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
   };
 
   const [isExaminerSpeaking, setIsExaminerSpeaking] = useState(false);
+  const prepIntervalRef = useRef<any>(null);
+  const speechTimeoutRef = useRef<any>(null);
+
+  const clearPrepInterval = () => {
+    if (prepIntervalRef.current) {
+      clearInterval(prepIntervalRef.current);
+      prepIntervalRef.current = null;
+    }
+    setPrepDelay(null);
+  };
+
+  const clearSpeechTimeout = () => {
+    if (speechTimeoutRef.current) {
+      clearTimeout(speechTimeoutRef.current);
+      speechTimeoutRef.current = null;
+    }
+  };
 
   // Trigger 3-second countdown after examiner finishes reading before timer and mic start
   const triggerStartAfterSpeech = (onStart: () => void) => {
+    clearPrepInterval();
+    if (!isExamActiveRef.current) return;
     setPrepDelay(3);
     let count = 3;
-    const interval = setInterval(() => {
+    prepIntervalRef.current = setInterval(() => {
+      if (!isExamActiveRef.current) {
+        clearPrepInterval();
+        return;
+      }
       count -= 1;
       if (count > 0) {
         setPrepDelay(count);
       } else {
-        clearInterval(interval);
-        setPrepDelay(null);
-        onStart();
+        clearPrepInterval();
+        if (isExamActiveRef.current) {
+          onStart();
+        }
       }
     }, 1000);
   };
@@ -115,6 +139,9 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
   const speakText = (text: string, onEnd?: () => void) => {
     setIsTimerRunning(false);
     stopListening();
+    clearPrepInterval();
+
+    if (!isExamActiveRef.current) return;
 
     if (!speechEnabled) {
       if (onEnd) {
@@ -128,7 +155,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       pitch: 1.0,
       onEnd: () => {
         setIsExaminerSpeaking(false);
-        if (onEnd) {
+        if (isExamActiveRef.current && onEnd) {
           triggerStartAfterSpeech(onEnd);
         }
       }
@@ -170,13 +197,16 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     isExamActiveRef.current = false;
     isListeningWantedRef.current = false;
     setIsRecording(false);
+    setIsExaminerSpeaking(false);
+    clearPrepInterval();
+    clearSpeechTimeout();
+    stopSpeaking();
     recorderRef.current.release();
   };
 
   useEffect(() => {
     return () => {
       stopAndCleanupRecognition();
-      window.speechSynthesis?.cancel();
     };
   }, []);
 
@@ -275,7 +305,8 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       setCountdown(TIME_LIMITS.part1Question);
       setIsTimerRunning(false);
 
-      setTimeout(() => {
+      speechTimeoutRef.current = setTimeout(() => {
+        if (!isExamActiveRef.current) return;
         speakText(
           `Welcome to IELTS Speaking Part 1. Topic: ${topic.topic}. First question: ${topic.questions[0]}`,
           () => {
@@ -292,7 +323,8 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       setIsTimerRunning(false);
       setPrepNotes('');
 
-      setTimeout(() => {
+      speechTimeoutRef.current = setTimeout(() => {
+        if (!isExamActiveRef.current) return;
         speakText(
           `In this part, I will give you a topic. You have one minute to prepare. Here is your topic: ${topic.cueCard}`,
           () => {
@@ -308,7 +340,8 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       setCountdown(TIME_LIMITS.part3Question);
       setIsTimerRunning(false);
 
-      setTimeout(() => {
+      speechTimeoutRef.current = setTimeout(() => {
+        if (!isExamActiveRef.current) return;
         speakText(
           `We are now in Part 3. Let's discuss ${topic.topic} in depth. First question: ${topic.questions[0]}`,
           () => {
@@ -334,7 +367,8 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       setCountdown(TIME_LIMITS.part1Question);
       setIsTimerRunning(false);
 
-      setTimeout(() => {
+      speechTimeoutRef.current = setTimeout(() => {
+        if (!isExamActiveRef.current) return;
         speakText(
           `Welcome ${userName} to your Full IELTS Speaking Mock Test. We will begin Part 1 with ${p1.topic}. ${p1.questions[0]}`,
           () => {
@@ -605,7 +639,10 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       <div className="p-5 space-y-5 animate-in fade-in duration-300">
         <div className="flex items-center justify-between">
           <button
-            onClick={onBack}
+            onClick={() => {
+              stopAndCleanupRecognition();
+              onBack();
+            }}
             className="flex items-center space-x-1.5 text-xs font-black text-slate-600 hover:text-slate-900"
           >
             <ArrowLeft size={16} />

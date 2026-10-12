@@ -5,12 +5,20 @@
  */
 
 let currentAudio: HTMLAudioElement | null = null;
+let currentSafetyTimer: any = null;
 
 export function stopSpeaking(): void {
+  if (currentSafetyTimer) {
+    clearTimeout(currentSafetyTimer);
+    currentSafetyTimer = null;
+  }
   if (currentAudio) {
     try {
+      currentAudio.onended = null;
+      currentAudio.onerror = null;
       currentAudio.pause();
       currentAudio.currentTime = 0;
+      currentAudio.src = '';
     } catch {}
     currentAudio = null;
   }
@@ -32,6 +40,10 @@ export function speakEnglishText(
   const finish = () => {
     if (!ended) {
       ended = true;
+      if (currentSafetyTimer) {
+        clearTimeout(currentSafetyTimer);
+        currentSafetyTimer = null;
+      }
       currentAudio = null;
       if (onEnd) onEnd();
     }
@@ -49,17 +61,23 @@ export function speakEnglishText(
   currentAudio = audio;
 
   // Safety timer in case audio stalls
-  const safetyTimer = setTimeout(() => {
+  currentSafetyTimer = setTimeout(() => {
     finish();
   }, Math.max(3000, text.length * 90));
 
   audio.onended = () => {
-    clearTimeout(safetyTimer);
+    if (currentSafetyTimer) {
+      clearTimeout(currentSafetyTimer);
+      currentSafetyTimer = null;
+    }
     finish();
   };
 
   audio.onerror = () => {
-    clearTimeout(safetyTimer);
+    if (currentSafetyTimer) {
+      clearTimeout(currentSafetyTimer);
+      currentSafetyTimer = null;
+    }
     console.warn('Backend TTS failed, checking device native English voice...');
     playStrictEnglishWebSpeech(text, finish);
   };
@@ -68,13 +86,15 @@ export function speakEnglishText(
   if (playPromise !== undefined) {
     playPromise.catch((err) => {
       console.warn('Audio play interrupted or waiting for gesture:', err);
-      clearTimeout(safetyTimer);
+      if (currentSafetyTimer) {
+        clearTimeout(currentSafetyTimer);
+        currentSafetyTimer = null;
+      }
       playStrictEnglishWebSpeech(text, finish);
     });
   }
 
   return () => {
-    clearTimeout(safetyTimer);
     stopSpeaking();
   };
 }
