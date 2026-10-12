@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Volume2, VolumeX, Clock, Award, ChevronRight, RotateCcw, Mic, MicOff, Image as ImageIcon } from 'lucide-react';
-import { startMicKeepAlive, stopMicKeepAlive } from '../../utils/micKeepAlive';
+import { createExamRecorder, transcribeAudio, resolvePendingAnswers } from '../utils/examRecorder';
 import {
   getRandomMultilevelPart1_1,
   getRandomMultilevelPart1_2,
@@ -62,7 +62,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [feedback, setFeedback] = useState<MultilevelEvaluationResult | null>(null);
 
-  const recognitionRef = useRef<any>(null);
   const currentTurnSpeechRef = useRef<string>('');
   const sessionBaseTextRef = useRef<string>('');
   const liveTranscriptRef = useRef<string>('');
@@ -122,29 +121,37 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
 
   const isListeningWantedRef = useRef<boolean>(false);
   const isExamActiveRef = useRef<boolean>(false);
-  const keepAliveStreamRef = useRef<MediaStream | null>(null);
   const [isManualInput, setIsManualInput] = useState<boolean>(false);
+
+  // ONE microphone stream per part / full test (single Telegram permission prompt).
+  const recorderRef = useRef(createExamRecorder());
+  const micDeniedRef = useRef<boolean>(false);
+  const turnAudioRef = useRef<Promise<Blob | null> | null>(null);
+  const pendingTranscriptsRef = useRef<Map<number, Promise<string>>>(new Map());
 
   const stopListening = () => {
     isListeningWantedRef.current = false;
     setIsRecording(false);
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {}
+    if (recorderRef.current.isRecording()) {
+      turnAudioRef.current = recorderRef.current.stopTurn();
     }
+  };
+
+  const queueTurnTranscription = (historyIndex: number) => {
+    const audio = turnAudioRef.current;
+    turnAudioRef.current = null;
+    if (!audio) return;
+    pendingTranscriptsRef.current.set(
+      historyIndex,
+      audio.then((blob) => (blob ? transcribeAudio(blob) : ''))
+    );
   };
 
   const stopAndCleanupRecognition = () => {
     isExamActiveRef.current = false;
     isListeningWantedRef.current = false;
     setIsRecording(false);
-    if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch {}
-      recognitionRef.current = null;
-    }
-    stopMicKeepAlive(keepAliveStreamRef.current);
-    keepAliveStreamRef.current = null;
+    recorderRef.current.release();
   };
 
   useEffect(() => {
@@ -154,7 +161,14 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     };
   }, []);
 
-  const startListening = () => {
+  const fallbackToManualInput = () => {
+    isListeningWantedRef.current = false;
+    setIsRecording(false);
+    setIsManualInput(true);
+    setIsTimerRunning(true);
+  };
+
+  const startListening = async () => {
     // If examiner is still speaking or prep delay is counting down, microphone MUST remain OFF
     if (isExaminerSpeaking) {
       return;
@@ -162,116 +176,39 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
 
     isListeningWantedRef.current = true;
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setIsManualInput(true);
-      setIsTimerRunning(true);
+    if (micDeniedRef.current) {
+      fallbackToManualInput();
       return;
     }
 
-    // Reuse existing persistent instance if available!
-    let recognition = recognitionRef.current;
-    if (!recognition) {
-      try {
-        recognition = new SpeechRecognition();
-        recognition.lang = 'en-US';
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.maxAlternatives = 1;
+    // First call opens the mic (single permission prompt); later calls reuse the open stream.
+    const micReady = await recorderRef.current.ensureMic();
+    if (!isListeningWantedRef.current || !isExamActiveRef.current) return;
 
-        recognition.onstart = () => {
-          if (isListeningWantedRef.current) {
-            setIsRecording(true);
-            setIsTimerRunning(true); // Countdown starts only when mic is ACTUALLY active!
-          }
-        };
-
-        recognition.onresult = (event: any) => {
-          if (!isListeningWantedRef.current) {
-            return;
-          }
-
-          let pieceFinal = '';
-          let pieceInterim = '';
-          for (let i = 0; i < event.results.length; ++i) {
-            const item = event.results[i];
-            const text = item[0]?.transcript || '';
-            if (item.isFinal) {
-              pieceFinal += text + ' ';
-            } else {
-              pieceInterim += text;
-            }
-          }
-
-          // Clean single combination - NO repeated arrays!
-          const combined = [sessionBaseTextRef.current, pieceFinal, pieceInterim]
-            .filter(Boolean)
-            .join(' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-
-          currentTurnSpeechRef.current = combined;
-          setLiveTranscript(combined);
-        };
-
-        recognition.onerror = (event: any) => {
-          console.warn("Speech recognition error:", event.error);
-          if (event.error === 'no-speech') {
-            return;
-          }
-          if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-            isListeningWantedRef.current = false;
-            setIsRecording(false);
-            setIsManualInput(true);
-            setIsTimerRunning(true);
-            return;
-          }
-        };
-
-        recognition.onend = () => {
-          // If candidate paused before their turn expired, carry over their recognized words to base
-          if (isListeningWantedRef.current) {
-            sessionBaseTextRef.current = currentTurnSpeechRef.current;
-            try {
-              recognition.start();
-            } catch {
-              setTimeout(() => {
-                if (isListeningWantedRef.current) {
-                  try { recognition.start(); } catch {}
-                }
-              }, 300);
-            }
-          } else {
-            setIsRecording(false);
-          }
-        };
-
-        recognitionRef.current = recognition;
-      } catch (err) {
-        console.error("Speech recognition start failed:", err);
-        setIsManualInput(true);
-        setIsTimerRunning(true);
-        return;
-      }
+    if (!micReady) {
+      micDeniedRef.current = true;
+      fallbackToManualInput();
+      return;
     }
 
-    try {
-      recognition.start();
-    } catch {
-      // Already running or starting
+    if (!recorderRef.current.startTurn()) {
+      fallbackToManualInput();
+      return;
     }
+
+    setIsRecording(true);
+    setIsTimerRunning(true); // Countdown starts only when mic is ACTUALLY recording
   };
 
   // Start selected Part
-  const handleStartExam = async (part: PartSelection) => {
+  const handleStartExam = (part: PartSelection) => {
     triggerHaptic('heavy');
     isExamActiveRef.current = true;
-    
-    if (!keepAliveStreamRef.current) {
-      keepAliveStreamRef.current = await startMicKeepAlive();
-    }
-    
+    micDeniedRef.current = false;
+    pendingTranscriptsRef.current.clear();
+
     stopListening();
+    turnAudioRef.current = null;
 
     setSelectedPart(part);
     setTranscriptHistory([]);
@@ -436,6 +373,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       ...transcriptHistory,
       { question: currentQ, answer: currentAnswer || "(Nomzod belgilangan vaqtda javob bermadi)" }
     ];
+    if (!currentAnswer) queueTurnTranscription(newHistory.length - 1);
     currentTurnSpeechRef.current = '';
     sessionBaseTextRef.current = '';
     setTranscriptHistory(newHistory);
@@ -470,6 +408,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         ...transcriptHistory,
         { question: `[Part 1.1] ${currentQ}`, answer: currentAnswer || "(Part 1.1 javobi berilmadi)" }
       ];
+      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1);
       currentTurnSpeechRef.current = '';
       sessionBaseTextRef.current = '';
       setTranscriptHistory(newHistory);
@@ -502,6 +441,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         ...transcriptHistory,
         { question: `[Part 1.2] ${p1_2Item?.title}`, answer: currentAnswer || "(Part 1.2 nutqi berilmadi)" }
       ];
+      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1);
       currentTurnSpeechRef.current = '';
       sessionBaseTextRef.current = '';
       setTranscriptHistory(newHistory);
@@ -524,6 +464,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         ...transcriptHistory,
         { question: `[Part 2] ${p2Item?.title}`, answer: currentAnswer || "(Part 2 nutqi berilmadi)" }
       ];
+      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1);
       currentTurnSpeechRef.current = '';
       sessionBaseTextRef.current = '';
       setTranscriptHistory(newHistory);
@@ -546,6 +487,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         ...transcriptHistory,
         { question: `[Part 3] ${p3Item?.statement}`, answer: currentAnswer || "(Part 3 nutqi berilmadi)" }
       ];
+      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1);
       currentTurnSpeechRef.current = '';
       sessionBaseTextRef.current = '';
       finishAndEvaluate(newHistory, 'full_mock');
@@ -561,8 +503,17 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     window.speechSynthesis?.cancel();
     stopAndCleanupRecognition();
 
-    setTimeout(() => {
-      const evalResult = evaluateMultilevelSpeech(history, evaluatedType);
+    setTimeout(async () => {
+      const { history: resolvedHistory, failed } = await resolvePendingAnswers(history, pendingTranscriptsRef.current);
+      setTranscriptHistory(resolvedHistory);
+
+      const evalResult = evaluateMultilevelSpeech(resolvedHistory, evaluatedType);
+      if (failed > 0) {
+        evalResult.improvements = [
+          `⚠️ ${failed} ta javobni ovozdan matnga o'girishda server xatosi yuz berdi, shu sababli ular baholanmadi. Internetni tekshirib, qaytadan urinib ko'ring.`,
+          ...evalResult.improvements,
+        ].slice(0, 4);
+      }
       setFeedback(evalResult);
       setIsEvaluating(false);
       setStep('feedback');
