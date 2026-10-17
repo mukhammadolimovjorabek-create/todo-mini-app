@@ -7,6 +7,7 @@ import type { TestResultItem } from '../types';
 interface Props {
   onBack: () => void;
   userName: string;
+  examType?: 'ielts' | 'multilevel';
 }
 
 export interface ReadingQuestion {
@@ -54,7 +55,7 @@ const READING_PASSAGES: ReadingPassage[] = [
       },
       {
         label: 'E',
-        text: 'Among many of the important records made by Cyriacus was his crucial documenting, in 1431, of the remains of Cyzicus, an ancient Roman city that had relied on commerce for its financial success. He hired a local person to take him to site and then had to work out for himself the significance of the ruins he was looking at because there was no guidebook on ancient architecture to help him. Indeed, his contemporary knowledge about the ruins. Cyzicus had been a splendid city in its prime. Unfortunately, the area was highly seismic and in AD 123 the city was so devastated by a major earthquake that, when the Roman Emperor Hadrian visited it the following year, he was so saddened that he decided to subsidise a campaign to reconstruct Cyzicus. He made a substantial donation for a new temple to the Roman god Jupiter. Cyriacus thought the ruined city was awe-inspiring. He found the remains of the temple and examined it in great detail, looking for clues in ancient texts to help him understand what he was seeing. He sketched the great doorway adorned with carved foliage and mythological characters. Cyriacus\'s account of this temple is the only record of this building as in the following centuries it was entirely stripped of all its stonework and all that remains is its base.',
+        text: 'Among many of the important records made by Cyriacus was his crucial documenting, in 1431, of the remains of Cyzicus, an ancient Roman city that had relied on commerce for its financial success. He hired a local person to take him to site and then had to work out for himself the significance of the ruins he was looking at because there was no guidebook on ancient architecture to help him. Indeed, his contemporary Francesco Filelfo praised Cyriacus as a tireless scholar who expanded contemporary knowledge about the ruins. Cyzicus had been a splendid city in its prime. Unfortunately, the area was highly seismic and in AD 123 the city was so devastated by a major earthquake that, when the Roman Emperor Hadrian visited it the following year, he was so saddened that he decided to subsidise a campaign to reconstruct Cyzicus. He made a substantial donation for a new temple to the Roman god Jupiter. Cyriacus thought the ruined city was awe-inspiring. He found the remains of the temple and examined it in great detail, looking for clues in ancient texts to help him understand what he was seeing. He sketched the great doorway adorned with carved foliage and mythological characters. Cyriacus\'s account of this temple is the only record of this building as in the following centuries it was entirely stripped of all its stonework and all that remains is its base.',
       },
       {
         label: 'F',
@@ -201,85 +202,97 @@ const READING_PASSAGES: ReadingPassage[] = [
     paragraphs: [
       {
         label: 'A',
-        text: 'For centuries, sleep was considered a passive state in which the brain simply shut down to recover from daily fatigue. However, modern neurobiological research has revealed that the sleeping brain is highly active, performing critical cognitive functions, foremost among them being the consolidation of memories acquired during wakefulness.',
+        text: 'For centuries, sleep was widely dismissed by early physicians and philosophers as a passive, dormant state in which the human brain simply shut down to recover from physical fatigue. Only in the late twentieth century, with the advent of high-density electroencephalography (EEG) and functional neuroimaging, did neurobiologists overturn this misconception. Modern clinical research has revealed that the sleeping brain is metabolically and electrically dynamic, executing critical cognitive maintenance—foremost among which is the consolidation of fragile memories acquired during wakefulness.',
       },
       {
         label: 'B',
-        text: 'During Non-Rapid Eye Movement (NREM) slow-wave sleep, electrical oscillations called slow waves synchronize across the cerebral cortex. Simultaneously, fast bursts of activity known as sleep spindles originate in the thalamus. Neuroscientists at Harvard University demonstrated that these coordinated signals facilitate the transfer of recently learned information from the temporary storage of the hippocampus to the permanent architecture of the neocortex.',
+        text: 'During Non-Rapid Eye Movement (NREM) slow-wave sleep, large-scale electrical oscillations known as slow waves synchronize across the cerebral cortex. Simultaneously, brief, high-frequency bursts of neural activity called sleep spindles originate within the thalamus. In a landmark series of experiments, neuroscientists at Harvard University demonstrated that these tightly coupled signals act as a biological courier service, facilitating the transfer of newly encoded episodic information from the temporary, limited-capacity vault of the hippocampus to the permanent structural architecture of the neocortex.',
       },
       {
         label: 'C',
-        text: 'Rapid Eye Movement (REM) sleep, characterized by vivid dreaming and rapid ocular saccades, serves an equally vital complementary role. While NREM sleep stabilizes declarative facts and semantic knowledge, REM sleep integrates novel emotional experiences and fosters creative problem-solving by forging unexpected neural associations across distant semantic networks.',
+        text: 'Rapid Eye Movement (REM) sleep, characterized by vivid narrative dreaming, muscle atonia, and rapid ocular saccades, serves an equally vital yet distinct complementary role. While NREM slow-wave sleep primarily stabilizes declarative facts and explicit semantic knowledge, REM sleep integrates complex emotional experiences, strips away acute affective distress, and fosters creative problem-solving. By temporarily suppressing executive prefrontal inhibition, REM sleep allows the brain to forge unexpected neural associations across distant semantic networks.',
       },
       {
         label: 'D',
-        text: 'Conversely, chronic sleep deprivation severely impairs these neurochemical processes. Individuals restricted to fewer than six hours of sleep per night exhibit a 40% reduction in hippocampal retention capacity. Furthermore, during slow-wave sleep, the brain’s glymphatic system expands, flushing out metabolic waste products including neurotoxic beta-amyloid proteins. Failure to clear these proteins is directly linked to Alzheimer’s disease and other degenerative cognitive impairments.',
+        text: 'Conversely, chronic sleep deprivation severely disrupts these delicate neurochemical and synaptic processes. Laboratory trials show that university students restricted to fewer than six hours of nocturnal sleep exhibit a 40% reduction in hippocampal retention capacity when attempting to encode new academic material the following day. Furthermore, during deep slow-wave sleep, glial cells shrink by up to 60%, allowing the brain’s glymphatic system to expand and flush out metabolic waste products—including neurotoxic beta-amyloid plaques. Failure to clear these proteins is directly implicated in the pathogenesis of Alzheimer’s disease and related neurodegenerative disorders.',
       },
       {
         label: 'E',
-        text: 'Across the human lifespan, the architecture of sleep changes dramatically. Infants spend up to fifty percent of their slumber in REM sleep, aiding rapid neural plasticity, whereas elderly adults experience a steep decline in slow-wave sleep spindles. Gerontologists stress that maintaining consistent circadian rhythms and adequate deep sleep preserves executive cognitive functions well into advanced age.',
+        text: 'Across the human lifespan, the structural architecture of sleep undergoes profound developmental remodeling. Newborn infants spend up to fifty percent of their total slumber in REM sleep, a proportion that actively drives rapid synaptic proliferation and neural plasticity. In stark contrast, adults over the age of sixty-five experience a steep, progressive decline in both slow-wave amplitude and thalamic sleep spindles. Gerontologists emphasize that preserving consistent circadian rhythms and deep nocturnal sleep is essential for safeguarding executive cognitive functions well into advanced age.',
       },
     ],
     questions: [
       {
         id: 14,
-        type: 'tfng',
-        questionText: 'Early historical theories accurately recognized that the brain remains cognitively active during sleep.',
-        correctAnswer: 'FALSE',
+        type: 'mcq',
+        questionText: 'Which paragraph contains the following information? A historical misconception that the brain becomes inactive while a person is asleep.',
+        options: ['Paragraph A', 'Paragraph B', 'Paragraph C', 'Paragraph D', 'Paragraph E'],
+        correctAnswer: 'Paragraph A',
+        acceptableAnswers: ['A', 'Paragraph A'],
         paragraphRef: 'Paragraph A',
-        evidenceQuote: 'For centuries, sleep was considered a passive state in which the brain simply shut down to recover from daily fatigue.',
-        paraphraseAnalysis: '"sleep was considered a passive state" ↔ "accurately recognized active brain"',
-        explanation: 'Tarixan uyqu miya faoliyati to\'xtaydigan passiv holat deb hisoblangan, bu esa da\'voga ziddir (FALSE).',
+        evidenceQuote: 'For centuries, sleep was widely dismissed by early physicians and philosophers as a passive, dormant state in which the human brain simply shut down...',
+        paraphraseAnalysis: '"dismissed as a passive, dormant state in which the brain shut down" = "historical misconception that the brain becomes inactive"',
+        explanation: 'Paragraph A da asrlar davomida uyqu miya faoliyati to\'xtaydigan passiv holat deb noto\'g\'ri hisoblangani bayon etilgan.',
       },
       {
         id: 15,
-        type: 'tfng',
-        questionText: 'Sleep spindles are generated in the thalamus during NREM slow-wave sleep.',
-        correctAnswer: 'TRUE',
+        type: 'mcq',
+        questionText: 'Which paragraph contains the following information? How two distinct types of electrical brain waves work together to move memories into long-term storage.',
+        options: ['Paragraph A', 'Paragraph B', 'Paragraph C', 'Paragraph D', 'Paragraph E'],
+        correctAnswer: 'Paragraph B',
+        acceptableAnswers: ['B', 'Paragraph B'],
         paragraphRef: 'Paragraph B',
-        evidenceQuote: 'Simultaneously, fast bursts of activity known as sleep spindles originate in the thalamus.',
-        paraphraseAnalysis: '"originate in the thalamus" = "generated in the thalamus"',
-        explanation: 'Paragraph B da uyqu veretenolari (sleep spindles) talamusda hosil bo\'lishi to\'g\'ridan-to\'g\'ri tasdiqlangan (TRUE).',
+        evidenceQuote: '...slow waves synchronize across the cerebral cortex. Simultaneously, brief, high-frequency bursts... called sleep spindles originate within the thalamus... facilitating the transfer of newly encoded episodic information... to the permanent structural architecture of the neocortex.',
+        paraphraseAnalysis: '"slow waves + sleep spindles facilitating transfer to permanent neocortex" = "two distinct electrical waves moving memories to long-term storage"',
+        explanation: 'Paragraph B da NREM uyqudagi sekin to\'lqinlar (slow waves) va talamusning uyqu urchuqlari (sleep spindles) birgalikda xotirani gipokampdan neokorteksga ko\'chirishi tushuntirilgan.',
       },
       {
         id: 16,
-        type: 'tfng',
-        questionText: 'REM sleep primarily consolidates factual and declarative knowledge rather than emotional integration.',
-        correctAnswer: 'FALSE',
+        type: 'mcq',
+        questionText: 'Which paragraph contains the following information? A contrast between how factual information and emotional experiences are processed in different sleep stages.',
+        options: ['Paragraph A', 'Paragraph B', 'Paragraph C', 'Paragraph D', 'Paragraph E'],
+        correctAnswer: 'Paragraph C',
+        acceptableAnswers: ['C', 'Paragraph C'],
         paragraphRef: 'Paragraph C',
-        evidenceQuote: 'While NREM sleep stabilizes declarative facts and semantic knowledge, REM sleep integrates novel emotional experiences...',
-        paraphraseAnalysis: '"NREM stabilizes declarative facts, REM integrates emotions" ↔ "REM primarily consolidates factual knowledge"',
-        explanation: 'Faktik bilimlarni NREM uyqu mustahkamlaydi, REM esa hissiy tajriba va ijodiy bog\'lanishlarni shakllantiradi (FALSE).',
+        evidenceQuote: 'While NREM slow-wave sleep primarily stabilizes declarative facts and explicit semantic knowledge, REM sleep integrates complex emotional experiences... and fosters creative problem-solving.',
+        paraphraseAnalysis: '"While NREM stabilizes declarative facts... REM integrates complex emotional experiences" = "contrast between factual information and emotional experiences"',
+        explanation: 'Paragraph C da NREM (faktik bilimlar) va REM (hissiy tajriba hamda ijodiy yechimlar) uyqu bosqichlari o\'rtasidagi farq qiyoslangan.',
       },
       {
         id: 17,
-        type: 'tfng',
-        questionText: 'The Harvard University study received funding from international healthcare organizations.',
-        correctAnswer: 'NOT GIVEN',
-        paragraphRef: 'Paragraph B',
-        evidenceQuote: 'Neuroscientists at Harvard University demonstrated that these coordinated signals facilitate the transfer...',
-        paraphraseAnalysis: 'Tadqiqotchilar Garvarddan ekani aytilgan, ammo moliyalashtirish manbasi haqida hech narsa yozilmagan.',
-        explanation: 'Matnda tadqiqotni moliyalashtirgan xalqaro tashkilotlar haqida hech qanday ma\'lumot berilmagan (NOT GIVEN).',
+        type: 'mcq',
+        questionText: 'Which paragraph contains the following information? Statistical evidence showing how insufficient sleep reduces the ability to learn new material.',
+        options: ['Paragraph A', 'Paragraph B', 'Paragraph C', 'Paragraph D', 'Paragraph E'],
+        correctAnswer: 'Paragraph D',
+        acceptableAnswers: ['D', 'Paragraph D'],
+        paragraphRef: 'Paragraph D',
+        evidenceQuote: 'Laboratory trials show that university students restricted to fewer than six hours of nocturnal sleep exhibit a 40% reduction in hippocampal retention capacity...',
+        paraphraseAnalysis: '"40% reduction in hippocampal retention capacity" = "statistical evidence showing how insufficient sleep reduces learning ability"',
+        explanation: 'Paragraph D da kechasi 6 soatdan kam uxlash yangi ma\'lumotlarni eslab qolish qobiliyatini 40% ga tushirishi haqida statistik dalil keltirilgan.',
       },
       {
         id: 18,
-        type: 'tfng',
-        questionText: 'The glymphatic system clears beta-amyloid proteins from the brain primarily during slow-wave sleep.',
-        correctAnswer: 'TRUE',
-        paragraphRef: 'Paragraph D',
-        evidenceQuote: '...during slow-wave sleep, the brain’s glymphatic system expands, flushing out metabolic waste products including neurotoxic beta-amyloid proteins.',
-        paraphraseAnalysis: '"flushing out metabolic waste products including beta-amyloid" = "clears beta-amyloid proteins"',
-        explanation: 'Chuqur uyqu paytida glimfatik tizim zaharli beta-amiloid oqsillarini miyadan tozalashi tasdiqlangan (TRUE).',
+        type: 'mcq',
+        questionText: 'Which paragraph contains the following information? A comparison of sleep patterns between babies and older people.',
+        options: ['Paragraph A', 'Paragraph B', 'Paragraph C', 'Paragraph D', 'Paragraph E'],
+        correctAnswer: 'Paragraph E',
+        acceptableAnswers: ['E', 'Paragraph E'],
+        paragraphRef: 'Paragraph E',
+        evidenceQuote: 'Newborn infants spend up to fifty percent of their total slumber in REM sleep... In stark contrast, adults over the age of sixty-five experience a steep, progressive decline in both slow-wave amplitude and thalamic sleep spindles.',
+        paraphraseAnalysis: '"Newborn infants... In stark contrast, adults over the age of sixty-five" = "comparison of sleep patterns between babies and older people"',
+        explanation: 'Paragraph E da chaqaloqlar (50% REM uyqu) va 65 yoshdan oshgan keksalar uyqu tuzilishi o\'zaro solishtirilgan.',
       },
       {
         id: 19,
-        type: 'tfng',
-        questionText: 'Elderly adults experience an increase in slow-wave sleep spindles compared to younger generations.',
-        correctAnswer: 'FALSE',
-        paragraphRef: 'Paragraph E',
-        evidenceQuote: '...whereas elderly adults experience a steep decline in slow-wave sleep spindles.',
-        paraphraseAnalysis: '"steep decline" ↔ "experience an increase" (Qarama-qarshi)',
-        explanation: 'Katta yoshli insonlarda uyqu veretenolari ko\'paymaydi, aksincha keskin kamayadi (FALSE).',
+        type: 'mcq',
+        questionText: 'Which paragraph contains the following information? The biological mechanism that removes toxic proteins linked to neurological disease.',
+        options: ['Paragraph A', 'Paragraph B', 'Paragraph C', 'Paragraph D', 'Paragraph E'],
+        correctAnswer: 'Paragraph D',
+        acceptableAnswers: ['D', 'Paragraph D'],
+        paragraphRef: 'Paragraph D',
+        evidenceQuote: '...allowing the brain’s glymphatic system to expand and flush out metabolic waste products—including neurotoxic beta-amyloid plaques. Failure to clear these proteins is directly implicated in the pathogenesis of Alzheimer’s disease...',
+        paraphraseAnalysis: '"glymphatic system flush out neurotoxic beta-amyloid plaques implicated in Alzheimer\'s" = "biological mechanism removing toxic proteins linked to neurological disease"',
+        explanation: 'Paragraph D da Altsgeymer kasalligiga sabab bo\'luvchi zaharli beta-amiloid oqsillarini glimfatik tizim qanday yuvib chiqarishi tushuntirilgan.',
       },
       {
         id: 20,
@@ -711,12 +724,15 @@ export const IELTS_READING_SCORE_TABLE = [
   { min: 0,  max: 3,  band: 'None', rangeStr: '0–3' },
 ];
 
-export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName }) => {
+export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName, examType = 'ielts' }) => {
+  const isMultilevel = examType === 'multilevel';
   const [selectedPassageIdx, setSelectedPassageIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [score, setScore] = useState<number>(0);
+  const [scaledRawScore, setScaledRawScore] = useState<number>(0);
   const [bandScore, setBandScore] = useState<number>(0);
+  const [multilevelScore, setMultilevelScore] = useState<number>(0);
   const [showScaleModal, setShowScaleModal] = useState<boolean>(false);
 
   // Error Review States (User requested flow: "xatolarni ko'rish" and "tahlil qilish")
@@ -805,6 +821,13 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
     return 0; // 0–3 to'g'ri javob: None
   };
 
+  const getCefrFromMultilevelScore = (pts: number): string => {
+    if (pts >= 65) return 'C1';
+    if (pts >= 51) return 'B2';
+    if (pts >= 38) return 'B1';
+    return 'B1 dan past';
+  };
+
   const handleSubmit = () => {
     // Check if the user answered questions in multiple passages or chose full mode
     const passagesAnswered = READING_PASSAGES.filter((p) =>
@@ -837,10 +860,13 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
     }
 
     const band = calculateIeltsReadingBand(rawScoreForBand);
+    const mlPoints = Math.round((rawScoreForBand / 40) * 75);
 
     setScore(totalCorrect);
+    setScaledRawScore(rawScoreForBand);
     setEvaluatedTotal(totalQuestions);
     setBandScore(band);
+    setMultilevelScore(mlPoints);
     setIsSubmitted(true);
     setIsTimerRunning(false);
     triggerHaptic('heavy');
@@ -860,38 +886,44 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
     const dateStr = now.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.');
 
     const historyItem: TestResultItem = {
-      id: `reading_${Date.now()}`,
+      id: isMultilevel ? `ml_reading_${Date.now()}` : `reading_${Date.now()}`,
       date: dateStr,
       startTime,
       endTime,
       testType: 'reading',
-      title: isSinglePassageEval
+      title: isMultilevel
+        ? isSinglePassageEval
+          ? `Milliy Multilevel: Reading Passage ${selectedPassageIdx + 1} (75 ball)`
+          : `Milliy Multilevel: Reading (75 ball)`
+        : isSinglePassageEval
         ? `IELTS Reading: Passage ${selectedPassageIdx + 1} (${totalQuestions} savol)`
         : `IELTS Reading (40 ta savol)`,
       topic: isSinglePassageEval
         ? currentPassage.title
         : `${READING_PASSAGES[0].title} • ${READING_PASSAGES[1].title} • ${READING_PASSAGES[2].title}`,
-      overallBand: band,
+      overallBand: isMultilevel ? mlPoints : band,
       criteriaScores: {
         c1Name: 'To\'g\'ri javoblar',
         c1Score: totalCorrect,
         c2Name: 'Jami savollar',
         c2Score: totalQuestions,
-        c3Name: 'Aniqlik',
+        c3Name: 'Aniqlik (%)',
         c3Score: Math.round((totalCorrect / totalQuestions) * 100),
-        c4Name: 'Band Natija',
-        c4Score: band,
+        c4Name: isMultilevel ? 'DTM Ball (75)' : 'Band Natija',
+        c4Score: isMultilevel ? mlPoints : band,
       },
       strengths: [
         `${totalQuestions} ta savoldan ${totalCorrect} tasiga to'g'ri javob berildi (${Math.round((totalCorrect / totalQuestions) * 100)}%).`,
-        isSinglePassageEval
+        isMultilevel
+          ? `DTM 75 ballik shkalada: ${mlPoints} / 75 ball (${getCefrFromMultilevelScore(mlPoints)} daraja, IELTS Band ${band.toFixed(1)} ekvivalenti).`
+          : isSinglePassageEval
           ? `Passage ${selectedPassageIdx + 1} sinovi (40 talik rasmiy shkalada ekvivalenti: ${rawScoreForBand}/40).`
           : `Haqiqiy IELTS Academic 3 ta Passage va 40 ta savollik to'liq sinov.`,
       ],
       improvements: [
         totalCorrect < totalQuestions
           ? `Xato belgilangan ${totalQuestions - totalCorrect} ta savol bo'yicha "Tahlil qilish" tugmasini ochib parafrazlarni o'rganing.`
-          : `Mukammal natija! 9.0 darajali aniqlik bilan yakunlandi.`,
+          : `Mukammal natija! Yuqori aniqlik bilan yakunlandi.`,
       ],
     };
 
@@ -951,7 +983,7 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
             <div className="text-center space-y-1.5">
               <h4 className="text-base font-black text-slate-900">Sinovni to'xtatmoqchimisiz?</h4>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Hozir chiqib ketsangiz, belgilangan javoblaringiz va 20 daqiqalik sinov natijasi saqlanmaydi.
+                Hozir chiqib ketsangiz, belgilangan javoblaringiz va {readingMode === 'full' ? '60' : '20'} daqiqalik sinov natijasi saqlanmaydi.
               </p>
             </div>
 
@@ -987,8 +1019,14 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
           <div className="bg-white rounded-[2rem] p-5 max-w-sm w-full space-y-3.5 shadow-2xl border border-slate-100 max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between border-b pb-3 border-slate-100">
               <div>
-                <h4 className="text-sm font-black text-slate-900">IELTS Reading Baholash Jadvali</h4>
-                <p className="text-[10px] text-slate-500 font-medium">Haqiqiy 40 ta savollik Academic shkala</p>
+                <h4 className="text-sm font-black text-slate-900">
+                  {isMultilevel ? 'Reading Baholash Jadvali (DTM 75 ball & IELTS)' : 'IELTS Reading Baholash Jadvali'}
+                </h4>
+                <p className="text-[10px] text-slate-500 font-medium">
+                  {isSubmitted && evaluatedTotal < 40
+                    ? `Sizda: ${score}/${evaluatedTotal} to'g'ri → 40 talik shkalada ${scaledRawScore}/40`
+                    : 'Haqiqiy 40 ta savollik Academic shkala'}
+                </p>
               </div>
               <button
                 onClick={() => setShowScaleModal(false)}
@@ -1000,11 +1038,14 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
 
             <div className="overflow-y-auto space-y-1 pr-1 flex-1">
               <div className="grid grid-cols-2 text-[10px] font-black uppercase text-slate-400 px-3 py-1 border-b border-slate-100">
-                <span>To'g'ri javob</span>
+                <span>To'g'ri javob (40 dan)</span>
                 <span className="text-right">Band Score</span>
               </div>
               {IELTS_READING_SCORE_TABLE.map((item, idx) => {
-                const isCurrent = isSubmitted && ((item.band === 'None' && score <= 3) || (score >= item.min && score <= item.max));
+                const isCurrent =
+                  isSubmitted &&
+                  ((item.band === 'None' && scaledRawScore <= 3) ||
+                    (scaledRawScore >= item.min && scaledRawScore <= item.max));
                 return (
                   <div
                     key={idx}
@@ -1061,20 +1102,22 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
           </button>
           <div>
             <div className="flex items-center space-x-1.5">
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#7052ff] bg-indigo-50 px-2 py-0.5 rounded-full">
-                IELTS Reading
+              <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                isMultilevel ? 'text-teal-700 bg-teal-50' : 'text-[#7052ff] bg-indigo-50'
+              }`}>
+                {isMultilevel ? 'Milliy Multilevel Reading' : 'IELTS Reading'}
               </span>
               <span className="text-xs font-mono font-bold text-slate-400">
                 {startTime}
               </span>
             </div>
             <h2 className="text-base font-black text-slate-900 tracking-tight leading-tight">
-              Akademik O'qish Mashqi
+              {isMultilevel ? 'CEFR B1–C1 O\'qish Sinovi (75 ball)' : 'Akademik O\'qish Mashqi'}
             </h2>
           </div>
         </div>
 
-        {/* 20 Min Timer */}
+        {/* 20 / 60 Min Timer */}
         <div className="flex items-center space-x-1.5 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl font-mono text-xs font-black text-slate-700">
           <Clock size={14} className={timeLeft < 300 ? 'text-rose-500 animate-pulse' : 'text-[#7052ff]'} />
           <span className={timeLeft < 300 ? 'text-rose-600 font-bold' : ''}>
@@ -1121,15 +1164,19 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
 
             <div className="space-y-1.5">
               <span className="text-[10px] font-black uppercase text-[#7052ff] bg-indigo-50 px-2.5 py-1 rounded-md">
-                {readingMode === 'full' ? 'To\'liq IELTS Academic Reading (3 ta Passage)' : currentPassage.subtitle}
+                {readingMode === 'full'
+                  ? isMultilevel
+                    ? 'To\'liq Multilevel Reading (3 ta Passage • 75 ball)'
+                    : 'To\'liq IELTS Academic Reading (3 ta Passage)'
+                  : currentPassage.subtitle}
               </span>
               <h3 className="text-xl font-black text-slate-900 leading-snug">
                 {readingMode === 'full' ? '40 ta savollik To\'liq Sinov' : currentPassage.title}
               </h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
                 {readingMode === 'full'
-                  ? '60 daqiqalik to\'liq 3 ta Passage sinovi. Barcha 40 ta savol rasmiy Academic shkala bo\'yicha baholanadi.'
-                  : '20 daqiqalik Passage sinovi. Natijangiz tanlangan Passage savollari asosida proporsional Band shkalada baholanadi.'}
+                  ? '60 daqiqalik to\'liq 3 ta Passage sinovi. Barcha 40 ta savol rasmiy mezonlar bo\'yicha baholanadi.'
+                  : '20 daqiqalik Passage sinovi. Natijangiz tanlangan Passage savollari asosida proporsional shkalada baholanadi.'}
               </p>
             </div>
 
@@ -1177,7 +1224,7 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
                 📝 {readingMode === 'full' ? '40 ta savol' : `${currentPassage.questions.length} ta savol`}
               </span>
               <span className="text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-xl">
-                🎯 Band 9.0 aniqlik
+                🎯 {isMultilevel ? '75 ballik CEFR B1–C1' : 'Band 9.0 aniqlik'}
               </span>
             </div>
 
@@ -1262,21 +1309,27 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-black uppercase text-[#7052ff] bg-indigo-50 px-2 py-0.5 rounded-md">
-                  IELTS Reading Natijasi
+                  {isMultilevel ? `Multilevel Reading (${getCefrFromMultilevelScore(multilevelScore)})` : 'IELTS Reading Natijasi'}
                 </span>
                 <h4 className="text-xl font-black text-slate-900 mt-1">
                   {score} / {evaluatedTotal} to'g'ri javob
                 </h4>
                 <p className="text-xs text-slate-500">
-                  {score === evaluatedTotal ? 'Barcha savollarga to\'g\'ri javob berdingiz! 🏆' : `${evaluatedTotal - score} ta xato yoki belgilanmagan savol.`}
+                  {score === evaluatedTotal
+                    ? 'Barcha savollarga to\'g\'ri javob berdingiz! 🏆'
+                    : `${evaluatedTotal - score} ta xato yoki belgilanmagan savol.`}
                 </p>
               </div>
 
-              <div className="text-right bg-gradient-to-br from-[#7052ff] to-[#4e2bf5] text-white p-3.5 rounded-2xl shadow-md min-w-[90px]">
+              <div className="text-right bg-gradient-to-br from-[#7052ff] to-[#4e2bf5] text-white p-3.5 rounded-2xl shadow-md min-w-[95px]">
                 <span className="text-2xl font-black font-mono block">
-                  {bandScore === 0 ? 'None' : bandScore.toFixed(1)}
+                  {isMultilevel ? `${multilevelScore}/75` : bandScore === 0 ? 'None' : bandScore.toFixed(1)}
                 </span>
-                <span className="text-[9px] uppercase font-black text-purple-100">IELTS Band</span>
+                <span className="text-[9px] uppercase font-black text-purple-100">
+                  {isMultilevel
+                    ? `CEFR ${getCefrFromMultilevelScore(multilevelScore)} • Band ${bandScore === 0 ? '0' : bandScore.toFixed(1)}`
+                    : 'IELTS Band'}
+                </span>
               </div>
             </div>
 

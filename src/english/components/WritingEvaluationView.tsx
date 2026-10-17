@@ -41,21 +41,66 @@ const SAMPLE_TASK1_PROMPTS = [
     summaryLeft: '• Eng katta xarajat (UK): Housing (34%)',
     summaryRight: '• Eng yuqori farq: Food (Japan 23% vs UK 14%)',
   },
+  {
+    id: 'process_recycling',
+    topic: 'Industrial Plastic Bottle Recycling Process',
+    badge: 'Academic Task 1 • Process Diagram',
+    prompt:
+      'The diagram below illustrates the six-stage linear and cyclical process by which used plastic bottles are collected, sorted, processed, and manufactured into new consumer goods.',
+    summaryLeft: '• Bosqichlar soni: 6 ta ketma-ket bosqich',
+    summaryRight: '• Tuzilishi: Yopiq qayta ishlash zanjiri (Cyclical)',
+  },
 ];
 
-// Sample Task 2 Prompts
+// Official IELTS Academic Task 2 Prompts (All 5 Essay Types)
 const SAMPLE_TASK2_PROMPTS = [
   {
-    topic: 'Education & Technology',
-    prompt: 'Some people believe that computers and the internet will soon replace teachers in classrooms. To what extent do you agree or disagree with this opinion?',
+    topic: 'Education & Technology (Agree / Disagree)',
+    prompt: 'Some people believe that computers and artificial intelligence will soon replace human teachers in classrooms. To what extent do you agree or disagree with this opinion?',
   },
   {
-    topic: 'Environment & Climate',
-    prompt: 'Many environmental problems are becoming increasingly severe around the world. What are the main causes of these problems, and what measures can governments take to resolve them?',
+    topic: 'Environment & Climate (Causes & Solutions)',
+    prompt: 'Many environmental problems such as plastic pollution and deforestation are becoming increasingly severe around the world. What are the main causes of these problems, and what measures can governments and individuals take to resolve them?',
   },
   {
-    topic: 'Work-Life Balance',
-    prompt: 'In many countries, people are working longer hours than ever before. Discuss both views and give your own opinion.',
+    topic: 'Work-Life Balance (Discuss Both Views)',
+    prompt: 'In many countries, employees are working longer hours than ever before. Some argue this boosts economic growth, while others believe it harms family life and mental health. Discuss both views and give your own opinion.',
+  },
+  {
+    topic: 'Higher Education (Discuss Both Views)',
+    prompt: 'Some people think that university education should prepare students for specific careers, while others believe universities should focus on providing broad academic knowledge for its own sake. Discuss both views and give your opinion.',
+  },
+  {
+    topic: 'Remote Work & Urbanization (Advantages / Disadvantages)',
+    prompt: 'In recent years, an increasing number of companies allow employees to work from home using digital technology. Do the advantages of remote working outweigh the disadvantages?',
+  },
+  {
+    topic: 'Public Transport vs Private Cars (Agree / Disagree)',
+    prompt: 'The best way for governments to solve traffic congestion and air pollution in major cities is to provide free public transport 24 hours a day. To what extent do you agree or disagree?',
+  },
+  {
+    topic: 'Youth & Crime Prevention (Causes & Solutions)',
+    prompt: 'In several parts of the world, the rate of juvenile delinquency and youth crime is rising. Why is this happening, and what steps can society take to prevent young people from committing crimes?',
+  },
+  {
+    topic: 'Globalization & Local Culture (Discuss Both Views)',
+    prompt: 'Some people feel that increasing business and cultural contact between countries is a positive development, while others believe it leads to the loss of national identities and traditions. Discuss both views and give your own opinion.',
+  },
+  {
+    topic: 'Healthcare Prevention vs Treatment (Agree / Disagree)',
+    prompt: 'A larger proportion of the national healthcare budget should be spent on health education and preventive measures rather than on treating patients who are already ill. To what extent do you agree or disagree?',
+  },
+  {
+    topic: 'Space Exploration vs Earth Needs (Discuss Both Views)',
+    prompt: 'Governments spend billions of dollars on space exploration every year. Some people argue that this money should be spent on solving urgent problems on Earth instead. Discuss both views and give your own opinion.',
+  },
+  {
+    topic: 'International Tourism (Advantages / Disadvantages)',
+    prompt: 'International tourism has become one of the largest industries in the world. Do the economic benefits of international tourism outweigh its negative impacts on local environments and communities?',
+  },
+  {
+    topic: 'Children & Screen Time (Two-Part Question)',
+    prompt: 'Children today spend far more time watching screens and playing video games than participating in outdoor physical activities. Why has this shift occurred, and how does it affect children’s development?',
   },
 ];
 
@@ -540,6 +585,43 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
                         <tr><td className="py-1.5 font-sans">Leisure & Other</td><td className="text-right">28%</td><td className="text-right">24%</td></tr>
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              )}
+
+              {currentTask1.id === 'process_recycling' && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <span className="text-[11px] font-bold text-[#c4f82a]">
+                      ♻️ Plastic Bottle Recycling Process (6 Stages)
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-mono">Stage 1 → 6</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[10px]">
+                    <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-2.5 space-y-1">
+                      <span className="text-[#c4f82a] font-black font-mono block">1. Collection</span>
+                      <p className="text-slate-300 leading-snug">Used plastic bottles placed in recycling bins & transported by trucks</p>
+                    </div>
+                    <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-2.5 space-y-1">
+                      <span className="text-[#c4f82a] font-black font-mono block">2. Sorting</span>
+                      <p className="text-slate-300 leading-snug">Sorted manually & optically by plastic type and color at plant</p>
+                    </div>
+                    <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-2.5 space-y-1">
+                      <span className="text-[#c4f82a] font-black font-mono block">3. Compressing</span>
+                      <p className="text-slate-300 leading-snug">Compressed into dense blocks and crushed into small plastic flakes</p>
+                    </div>
+                    <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-2.5 space-y-1">
+                      <span className="text-[#7052ff] font-black font-mono block">4. Washing</span>
+                      <p className="text-slate-300 leading-snug">Flakes sterilized in chemical bath & dried to remove impurities</p>
+                    </div>
+                    <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-2.5 space-y-1">
+                      <span className="text-[#7052ff] font-black font-mono block">5. Pelletizing</span>
+                      <p className="text-slate-300 leading-snug">Heated, melted (260°C), and extruded into raw plastic pellets</p>
+                    </div>
+                    <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-2.5 space-y-1">
+                      <span className="text-emerald-400 font-black font-mono block">6. Remanufacturing</span>
+                      <p className="text-slate-300 leading-snug">Pellets molded into new bottles, clothing fibers & bags for retail</p>
+                    </div>
                   </div>
                 </div>
               )}

@@ -326,7 +326,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       speechTimeoutRef.current = setTimeout(() => {
         if (!isExamActiveRef.current) return;
         speakText(`Welcome to the Full Multilevel Speaking Mock Test. Part 1, Question one: ${p1_1.questions[0]}`, () => {
-          setIsTimerRunning(true);
           startListening();
         });
       }, 300);
@@ -356,7 +355,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       setCurrentPhase('speak');
       setCountdown(120); // Official: 2 minutes speaking
       speakText("Your preparation time is up. Please speak now. You have two minutes.", () => {
-        setIsTimerRunning(true);
         startListening();
       });
       return;
@@ -366,7 +364,6 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       setCurrentPhase('speak');
       setCountdown(120); // Official: 2 minutes speaking
       speakText("Your preparation time is up. Please give your presentation now. You have two minutes.", () => {
-        setIsTimerRunning(true);
         startListening();
       });
       return;
@@ -566,7 +563,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       };
 
       const historyItem: TestResultItem = {
-        id: `ml_test_${Date.now()}`,
+        id: `ml_speaking_${Date.now()}`,
         date: dateStr,
         startTime: testStartTime || endTime,
         endTime,

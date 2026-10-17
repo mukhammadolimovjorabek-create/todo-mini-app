@@ -36,18 +36,13 @@ export const MultilevelDashboard: React.FC<Props> = ({
 
   const { speakingScore, writingScore, readingScore } = useMemo(() => {
     const results = getTestResults();
-    const lastSpeaking = results.find((r) => r.id.startsWith('ml_speaking_'));
+    const lastSpeaking = results.find((r) => r.id.startsWith('ml_speaking_') || r.id.startsWith('ml_test_'));
     const lastWriting = results.find((r) => r.id.startsWith('ml_writing_'));
-    const lastReading = results.find((r) => r.testType === 'reading');
+    const lastReading = results.find((r) => r.id.startsWith('ml_reading_'));
     return {
       speakingScore: lastSpeaking?.overallBand !== undefined ? `${lastSpeaking.overallBand}/75` : null,
       writingScore: lastWriting?.overallBand !== undefined ? `${lastWriting.overallBand}/75` : null,
-      readingScore:
-        lastReading?.overallBand !== undefined
-          ? lastReading.overallBand === 0
-            ? 'None'
-            : `${lastReading.overallBand.toFixed(1)}`
-          : null,
+      readingScore: lastReading?.overallBand !== undefined ? `${Math.round(lastReading.overallBand)}/75` : null,
     };
   }, [activeView]);
 
@@ -66,7 +61,7 @@ export const MultilevelDashboard: React.FC<Props> = ({
   }
 
   if (activeView === 'reading') {
-    return <IeltsReadingView onBack={() => setActiveView('menu')} userName={userName} />;
+    return <IeltsReadingView onBack={() => setActiveView('menu')} userName={userName} examType="multilevel" />;
   }
 
   if (activeView === 'partner_speaking') {

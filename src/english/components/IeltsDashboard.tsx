@@ -29,7 +29,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
   // Compute last scores & active days from test history (refreshes whenever activeView changes back to 'menu')
   const { readingScore, writingScore, speakingScore, activeDaysCount } = useMemo(() => {
     const results = getTestResults();
-    const lastReading = results.find((r) => r.testType === 'reading');
+    const lastReading = results.find((r) => r.testType === 'reading' && !r.id.startsWith('ml_'));
     const lastWriting = results.find(
       (r) => (r.testType === 'writing_task1' || r.testType === 'writing_task2') && !r.id.startsWith('ml_')
     );

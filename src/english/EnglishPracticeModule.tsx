@@ -233,13 +233,37 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
 
             {/* Sub-section Pills */}
             <div className="flex flex-wrap gap-2 pt-1 relative z-10">
-              <span className="text-[10px] font-extrabold text-white bg-white/10 px-3 py-1.5 rounded-xl border border-white/10">
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic('medium');
+                  setIeltsInitialView('ai_speaking');
+                  setSelectedExam('ielts');
+                }}
+                className="text-[10px] font-extrabold text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl border border-white/10 cursor-pointer transition-all active:scale-95"
+              >
                 🎙️ Speaking (AI & Sherik)
               </span>
-              <span className="text-[10px] font-extrabold text-white bg-white/10 px-3 py-1.5 rounded-xl border border-white/10">
-                📖 Reading
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic('medium');
+                  setIeltsInitialView('reading');
+                  setSelectedExam('ielts');
+                }}
+                className="text-[10px] font-extrabold text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl border border-white/10 cursor-pointer transition-all active:scale-95"
+              >
+                📖 Reading (40 savol)
               </span>
-              <span className="text-[10px] font-extrabold text-white bg-white/10 px-3 py-1.5 rounded-xl border border-white/10">
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic('medium');
+                  setIeltsInitialView('writing');
+                  setSelectedExam('ielts');
+                }}
+                className="text-[10px] font-extrabold text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-xl border border-white/10 cursor-pointer transition-all active:scale-95"
+              >
                 ✍️ Writing Task 1 & 2
               </span>
             </div>
@@ -292,7 +316,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
                 Milliy Multilevel (CEFR)
               </h3>
               <p className="text-xs text-slate-300/90 leading-relaxed">
-                DTM formati asosida: Part 1-3 Speaking sinovlari va Task 1 (Do'stga/rasmiy xat) hamda Task 2 (Insho) Writing.
+                DTM formati asosida: Part 1-3 Speaking sinovlari, Reading va Task 1 (Xat) hamda Task 2 (Insho) Writing.
               </p>
             </div>
 
@@ -307,7 +331,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
                 }}
                 className="text-[10px] font-extrabold text-emerald-200 bg-emerald-950/50 hover:bg-emerald-800/60 px-3 py-1.5 rounded-xl border border-emerald-500/30 cursor-pointer transition-all active:scale-95"
               >
-                🎙️ Multilevel Speaking Sinovlari
+                🎙️ Multilevel Speaking
               </span>
               <span
                 onClick={(e) => {
@@ -332,6 +356,17 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
                 className="text-[10px] font-extrabold text-emerald-200 bg-emerald-950/50 hover:bg-emerald-800/60 px-3 py-1.5 rounded-xl border border-emerald-500/30 cursor-pointer transition-all active:scale-95"
               >
                 📝 Task 2: Insho (40 daq)
+              </span>
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic('medium');
+                  setMultilevelInitialView('reading');
+                  setSelectedExam('multilevel');
+                }}
+                className="text-[10px] font-extrabold text-emerald-200 bg-emerald-950/50 hover:bg-emerald-800/60 px-3 py-1.5 rounded-xl border border-emerald-500/30 cursor-pointer transition-all active:scale-95"
+              >
+                📖 Reading (75 ball)
               </span>
             </div>
 
@@ -454,17 +489,17 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
           )}
         </div>
 
-        {/* Quick Health & Isolation Status */}
+        {/* Official Standards Info Card */}
         <div className="bg-white rounded-2xl p-4 border border-slate-100 space-y-2">
           <div className="flex items-center justify-between text-xs font-bold text-slate-600">
             <span className="flex items-center space-x-1.5">
               <Trophy size={14} className="text-[#7052ff]" />
-              <span>Modul Holati:</span>
+              <span>Baholash Standarti:</span>
             </span>
-            <span className="text-emerald-600 font-black">PHASE 0 & 1 & 2 Tayyor ✓</span>
+            <span className="text-emerald-600 font-black">IELTS Band 9.0 & DTM 75 Ball ✓</span>
           </div>
           <p className="text-[11px] text-slate-400 leading-relaxed">
-            Mavjud To-Do ilovangizdan to'liq ajratilgan (Zero-conflict). Faqat <code>src/english/</code> va <code>server/english/</code> ichida ishlaydi.
+            Barcha Speaking, Reading va Writing mashqlari rasmiy xalqaro IELTS Academic hamda Milliy Sertifikat (CEFR B1–C1) mezonlari asosida baholanadi.
           </p>
         </div>
 

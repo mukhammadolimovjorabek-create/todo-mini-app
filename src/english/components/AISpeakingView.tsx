@@ -407,7 +407,6 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       setMockPhase('p2_speak');
       setCountdown(TIME_LIMITS.part2Speak);
       speakText("Your preparation time is up. Please speak now. You have up to two minutes.", () => {
-        setIsTimerRunning(true);
         startListening();
       });
       return;
