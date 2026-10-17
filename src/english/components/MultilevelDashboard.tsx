@@ -1,37 +1,82 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ArrowLeft, ArrowRight, Award, Users } from 'lucide-react';
 import { MultilevelSpeakingView } from './MultilevelSpeakingView';
 import { MultilevelWritingView } from './MultilevelWritingView';
 import { PartnerSpeakingView } from './PartnerSpeakingView';
+import { IeltsReadingView } from './IeltsReadingView';
 import { triggerHaptic } from '../../utils/telegram';
+import { getTestResults } from '../utils/storage';
 import {
   SpeakingWaveform,
   TilePulseRing,
+  ReadingAnimatedBook,
   WritingAnimatedPencil,
 } from './AnimatedSectionIcons';
 
 interface Props {
   onBack: () => void;
   userName: string;
+  userGender?: 'male' | 'female';
   initialView?: ActiveView;
+  initialWritingTab?: 'task1' | 'task2';
 }
 
-type ActiveView = 'menu' | 'speaking' | 'writing' | 'partner_speaking';
+type ActiveView = 'menu' | 'speaking' | 'writing' | 'reading' | 'partner_speaking';
 
-export const MultilevelDashboard: React.FC<Props> = ({ onBack, userName, initialView = 'menu' }) => {
+export const MultilevelDashboard: React.FC<Props> = ({
+  onBack,
+  userName,
+  userGender,
+  initialView = 'menu',
+  initialWritingTab = 'task2',
+}) => {
   const [activeView, setActiveView] = useState<ActiveView>(initialView);
+  const [writingTab, setWritingTab] = useState<'task1' | 'task2'>(initialWritingTab);
   const [showSpeakingModal, setShowSpeakingModal] = useState(false);
+
+  const { speakingScore, writingScore, readingScore } = useMemo(() => {
+    const results = getTestResults();
+    const lastSpeaking = results.find((r) => r.id.startsWith('ml_speaking_'));
+    const lastWriting = results.find((r) => r.id.startsWith('ml_writing_'));
+    const lastReading = results.find((r) => r.testType === 'reading');
+    return {
+      speakingScore: lastSpeaking?.overallBand !== undefined ? `${lastSpeaking.overallBand}/75` : null,
+      writingScore: lastWriting?.overallBand !== undefined ? `${lastWriting.overallBand}/75` : null,
+      readingScore:
+        lastReading?.overallBand !== undefined
+          ? lastReading.overallBand === 0
+            ? 'None'
+            : `${lastReading.overallBand.toFixed(1)}`
+          : null,
+    };
+  }, [activeView]);
 
   if (activeView === 'speaking') {
     return <MultilevelSpeakingView onBack={() => setActiveView('menu')} userName={userName} />;
   }
 
   if (activeView === 'writing') {
-    return <MultilevelWritingView onBack={() => setActiveView('menu')} userName={userName} />;
+    return (
+      <MultilevelWritingView
+        onBack={() => setActiveView('menu')}
+        userName={userName}
+        initialTab={writingTab}
+      />
+    );
+  }
+
+  if (activeView === 'reading') {
+    return <IeltsReadingView onBack={() => setActiveView('menu')} userName={userName} />;
   }
 
   if (activeView === 'partner_speaking') {
-    return <PartnerSpeakingView onBack={() => setActiveView('menu')} userName={userName} />;
+    return (
+      <PartnerSpeakingView
+        onBack={() => setActiveView('menu')}
+        userName={userName}
+        userGender={userGender}
+      />
+    );
   }
 
   // ── MAIN DASHBOARD MENU ──
@@ -77,10 +122,10 @@ export const MultilevelDashboard: React.FC<Props> = ({ onBack, userName, initial
               <span>CEFR B1 · B2 · C1 Standarti</span>
             </span>
             <h3 className="text-xl font-black">
-              Multilevel Speaking & Writing 🎯
+              Multilevel Speaking, Reading & Writing 🎯
             </h3>
             <p className="text-xs text-teal-100/90 leading-relaxed">
-              Xush kelibsiz, <strong>{userName}</strong>! Rasmiy DTM mezonlari, Speaking, xat va insho mavzulari tayyor.
+              Xush kelibsiz, <strong>{userName}</strong>! Rasmiy DTM mezonlari, Speaking, Reading, xat va insho mavzulari tayyor.
             </p>
           </div>
         </div>
@@ -137,6 +182,11 @@ export const MultilevelDashboard: React.FC<Props> = ({ onBack, userName, initial
               <span className="text-[10px] font-black text-[#c4f82a] bg-[#c4f82a]/10 border border-[#c4f82a]/20 px-2.5 py-1 rounded-xl">
                 Full Mock Sinov
               </span>
+              {speakingScore && (
+                <span className="text-[10px] font-black text-emerald-300 bg-emerald-500/15 border border-emerald-400/30 px-2.5 py-1 rounded-xl">
+                  Oxirgi: {speakingScore}
+                </span>
+              )}
             </div>
           </div>
 
@@ -146,6 +196,7 @@ export const MultilevelDashboard: React.FC<Props> = ({ onBack, userName, initial
             tabIndex={0}
             onClick={() => {
               triggerHaptic('medium');
+              setWritingTab('task2');
               setActiveView('writing');
             }}
             className="p-5 rounded-[2rem] bg-[#181630] border border-white/10 hover:border-violet-400/50 hover:shadow-lg transition-all cursor-pointer group active:scale-[0.99] space-y-3 text-white"
@@ -181,14 +232,87 @@ export const MultilevelDashboard: React.FC<Props> = ({ onBack, userName, initial
               </div>
             </div>
 
-            {/* Clean labels replacing cramped pills (3-rasm talabi) */}
+            {/* Interactive direct task buttons */}
             <div className="flex flex-wrap items-center gap-2 pt-1">
-              <span className="text-[10px] font-bold text-amber-300 bg-amber-400/10 border border-amber-400/25 px-2.5 py-1 rounded-xl">
-                Task 1: Xatlar (20 daqiqa)
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic('medium');
+                  setWritingTab('task1');
+                  setActiveView('writing');
+                }}
+                className="text-[10px] font-bold text-amber-300 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/25 px-2.5 py-1 rounded-xl cursor-pointer transition-all active:scale-95"
+              >
+                ✉️ Task 1: Xatlar (20 daqiqa)
               </span>
-              <span className="text-[10px] font-bold text-emerald-300 bg-emerald-400/10 border border-emerald-400/25 px-2.5 py-1 rounded-xl">
-                Task 2: Insho (40 daqiqa)
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic('medium');
+                  setWritingTab('task2');
+                  setActiveView('writing');
+                }}
+                className="text-[10px] font-bold text-emerald-300 bg-emerald-400/10 hover:bg-emerald-400/20 border border-emerald-400/25 px-2.5 py-1 rounded-xl cursor-pointer transition-all active:scale-95"
+              >
+                📝 Task 2: Insho (40 daqiqa)
               </span>
+              {writingScore && (
+                <span className="text-[10px] font-black text-violet-300 bg-violet-500/15 border border-violet-400/30 px-2.5 py-1 rounded-xl">
+                  Oxirgi: {writingScore}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* 3. Reading Sinovi */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              triggerHaptic('medium');
+              setActiveView('reading');
+            }}
+            className="p-5 rounded-[2rem] bg-[#181630] border border-white/10 hover:border-sky-400/50 hover:shadow-lg transition-all cursor-pointer group active:scale-[0.99] space-y-3 text-white"
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-3.5">
+                <div
+                  className="w-[52px] h-[52px] rounded-[16px] flex items-center justify-center shrink-0 relative"
+                  style={{ background: 'rgba(108,199,255,.16)' }}
+                >
+                  <TilePulseRing color="#6CC7FF" />
+                  <ReadingAnimatedBook size={32} />
+                </div>
+
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h4 className="text-base font-black text-white group-hover:text-sky-400 transition-colors">
+                      Multilevel Reading Sinovi
+                    </h4>
+                    <span className="text-[9px] font-black bg-sky-500/20 text-sky-300 border border-sky-400/30 px-2 py-0.5 rounded-full">
+                      B1-C1 Matnlar
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Akademik matnlar tahlili, TFNG, MCQ va xatolar ustida ishlash
+                  </p>
+                </div>
+              </div>
+
+              <div className="w-8 h-8 rounded-full bg-white/10 text-slate-300 flex items-center justify-center group-hover:bg-sky-500 group-hover:text-white transition-all shrink-0">
+                <ArrowRight size={15} />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span className="text-[10px] font-bold text-sky-300 bg-sky-400/10 border border-sky-400/25 px-2.5 py-1 rounded-xl">
+                📖 3 ta Passage (20 / 60 daqiqa)
+              </span>
+              {readingScore && (
+                <span className="text-[10px] font-black text-sky-200 bg-sky-500/15 border border-sky-400/30 px-2.5 py-1 rounded-xl">
+                  Oxirgi: {readingScore}
+                </span>
+              )}
             </div>
           </div>
 

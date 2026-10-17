@@ -43,7 +43,8 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
     } catch {}
     return 'menu';
   });
-  const [multilevelInitialView, setMultilevelInitialView] = useState<'menu' | 'speaking' | 'writing' | 'partner_speaking'>('menu');
+  const [multilevelInitialView, setMultilevelInitialView] = useState<'menu' | 'speaking' | 'writing' | 'reading' | 'partner_speaking'>('menu');
+  const [multilevelInitialWritingTab, setMultilevelInitialWritingTab] = useState<'task1' | 'task2'>('task2');
   const [results, setResults] = useState<TestResultItem[]>(() => getTestResults());
   const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
 
@@ -90,8 +91,10 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
         )}
         <MultilevelDashboard
           initialView={multilevelInitialView}
+          initialWritingTab={multilevelInitialWritingTab}
           onBack={handleReturnFromExam}
           userName={currentName}
+          userGender={currentGender}
         />
       </div>
     );
@@ -310,6 +313,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   triggerHaptic('medium');
+                  setMultilevelInitialWritingTab('task1');
                   setMultilevelInitialView('writing');
                   setSelectedExam('multilevel');
                 }}
@@ -321,6 +325,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   triggerHaptic('medium');
+                  setMultilevelInitialWritingTab('task2');
                   setMultilevelInitialView('writing');
                   setSelectedExam('multilevel');
                 }}

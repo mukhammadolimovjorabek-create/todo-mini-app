@@ -12,6 +12,37 @@ interface Props {
 
 type WritingTaskTab = 'task1' | 'task2';
 
+// Sample Task 1 Charts & Prompts
+const SAMPLE_TASK1_PROMPTS = [
+  {
+    id: 'bar_renewable',
+    topic: 'Renewable Energy Generation 2015–2025',
+    badge: 'Academic Task 1 • Bar Chart',
+    prompt:
+      'The chart below illustrates global renewable electricity production in 2015 and 2025 (in Terawatt-hours, TWh), comparing Solar, Wind, Hydro, and Biomass.',
+    summaryLeft: '• Eng katta o\'sish: Solar (+350%)',
+    summaryRight: '• Eng barqaror: Hydro (+8%)',
+  },
+  {
+    id: 'line_transport',
+    topic: 'High-Speed Rail Passengers 2010–2025',
+    badge: 'Academic Task 1 • Line Graph',
+    prompt:
+      'The line graph below compares the annual number of high-speed rail passengers (in millions) in Europe, East Asia, and North America between 2010 and 2025.',
+    summaryLeft: '• Yetakchi mintaqa: East Asia (950M)',
+    summaryRight: '• Barqaror o\'sish: Europe (320M -> 580M)',
+  },
+  {
+    id: 'table_spending',
+    topic: 'Household Monthly Expenditure (UK vs Japan)',
+    badge: 'Academic Task 1 • Data Table',
+    prompt:
+      'The table below shows the proportion of monthly household income spent on five categories (Housing, Food, Transport, Healthcare, and Leisure) in the UK and Japan in 2024.',
+    summaryLeft: '• Eng katta xarajat (UK): Housing (34%)',
+    summaryRight: '• Eng yuqori farq: Food (Japan 23% vs UK 14%)',
+  },
+];
+
 // Sample Task 2 Prompts
 const SAMPLE_TASK2_PROMPTS = [
   {
@@ -30,6 +61,7 @@ const SAMPLE_TASK2_PROMPTS = [
 
 export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _userName }) => {
   const [activeTab, setActiveTab] = useState<WritingTaskTab>('task1');
+  const [task1Idx, setTask1Idx] = useState(0);
   const [task2Idx, setTask2Idx] = useState(0);
 
   // Separate states for Task 1 and Task 2 to prevent data loss and tab collisions
@@ -75,6 +107,61 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
     }
   };
 
+  const currentTask1 = SAMPLE_TASK1_PROMPTS[task1Idx];
+  const currentTask2 = SAMPLE_TASK2_PROMPTS[task2Idx];
+  const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
+  const minWordsRequired = activeTab === 'task1' ? 150 : 250;
+
+  const handleEvaluate = (isAutoSubmit = false) => {
+    if (!isAutoSubmit && wordCount < 40) {
+      alert(`Iltimos, matnni kamida 40 ta so'zdan iborat qilib yozing (IELTS talabi: ${minWordsRequired}+ so'z).`);
+      return;
+    }
+
+    triggerHaptic('medium');
+    setIsEvaluating(true);
+    setIsTimerRunning(false);
+
+    setTimeout(() => {
+      const promptContext = activeTab === 'task1' ? currentTask1.prompt : currentTask2.prompt;
+      const evaluation = evaluateIeltsWriting(essayText, activeTab, promptContext);
+
+      setResult(evaluation);
+      setIsEvaluating(false);
+
+      // Save to Test Results History
+      const now = new Date();
+      const endTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const dateStr = now.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.');
+
+      const historyItem: TestResultItem = {
+        id: `writing_${Date.now()}`,
+        date: dateStr,
+        startTime,
+        endTime,
+        testType: activeTab === 'task1' ? 'writing_task1' : 'writing_task2',
+        title: activeTab === 'task1' ? 'IELTS Writing Task 1 (Diagramma)' : 'IELTS Writing Task 2 (Insho)',
+        topic: activeTab === 'task1' ? currentTask1.topic : currentTask2.topic,
+        overallBand: evaluation.overallBand,
+        criteriaScores: {
+          c1Name: activeTab === 'task1' ? 'Task Achievement' : 'Task Response',
+          c1Score: evaluation.taskResponse,
+          c2Name: 'Coherence & Cohesion',
+          c2Score: evaluation.coherenceCohesion,
+          c3Name: 'Lexical Resource',
+          c3Score: evaluation.lexicalResource,
+          c4Name: 'Grammar Accuracy',
+          c4Score: evaluation.grammaticalRange,
+        },
+        strengths: evaluation.strengths,
+        improvements: evaluation.improvements,
+      };
+
+      saveTestResult(historyItem);
+      triggerHaptic('heavy');
+    }, 1200);
+  };
+
   // Auto-submit on timer expiry
   useEffect(() => {
     let interval: any = null;
@@ -83,7 +170,7 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
         setTimeLeft((prev) => {
           if (prev <= 1) {
             clearInterval(interval);
-            handleEvaluate();
+            handleEvaluate(true);
             return 0;
           }
           return prev - 1;
@@ -104,58 +191,6 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
     const d = new Date();
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   });
-
-  const currentTask2 = SAMPLE_TASK2_PROMPTS[task2Idx];
-  const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
-  const minWordsRequired = activeTab === 'task1' ? 150 : 250;
-
-  const handleEvaluate = () => {
-    if (wordCount < 40) {
-      alert(`Iltimos, matnni kamida 40 ta so'zdan iborat qilib yozing (IELTS talabi: ${minWordsRequired}+ so'z).`);
-      return;
-    }
-
-    triggerHaptic('medium');
-    setIsEvaluating(true);
-
-    setTimeout(() => {
-      const evaluation = evaluateIeltsWriting(essayText, activeTab);
-
-      setResult(evaluation);
-      setIsEvaluating(false);
-
-      // Save to Test Results History
-      const now = new Date();
-      const endTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      const dateStr = now.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.');
-
-      const historyItem: TestResultItem = {
-        id: `writing_${Date.now()}`,
-        date: dateStr,
-        startTime,
-        endTime,
-        testType: activeTab === 'task1' ? 'writing_task1' : 'writing_task2',
-        title: activeTab === 'task1' ? 'IELTS Writing Task 1 (Diagramma)' : 'IELTS Writing Task 2 (Insho)',
-        topic: activeTab === 'task1' ? 'Renewable Energy Generation 2015-2025' : currentTask2.topic,
-        overallBand: evaluation.overallBand,
-        criteriaScores: {
-          c1Name: activeTab === 'task1' ? 'Task Achievement' : 'Task Response',
-          c1Score: evaluation.taskResponse,
-          c2Name: 'Coherence & Cohesion',
-          c2Score: evaluation.coherenceCohesion,
-          c3Name: 'Lexical Resource',
-          c3Score: evaluation.lexicalResource,
-          c4Name: 'Grammar Accuracy',
-          c4Score: evaluation.grammaticalRange,
-        },
-        strengths: evaluation.strengths,
-        improvements: evaluation.improvements,
-      };
-
-      saveTestResult(historyItem);
-      triggerHaptic('heavy');
-    }, 1200);
-  };
 
   return (
     <div className="english-root min-h-screen bg-slate-50 flex flex-col text-slate-900 pb-12 relative">
@@ -351,75 +386,167 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
           <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3.5 animate-in fade-in duration-300">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-                Academic Task 1 • Report
+                {currentTask1.badge} ({task1Idx + 1}/{SAMPLE_TASK1_PROMPTS.length})
               </span>
-              <span className="text-xs font-bold text-slate-400">20 daqiqa • min. 150 so'z</span>
+              {(wordCount <= 5 || !!result) ? (
+                <button
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setTask1Idx((prev) => (prev + 1) % SAMPLE_TASK1_PROMPTS.length);
+                    setResult(null);
+                  }}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center space-x-1"
+                >
+                  <RotateCcw size={12} />
+                  <span>Boshqa grafik</span>
+                </button>
+              ) : (
+                <span className="text-xs font-bold text-slate-400">20 daqiqa • min. 150 so'z</span>
+              )}
             </div>
 
             <p className="text-xs font-bold text-slate-800 leading-relaxed">
-              The chart below illustrates global renewable electricity production in 2015 and 2025 (in Terawatt-hours, TWh), comparing Solar, Wind, Hydro, and Biomass.
+              {currentTask1.prompt}
             </p>
 
-            {/* Murakkab SVG Diagramma */}
+            {/* Murakkab SVG Diagramma / Grafik / Jadval */}
             <div className="bg-slate-900 text-white rounded-2xl p-4 shadow-inner space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <span className="text-[11px] font-bold text-[#c4f82a]">
-                  ⚡ Renewable Electricity Output (TWh)
-                </span>
-                <div className="flex items-center space-x-3 text-[10px]">
-                  <span className="flex items-center space-x-1">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#7052ff]" />
-                    <span>2015</span>
-                  </span>
-                  <span className="flex items-center space-x-1">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#c4f82a]" />
-                    <span>2025 (Proj.)</span>
-                  </span>
+              {currentTask1.id === 'bar_renewable' && (
+                <>
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <span className="text-[11px] font-bold text-[#c4f82a]">
+                      ⚡ Renewable Electricity Output (TWh)
+                    </span>
+                    <div className="flex items-center space-x-3 text-[10px]">
+                      <span className="flex items-center space-x-1">
+                        <span className="w-2.5 h-2.5 rounded-xs bg-[#7052ff]" />
+                        <span>2015</span>
+                      </span>
+                      <span className="flex items-center space-x-1">
+                        <span className="w-2.5 h-2.5 rounded-xs bg-[#c4f82a]" />
+                        <span>2025 (Proj.)</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <svg viewBox="0 0 360 160" className="w-full h-40">
+                    <line x1="40" y1="20" x2="350" y2="20" stroke="#334155" strokeDasharray="3 3" />
+                    <line x1="40" y1="60" x2="350" y2="60" stroke="#334155" strokeDasharray="3 3" />
+                    <line x1="40" y1="100" x2="350" y2="100" stroke="#334155" strokeDasharray="3 3" />
+                    <line x1="40" y1="130" x2="350" y2="130" stroke="#475569" strokeWidth="1.5" />
+
+                    <text x="30" y="24" fill="#94a3b8" fontSize="9" textAnchor="end">1200</text>
+                    <text x="30" y="64" fill="#94a3b8" fontSize="9" textAnchor="end">800</text>
+                    <text x="30" y="104" fill="#94a3b8" fontSize="9" textAnchor="end">400</text>
+                    <text x="30" y="133" fill="#94a3b8" fontSize="9" textAnchor="end">0</text>
+
+                    <rect x="65" y="110" width="16" height="20" fill="#7052ff" rx="2" />
+                    <rect x="83" y="45" width="16" height="85" fill="#c4f82a" rx="2" />
+                    <text x="82" y="145" fill="#cbd5e1" fontSize="9" textAnchor="middle">Solar</text>
+                    <text x="91" y="40" fill="#c4f82a" fontSize="8" fontWeight="bold" textAnchor="middle">+350%</text>
+
+                    <rect x="135" y="85" width="16" height="45" fill="#7052ff" rx="2" />
+                    <rect x="153" y="30" width="16" height="100" fill="#c4f82a" rx="2" />
+                    <text x="152" y="145" fill="#cbd5e1" fontSize="9" textAnchor="middle">Wind</text>
+                    <text x="161" y="25" fill="#c4f82a" fontSize="8" fontWeight="bold" textAnchor="middle">+140%</text>
+
+                    <rect x="205" y="35" width="16" height="95" fill="#7052ff" rx="2" />
+                    <rect x="223" y="28" width="16" height="102" fill="#c4f82a" rx="2" />
+                    <text x="222" y="145" fill="#cbd5e1" fontSize="9" textAnchor="middle">Hydro</text>
+                    <text x="231" y="23" fill="#c4f82a" fontSize="8" fontWeight="bold" textAnchor="middle">+8%</text>
+
+                    <rect x="275" y="98" width="16" height="32" fill="#7052ff" rx="2" />
+                    <rect x="293" y="88" width="16" height="42" fill="#c4f82a" rx="2" />
+                    <text x="292" y="145" fill="#cbd5e1" fontSize="9" textAnchor="middle">Biomass</text>
+                    <text x="301" y="82" fill="#c4f82a" fontSize="8" fontWeight="bold" textAnchor="middle">+30%</text>
+                  </svg>
+                </>
+              )}
+
+              {currentTask1.id === 'line_transport' && (
+                <>
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <span className="text-[11px] font-bold text-[#c4f82a]">
+                      🚄 High-Speed Rail Passengers (Millions)
+                    </span>
+                    <div className="flex items-center space-x-2 text-[9px]">
+                      <span className="text-[#c4f82a] font-bold">● East Asia</span>
+                      <span className="text-[#7052ff] font-bold">● Europe</span>
+                      <span className="text-sky-400 font-bold">● N. America</span>
+                    </div>
+                  </div>
+
+                  <svg viewBox="0 0 360 160" className="w-full h-40">
+                    <line x1="40" y1="20" x2="340" y2="20" stroke="#334155" strokeDasharray="3 3" />
+                    <line x1="40" y1="60" x2="340" y2="60" stroke="#334155" strokeDasharray="3 3" />
+                    <line x1="40" y1="100" x2="340" y2="100" stroke="#334155" strokeDasharray="3 3" />
+                    <line x1="40" y1="130" x2="340" y2="130" stroke="#475569" strokeWidth="1.5" />
+
+                    <text x="32" y="24" fill="#94a3b8" fontSize="9" textAnchor="end">1000</text>
+                    <text x="32" y="64" fill="#94a3b8" fontSize="9" textAnchor="end">600</text>
+                    <text x="32" y="104" fill="#94a3b8" fontSize="9" textAnchor="end">200</text>
+                    <text x="32" y="133" fill="#94a3b8" fontSize="9" textAnchor="end">0</text>
+
+                    <text x="60" y="146" fill="#cbd5e1" fontSize="9" textAnchor="middle">2010</text>
+                    <text x="150" y="146" fill="#cbd5e1" fontSize="9" textAnchor="middle">2015</text>
+                    <text x="240" y="146" fill="#cbd5e1" fontSize="9" textAnchor="middle">2020</text>
+                    <text x="320" y="146" fill="#cbd5e1" fontSize="9" textAnchor="middle">2025</text>
+
+                    {/* East Asia line */}
+                    <polyline fill="none" stroke="#c4f82a" strokeWidth="2.5" points="60,105 150,70 240,42 320,24" />
+                    <circle cx="60" cy="105" r="3" fill="#c4f82a" />
+                    <circle cx="150" cy="70" r="3" fill="#c4f82a" />
+                    <circle cx="240" cy="42" r="3" fill="#c4f82a" />
+                    <circle cx="320" cy="24" r="3" fill="#c4f82a" />
+
+                    {/* Europe line */}
+                    <polyline fill="none" stroke="#7052ff" strokeWidth="2.5" points="60,94 150,82 240,72 320,62" />
+                    <circle cx="60" cy="94" r="3" fill="#7052ff" />
+                    <circle cx="150" cy="82" r="3" fill="#7052ff" />
+                    <circle cx="240" cy="72" r="3" fill="#7052ff" />
+                    <circle cx="320" cy="62" r="3" fill="#7052ff" />
+
+                    {/* North America line */}
+                    <polyline fill="none" stroke="#38bdf8" strokeWidth="2" points="60,124 150,121 240,118 320,112" />
+                    <circle cx="60" cy="124" r="2.5" fill="#38bdf8" />
+                    <circle cx="150" cy="121" r="2.5" fill="#38bdf8" />
+                    <circle cx="240" cy="118" r="2.5" fill="#38bdf8" />
+                    <circle cx="320" cy="112" r="2.5" fill="#38bdf8" />
+                  </svg>
+                </>
+              )}
+
+              {currentTask1.id === 'table_spending' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <span className="text-[11px] font-bold text-[#c4f82a]">
+                      📊 Household Income Expenditure (%) — 2024
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[11px] text-left">
+                      <thead>
+                        <tr className="border-b border-slate-700 text-slate-400">
+                          <th className="py-1.5">Category</th>
+                          <th className="py-1.5 text-right text-[#7052ff]">United Kingdom</th>
+                          <th className="py-1.5 text-right text-[#c4f82a]">Japan</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800 text-slate-200 font-mono">
+                        <tr><td className="py-1.5 font-sans">Housing & Utilities</td><td className="text-right font-bold">34%</td><td className="text-right">26%</td></tr>
+                        <tr><td className="py-1.5 font-sans">Food & Groceries</td><td className="text-right">14%</td><td className="text-right font-bold text-[#c4f82a]">23%</td></tr>
+                        <tr><td className="py-1.5 font-sans">Transport</td><td className="text-right">16%</td><td className="text-right">12%</td></tr>
+                        <tr><td className="py-1.5 font-sans">Healthcare</td><td className="text-right">8%</td><td className="text-right">15%</td></tr>
+                        <tr><td className="py-1.5 font-sans">Leisure & Other</td><td className="text-right">28%</td><td className="text-right">24%</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-
-              {/* SVG Charts visual representation */}
-              <svg viewBox="0 0 360 160" className="w-full h-40">
-                {/* Horizontal Grid lines */}
-                <line x1="40" y1="20" x2="350" y2="20" stroke="#334155" strokeDasharray="3 3" />
-                <line x1="40" y1="60" x2="350" y2="60" stroke="#334155" strokeDasharray="3 3" />
-                <line x1="40" y1="100" x2="350" y2="100" stroke="#334155" strokeDasharray="3 3" />
-                <line x1="40" y1="130" x2="350" y2="130" stroke="#475569" strokeWidth="1.5" />
-
-                {/* Y-axis labels */}
-                <text x="30" y="24" fill="#94a3b8" fontSize="9" textAnchor="end">1200</text>
-                <text x="30" y="64" fill="#94a3b8" fontSize="9" textAnchor="end">800</text>
-                <text x="30" y="104" fill="#94a3b8" fontSize="9" textAnchor="end">400</text>
-                <text x="30" y="133" fill="#94a3b8" fontSize="9" textAnchor="end">0</text>
-
-                {/* Bars: Solar */}
-                <rect x="65" y="110" width="16" height="20" fill="#7052ff" rx="2" />
-                <rect x="83" y="45" width="16" height="85" fill="#c4f82a" rx="2" />
-                <text x="82" y="145" fill="#cbd5e1" fontSize="9" textAnchor="middle">Solar</text>
-                <text x="91" y="40" fill="#c4f82a" fontSize="8" fontWeight="bold" textAnchor="middle">+350%</text>
-
-                {/* Bars: Wind */}
-                <rect x="135" y="85" width="16" height="45" fill="#7052ff" rx="2" />
-                <rect x="153" y="30" width="16" height="100" fill="#c4f82a" rx="2" />
-                <text x="152" y="145" fill="#cbd5e1" fontSize="9" textAnchor="middle">Wind</text>
-                <text x="161" y="25" fill="#c4f82a" fontSize="8" fontWeight="bold" textAnchor="middle">+140%</text>
-
-                {/* Bars: Hydro */}
-                <rect x="205" y="35" width="16" height="95" fill="#7052ff" rx="2" />
-                <rect x="223" y="28" width="16" height="102" fill="#c4f82a" rx="2" />
-                <text x="222" y="145" fill="#cbd5e1" fontSize="9" textAnchor="middle">Hydro</text>
-                <text x="231" y="23" fill="#c4f82a" fontSize="8" fontWeight="bold" textAnchor="middle">+8%</text>
-
-                {/* Bars: Biomass */}
-                <rect x="275" y="98" width="16" height="32" fill="#7052ff" rx="2" />
-                <rect x="293" y="88" width="16" height="42" fill="#c4f82a" rx="2" />
-                <text x="292" y="145" fill="#cbd5e1" fontSize="9" textAnchor="middle">Biomass</text>
-                <text x="301" y="82" fill="#c4f82a" fontSize="8" fontWeight="bold" textAnchor="middle">+30%</text>
-              </svg>
+              )}
 
               <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-300 pt-1 border-t border-slate-800">
-                <div>• Eng katta o'sish: <span className="text-[#c4f82a] font-bold">Solar (Quyosh)</span></div>
-                <div>• Eng barqaror: <span className="text-[#c4f82a] font-bold">Hydro (Gidro)</span></div>
+                <div>{currentTask1.summaryLeft}</div>
+                <div>{currentTask1.summaryRight}</div>
               </div>
             </div>
 
@@ -434,19 +561,21 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
           <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3 animate-in fade-in duration-300">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-wider text-[#7052ff] bg-indigo-50 px-2 py-0.5 rounded-md">
-                {currentTask2.topic}
+                {currentTask2.topic} ({task2Idx + 1}/{SAMPLE_TASK2_PROMPTS.length})
               </span>
-              <button
-                onClick={() => {
-                  triggerHaptic('light');
-                  setTask2Idx((prev) => (prev + 1) % SAMPLE_TASK2_PROMPTS.length);
-                  setResult(null);
-                }}
-                className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center space-x-1"
-              >
-                <RotateCcw size={12} />
-                <span>Boshqa mavzu</span>
-              </button>
+              {(wordCount <= 5 || !!result) && (
+                <button
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setTask2Idx((prev) => (prev + 1) % SAMPLE_TASK2_PROMPTS.length);
+                    setResult(null);
+                  }}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center space-x-1"
+                >
+                  <RotateCcw size={12} />
+                  <span>Boshqa mavzu</span>
+                </button>
+              )}
             </div>
 
             <p className="text-sm font-bold text-slate-900 leading-relaxed">
@@ -481,7 +610,7 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
             rows={9}
             placeholder={
               activeTab === 'task1'
-                ? "The bar chart compares the amount of electricity generated from four renewable sources...\n\nOverall, it is clear that...\n\nRegarding solar and wind..."
+                ? "The chart compares...\n\nOverall, it is clear that...\n\nRegarding..."
                 : "Inshoyingizni shu yerga yozing yoki nusxasini joylashtiring..."
             }
             className="w-full text-xs font-sans leading-relaxed p-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#7052ff]/40 resize-none text-slate-800"
@@ -489,7 +618,7 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
 
           <button
             disabled={isEvaluating || wordCount === 0}
-            onClick={handleEvaluate}
+            onClick={() => handleEvaluate(false)}
             className="w-full py-3.5 rounded-2xl bg-[#7052ff] hover:bg-[#5b3ce0] active:scale-[0.98] text-white font-black text-xs shadow-lg shadow-indigo-500/25 flex items-center justify-center space-x-2 transition-all disabled:opacity-50"
           >
             {isEvaluating ? (

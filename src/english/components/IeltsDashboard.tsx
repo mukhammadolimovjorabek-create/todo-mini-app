@@ -26,16 +26,34 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
   const [activeView, setActiveView] = useState<ActiveView>(initialView);
   const [showSpeakingModal, setShowSpeakingModal] = useState(false);
 
-  // Compute last scores from test history (only if test has actually been taken)
-  const { readingScore, writingScore } = useMemo(() => {
+  // Compute last scores & active days from test history (refreshes whenever activeView changes back to 'menu')
+  const { readingScore, writingScore, speakingScore, activeDaysCount } = useMemo(() => {
     const results = getTestResults();
     const lastReading = results.find((r) => r.testType === 'reading');
-    const lastWriting = results.find((r) => r.testType === 'writing_task1' || r.testType === 'writing_task2');
+    const lastWriting = results.find(
+      (r) => (r.testType === 'writing_task1' || r.testType === 'writing_task2') && !r.id.startsWith('ml_')
+    );
+    const lastSpeaking = results.find(
+      (r) => r.testType.startsWith('speaking_') && !r.id.startsWith('ml_') && r.overallBand <= 9.0
+    );
+    const uniqueDates = new Set(results.map((r) => r.date).filter(Boolean));
     return {
-      readingScore: lastReading?.overallBand !== undefined ? (lastReading.overallBand === 0 ? 'None' : lastReading.overallBand.toFixed(1)) : null,
+      readingScore:
+        lastReading?.overallBand !== undefined
+          ? lastReading.overallBand === 0
+            ? 'None'
+            : lastReading.overallBand.toFixed(1)
+          : null,
       writingScore: lastWriting?.overallBand ? lastWriting.overallBand.toFixed(1) : null,
+      speakingScore:
+        lastSpeaking?.overallBand !== undefined
+          ? lastSpeaking.overallBand === 0
+            ? '0.0'
+            : lastSpeaking.overallBand.toFixed(1)
+          : null,
+      activeDaysCount: Math.max(1, uniqueDates.size),
     };
-  }, []);
+  }, [activeView]);
 
   if (activeView === 'reading') {
     return <IeltsReadingView onBack={() => setActiveView('menu')} userName={userName} />;
@@ -72,7 +90,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
         {/* Streak Pill */}
         <div className="flex items-center space-x-1.5 bg-[#1e1c3a] border border-white/10 px-3 py-1 rounded-full text-xs font-black text-amber-300 shadow-sm">
           <Flame size={14} className="text-amber-400 fill-amber-400" />
-          <span>3 kun</span>
+          <span>{activeDaysCount} kun</span>
         </div>
       </div>
 
@@ -120,6 +138,11 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
               >
                 Part 1-3
               </button>
+              {speakingScore && (
+                <span className="text-[11px] font-bold text-[#c4f82a] bg-[#c4f82a]/10 border border-[#c4f82a]/20 px-2.5 py-1 rounded-xl">
+                  Oxirgi: {speakingScore}
+                </span>
+              )}
             </div>
 
             <button

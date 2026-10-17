@@ -98,12 +98,40 @@ export const roundToIeltsBand = (score: number): number => {
 
 export const evaluateIeltsWriting = (
   text: string,
-  taskType: 'task1' | 'task2'
+  taskType: 'task1' | 'task2',
+  promptContext?: string
 ): WritingAnalysisResult => {
   const cleanText = text.trim();
   const words = cleanText ? cleanText.split(/\s+/).filter(Boolean) : [];
   const wordCount = words.length;
   const minWordsRequired = taskType === 'task1' ? 150 : 250;
+
+  if (wordCount === 0) {
+    return {
+      overallBand: 0.0,
+      taskResponse: 0.0,
+      coherenceCohesion: 0.0,
+      lexicalResource: 0.0,
+      grammaticalRange: 0.0,
+      wordCount: 0,
+      paragraphCount: 0,
+      minWordsRequired,
+      wordCountPenaltyApplied: true,
+      hasOverviewOrThesis: false,
+      complexSentenceRatio: 0,
+      detectedAcademicWords: [],
+      repetitionWarnings: [],
+      strengths: [],
+      improvements: [
+        "Belgilangan vaqt ichida matn kiritilmadi (0 ta so'z).",
+        `IELTS Writing ${taskType === 'task1' ? 'Task 1 uchun kamida 150' : 'Task 2 uchun kamida 250'} ta so'z yozish talab etiladi.`
+      ],
+      bandMilestoneAdvice: [
+        "Vaqt boshlangach kirish (Introduction) va asosiy qismlarni ketma-ket yozishni mashq qiling."
+      ],
+      recommendedVocabulary: [],
+    };
+  }
 
   // Split into paragraphs
   const rawParagraphs = cleanText.split(/\n+/).map((p) => p.trim()).filter((p) => p.length > 0);
@@ -111,6 +139,31 @@ export const evaluateIeltsWriting = (
 
   // Lowercase full text for pattern matching
   const lowerText = cleanText.toLowerCase();
+
+  // Check topic relevance if promptContext is provided
+  let isOffTopic = false;
+  if (promptContext && wordCount >= 20) {
+    const stopWords = new Set([
+      'below', 'chart', 'graph', 'table', 'shows', 'illustrates', 'compares', 'between',
+      'people', 'believe', 'think', 'extent', 'agree', 'disagree', 'opinion', 'discuss',
+      'views', 'give', 'your', 'some', 'many', 'more', 'than', 'ever', 'before', 'around',
+      'world', 'what', 'main', 'causes', 'these', 'problems', 'measures', 'take', 'resolve',
+      'them', 'with', 'this', 'from', 'that', 'have', 'will', 'soon'
+    ]);
+    const promptStems = promptContext
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length >= 4 && !stopWords.has(w))
+      .map((w) => w.slice(0, 5));
+    const uniqueStems = Array.from(new Set(promptStems));
+    if (uniqueStems.length >= 2) {
+      const matchedStems = uniqueStems.filter((stem) => lowerText.includes(stem));
+      if (matchedStems.length === 0) {
+        isOffTopic = true;
+      }
+    }
+  }
 
   // 1. Detect Academic Vocabulary
   const targetVocab = taskType === 'task1' ? ACADEMIC_VOCAB_TASK1 : ACADEMIC_VOCAB_TASK2;
@@ -164,7 +217,10 @@ export const evaluateIeltsWriting = (
   let trScore = 6.0;
   let wordCountPenaltyApplied = false;
 
-  if (wordCount < minWordsRequired * 0.5) {
+  if (wordCount < 40) {
+    trScore = 3.0;
+    wordCountPenaltyApplied = true;
+  } else if (wordCount < minWordsRequired * 0.5) {
     trScore = 4.0;
     wordCountPenaltyApplied = true;
   } else if (wordCount < minWordsRequired) {
@@ -176,13 +232,18 @@ export const evaluateIeltsWriting = (
     if (hasOverviewOrThesis) trScore += 0.5;
     if (wordCount >= minWordsRequired + 70 && hasOverviewOrThesis) trScore += 0.5;
   }
-  trScore = Math.min(8.5, Math.max(4.0, trScore));
+  if (isOffTopic) {
+    trScore = Math.min(trScore, 4.0);
+  }
+  trScore = Math.min(8.5, Math.max(2.5, trScore));
 
   // B) COHERENCE & COHESION (CC)
   let ccScore = 5.5;
   const targetParagraphs = taskType === 'task1' ? 3 : 4;
 
-  if (paragraphCount < 2) {
+  if (wordCount < 40) {
+    ccScore = 3.5;
+  } else if (paragraphCount < 2) {
     ccScore = 4.5; // No paragraphing is Band 4 or 5
   } else if (paragraphCount >= targetParagraphs) {
     ccScore = 6.5;
@@ -191,13 +252,15 @@ export const evaluateIeltsWriting = (
   } else {
     ccScore = 6.0;
   }
-  ccScore = Math.min(8.5, Math.max(4.5, ccScore));
+  ccScore = Math.min(8.5, Math.max(3.0, ccScore));
 
   // C) LEXICAL RESOURCE (LR)
   let lrScore = 5.5;
   const academicCount = detectedAcademicWords.length;
 
-  if (academicCount >= 8) {
+  if (wordCount < 40) {
+    lrScore = 3.5;
+  } else if (academicCount >= 8) {
     lrScore = 8.0;
   } else if (academicCount >= 5) {
     lrScore = 7.0;
@@ -211,11 +274,13 @@ export const evaluateIeltsWriting = (
   if (repetitionWarnings.length >= 2) {
     lrScore = Math.max(5.0, lrScore - 0.5);
   }
-  lrScore = Math.min(8.5, Math.max(4.5, lrScore));
+  lrScore = Math.min(8.5, Math.max(3.0, lrScore));
 
   // D) GRAMMATICAL RANGE & ACCURACY (GRA)
   let graScore = 5.5;
-  if (complexSentenceRatio >= 0.45) {
+  if (wordCount < 40) {
+    graScore = 3.5;
+  } else if (complexSentenceRatio >= 0.45) {
     graScore = 7.5;
   } else if (complexSentenceRatio >= 0.30) {
     graScore = 7.0;
@@ -226,10 +291,10 @@ export const evaluateIeltsWriting = (
   }
 
   // Length factor on grammar
-  if (wordCount < minWordsRequired * 0.7) {
+  if (wordCount >= 40 && wordCount < minWordsRequired * 0.7) {
     graScore = Math.min(graScore, 5.5);
   }
-  graScore = Math.min(8.5, Math.max(5.0, graScore));
+  graScore = Math.min(8.5, Math.max(3.0, graScore));
 
   // ══════════════════════════════════════════════════════════
   // ── 6. OVERALL BAND COMPUTATION ──
@@ -243,6 +308,12 @@ export const evaluateIeltsWriting = (
   const strengths: string[] = [];
   const improvements: string[] = [];
   const bandMilestoneAdvice: string[] = [];
+
+  if (isOffTopic) {
+    improvements.push(
+      "Diqqat: Matningiz berilgan mavzu (Prompt) kalit so'zlaridan chetga chiqqan (Off-topic). IELTS mezoniga ko'ra mavzudan chetlashish Task balini keskin pasaytiradi."
+    );
+  }
 
   // Strengths
   if (wordCount >= minWordsRequired) {

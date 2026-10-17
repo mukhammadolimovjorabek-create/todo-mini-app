@@ -12,6 +12,7 @@ import {
 interface Props {
   onBack: () => void;
   userName: string;
+  initialTab?: WritingTab;
 }
 
 type WritingTab = 'task1' | 'task2';
@@ -30,8 +31,29 @@ interface WritingBandBreakdown {
   recommendedVocabulary: { word: string; meaning: string; example: string }[];
 }
 
-export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _userName }) => {
-  const [activeTab, setActiveTab] = useState<WritingTab>('task2');
+const B2_C1_CONNECTORS = [
+  'furthermore', 'moreover', 'consequently', 'nevertheless', 'nonetheless', 'specifically',
+  'on the other hand', 'in addition', 'in conclusion', 'to sum up', 'as a result',
+  'for instance', 'for example', 'therefore', 'however', 'in contrast', 'subsequently'
+];
+
+const B2_C1_ACADEMIC_VOCAB = [
+  'significant', 'perspective', 'demonstrate', 'illustrate', 'substantially', 'fundamentally',
+  'indispensable', 'predominantly', 'detrimental', 'beneficial', 'crucial', 'essential',
+  'sustainable', 'facilitate', 'enhance', 'contemplate', 'mitigate', 'prevalent',
+  'comprehensive', 'inevitable', 'unprecedented', 'repercussion', 'priority', 'implement',
+  'convenient', 'opportunity', 'accommodation', 'grateful', 'appreciate', 'apologize',
+  'regarding', 'inquire', 'recommend', 'participate', 'arrangement', 'circumstance'
+];
+
+const COMPLEX_SYNTAX_MARKERS = [
+  'although', 'even though', 'whereas', 'while', 'despite', 'in spite of',
+  'provided that', 'unless', 'not only', 'would be', 'would have', 'had been',
+  'has been', 'have been', 'is considered', 'which means', 'in order to', 'so that'
+];
+
+export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _userName, initialTab = 'task2' }) => {
+  const [activeTab, setActiveTab] = useState<WritingTab>(initialTab);
   
   // Task 1 state
   const [task1Idx, setTask1Idx] = useState(0);
@@ -47,12 +69,13 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [result, setResult] = useState<WritingBandBreakdown | null>(null);
 
-  // Exam Start and Exit Confirmation
+  // Exam Start, Exit Confirmation, and Pending Tab Switch
   const [isStarted, setIsStarted] = useState(false);
   const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
+  const [pendingTabSwitch, setPendingTabSwitch] = useState<WritingTab | null>(null);
 
   // Official Multilevel Timers: Task 1 = 20 min (1200s), Task 2 = 40 min (2400s)
-  const [timeLeft, setTimeLeft] = useState<number>(() => (activeTab === 'task1' ? 20 * 60 : 40 * 60));
+  const [timeLeft, setTimeLeft] = useState<number>(() => (initialTab === 'task1' ? 20 * 60 : 40 * 60));
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
   // Time tracking
@@ -73,6 +96,7 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
   const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
   const minWordsRequired = activeTab === 'task1' ? (subTask1Mode === 'task1_1' ? 50 : 120) : 180;
   const targetWords = activeTab === 'task1' ? (subTask1Mode === 'task1_1' ? '50-60' : '120-150') : '180-200';
+  const isExamLocked = isStarted && !result && wordCount > 5;
 
   // Format timer
   const formatTimer = (seconds: number) => {
@@ -81,76 +105,144 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  React.useEffect(() => {
-    let interval: any = null;
-    if (isStarted && isTimerRunning && timeLeft > 0 && !result && !isEvaluating) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            handleEvaluate();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isStarted, isTimerRunning, timeLeft, result, isEvaluating]);
+  const applyTabSwitch = (targetTab: WritingTab) => {
+    triggerHaptic('light');
+    setActiveTab(targetTab);
+    setEssayText('');
+    setResult(null);
+    setIsStarted(false);
+    setIsTimerRunning(false);
+    setTimeLeft(targetTab === 'task1' ? 20 * 60 : 40 * 60);
+    setShowModelAnswer(false);
+    setPendingTabSwitch(null);
+  };
 
-  const handleEvaluate = () => {
-    if (wordCount < 30) {
+  const handleEvaluate = (isAutoSubmit = false) => {
+    if (!isAutoSubmit && wordCount < 25) {
       triggerHaptic('heavy');
-      alert(`Iltimos, baholash uchun kamida 30 ta so'z yozing. Hozirda: ${wordCount} ta so'z.`);
+      alert(`Iltimos, baholash uchun kamida 25 ta so'z yozing. Hozirda: ${wordCount} ta so'z.`);
       return;
     }
 
     setIsEvaluating(true);
+    setIsTimerRunning(false);
     triggerHaptic('heavy');
 
     setTimeout(() => {
-      // ── OFFICIAL DTM 75-BALL MULTILEVEL WRITING SCORING ──
-      const lengthRatio = Math.min(1.4, wordCount / minWordsRequired);
+      if (wordCount === 0) {
+        const emptyEval: WritingBandBreakdown = {
+          totalScore: 0,
+          cefrLevel: 'Baholanmadi',
+          cefrTitle: '0 / 75 ball • Matn kiritilmadi',
+          taskResponse: 0,
+          coherenceCohesion: 0,
+          lexicalResource: 0,
+          grammaticalRange: 0,
+          wordCount: 0,
+          strengths: [],
+          improvements: [
+            "Belgilangan vaqt ichida hech qanday matn yozilmadi (0 ball).",
+            `Multilevel Writing ${activeTab === 'task1' ? 'Task 1' : 'Task 2'} uchun kamida ${minWordsRequired} ta so'z yozish talab etiladi.`
+          ],
+          recommendedVocabulary: [],
+        };
+        setResult(emptyEval);
+        setIsEvaluating(false);
+        return;
+      }
 
-      const complexWords = [
-        'furthermore', 'moreover', 'consequently', 'nevertheless', 'specifically',
-        'significant', 'perspective', 'demonstrate', 'illustrate', 'substantially',
-        'although', 'whereas', 'however', 'fundamentally', 'in conclusion', 'in addition'
-      ];
-      const foundComplex = complexWords.filter((w) => essayText.toLowerCase().includes(w));
+      // ── OFFICIAL DTM 75-BALL MULTILEVEL WRITING SCORING ENGINE ──
+      const lowerText = essayText.toLowerCase();
+      const lengthRatio = Math.min(1.35, wordCount / minWordsRequired);
+      const rawParagraphs = essayText.trim().split(/\n+/).map((p) => p.trim()).filter(Boolean);
+      const paragraphCount = rawParagraphs.length;
 
-      const sentences = essayText.split(/[.!?]+/).filter(Boolean);
+      // Topic relevance check against prompt & scenario/title
+      const promptSource = activeTab === 'task1'
+        ? `${currentTask1?.title || ''} ${currentTask1?.scenario || ''} ${subTask1Mode === 'task1_1' ? currentTask1?.task1_1.prompt : currentTask1?.task1_2.prompt}`
+        : `${currentTask2?.title || ''} ${currentTask2?.prompt || ''}`;
+
+      const stopWords = new Set([
+        'write', 'letter', 'friend', 'email', 'coordinator', 'manager', 'about', 'words',
+        'explain', 'describe', 'suggest', 'tell', 'what', 'when', 'where', 'which', 'would',
+        'could', 'should', 'think', 'believe', 'people', 'some', 'many', 'more', 'than',
+        'your', 'their', 'there', 'with', 'from', 'that', 'this', 'have', 'will', 'essay',
+        'give', 'reasons', 'examples', 'support', 'opinion', 'agree', 'disagree', 'extent'
+      ]);
+      const promptStems = Array.from(
+        new Set(
+          promptSource
+            .toLowerCase()
+            .replace(/[^a-z\s]/g, ' ')
+            .split(/\s+/)
+            .filter((w) => w.length >= 4 && !stopWords.has(w))
+            .map((w) => w.slice(0, 5))
+        )
+      );
+      const matchedStems = promptStems.filter((stem) => lowerText.includes(stem));
+      const isOffTopic = wordCount >= 20 && promptStems.length >= 3 && matchedStems.length === 0;
+
+      // Register & Structure check (Salutation / Sign-off for Task 1, Thesis/Conclusion for Task 2)
+      let hasProperRegister = false;
+      if (activeTab === 'task1') {
+        if (subTask1Mode === 'task1_1') {
+          hasProperRegister = /\b(hi|hey|dear|hello|best|wishes|love|take care|see you|soon)\b/i.test(lowerText);
+        } else {
+          hasProperRegister = /\b(dear|sincerely|faithfully|regards|writing to|inform|inquire|grateful|appreciate)\b/i.test(lowerText);
+        }
+      } else {
+        hasProperRegister = /\b(in conclusion|to sum up|to conclude|in my opinion|i believe|from my perspective|overall)\b/i.test(lowerText);
+      }
+
+      const foundConnectors = B2_C1_CONNECTORS.filter((w) => lowerText.includes(w));
+      const foundAcademic = B2_C1_ACADEMIC_VOCAB.filter((w) => lowerText.includes(w));
+      const foundSyntax = COMPLEX_SYNTAX_MARKERS.filter((w) => lowerText.includes(w));
+
+      const sentences = essayText.split(/[.!?]+/).map((s) => s.trim()).filter((s) => s.length > 2);
       const avgLen = sentences.length > 0 ? wordCount / sentences.length : 0;
 
       // 1. Task Fulfillment / Achievement (max 20 ball)
-      let taskScore = Math.round(lengthRatio * 13);
-      if (wordCount >= minWordsRequired) taskScore += 4;
-      else if (wordCount >= minWordsRequired * 0.8) taskScore += 2;
-      if (sentences.length >= 4) taskScore += 3;
-      taskScore = Math.min(20, Math.max(3, taskScore));
+      let taskScore = Math.round(lengthRatio * 11);
+      if (wordCount >= minWordsRequired) taskScore += 3;
+      else if (wordCount >= minWordsRequired * 0.85) taskScore += 1;
+      if (hasProperRegister) taskScore += 3;
+      if (matchedStems.length >= 2) taskScore += 3;
+      else if (matchedStems.length === 1) taskScore += 1;
+
+      if (wordCount < minWordsRequired * 0.5) taskScore = Math.min(taskScore, 8);
+      if (isOffTopic) taskScore = Math.min(taskScore, 7);
+      taskScore = Math.min(20, Math.max(2, taskScore));
 
       // 2. Coherence & Cohesion (max 20 ball)
-      let cohesionScore = Math.round(lengthRatio * 11);
-      if (foundComplex.length >= 1) cohesionScore += 3;
-      if (foundComplex.length >= 3) cohesionScore += 4;
-      if (foundComplex.length >= 5) cohesionScore += 2;
-      cohesionScore = Math.min(20, Math.max(3, cohesionScore));
+      let cohesionScore = Math.round(lengthRatio * 9);
+      if (paragraphCount >= 3) cohesionScore += 4;
+      else if (paragraphCount === 2) cohesionScore += 2;
+      if (foundConnectors.length >= 1) cohesionScore += 2;
+      if (foundConnectors.length >= 3) cohesionScore += 3;
+      if (foundConnectors.length >= 5) cohesionScore += 2;
+      if (wordCount < minWordsRequired * 0.5) cohesionScore = Math.min(cohesionScore, 9);
+      cohesionScore = Math.min(20, Math.max(2, cohesionScore));
 
       // 3. Lexical Resource (max 20 ball)
-      const wordsArray = essayText.toLowerCase().replace(/[^a-z0-9'\s-]/g, ' ').split(/\s+/).filter(Boolean);
+      const wordsArray = lowerText.replace(/[^a-z0-9'\s-]/g, ' ').split(/\s+/).filter(Boolean);
       const uniqueWords = new Set(wordsArray);
       const ttr = wordsArray.length > 0 ? uniqueWords.size / wordsArray.length : 0;
-      let lexicalScore = Math.round(lengthRatio * 10);
-      if (ttr > 0.5) lexicalScore += 3;
-      if (foundComplex.length >= 1) lexicalScore += 4;
-      if (foundComplex.length >= 3) lexicalScore += 3;
-      lexicalScore = Math.min(20, Math.max(3, lexicalScore));
+      let lexicalScore = Math.round(lengthRatio * 9);
+      if (ttr > 0.48 && wordCount >= 40) lexicalScore += 3;
+      if (foundAcademic.length >= 2) lexicalScore += 3;
+      if (foundAcademic.length >= 5) lexicalScore += 3;
+      if (foundAcademic.length >= 8) lexicalScore += 2;
+      if (wordCount < minWordsRequired * 0.5) lexicalScore = Math.min(lexicalScore, 9);
+      if (isOffTopic) lexicalScore = Math.min(lexicalScore, 10);
+      lexicalScore = Math.min(20, Math.max(2, lexicalScore));
 
       // 4. Grammatical Range & Accuracy (max 15 ball)
-      let grammarScore = Math.round(lengthRatio * 8);
-      if (avgLen >= 10 && avgLen <= 26) grammarScore += 4;
-      else grammarScore += 1;
-      if (sentences.length >= 3) grammarScore += 3;
+      let grammarScore = Math.round(lengthRatio * 7);
+      if (avgLen >= 10 && avgLen <= 26) grammarScore += 3;
+      else if (avgLen >= 7) grammarScore += 1;
+      if (foundSyntax.length >= 1) grammarScore += 2;
+      if (foundSyntax.length >= 3) grammarScore += 3;
+      if (wordCount < minWordsRequired * 0.5) grammarScore = Math.min(grammarScore, 7);
       grammarScore = Math.min(15, Math.max(2, grammarScore));
 
       // Total 75-ball score
@@ -169,6 +261,74 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
         cefrTitle = `${totalScore} / 75 ball • B1 (O'rta daraja)`;
       }
 
+      const strengths: string[] = [];
+      const improvements: string[] = [];
+
+      if (isOffTopic) {
+        improvements.push(
+          "Diqqat: Matningiz berilgan topshiriq (savol) mavzusidan chetga chiqqan (Off-topic). Mavzu kalit so'zlariga bevosita javob bering."
+        );
+      } else if (matchedStems.length > 0) {
+        strengths.push("Matn berilgan vaziyat/mavzu talablariga bevosita mos (On-topic).");
+      }
+
+      if (wordCount >= minWordsRequired) {
+        strengths.push(`Belgilangan hajm me'yori to'liq bajarildi (${wordCount} / ${minWordsRequired}+ so'z).`);
+      } else {
+        improvements.push(`So'zlar sonini kamida ${minWordsRequired} taga yetkazing (hozir ${wordCount} ta so'z).`);
+      }
+
+      if (hasProperRegister) {
+        strengths.push(
+          activeTab === 'task1'
+            ? `${subTask1Mode === 'task1_1' ? 'Norasmiy (Informal)' : 'Rasmiy (Formal)'} xat uslubi va murojaat shakllari to'g'ri qo'llangan.`
+            : "Inshoda muallif pozitsiyasi va yakuniy xulosa (Conclusion) aniq ifodalangan."
+        );
+      } else {
+        improvements.push(
+          activeTab === 'task1'
+            ? subTask1Mode === 'task1_1'
+              ? "Do'stga xatda samimiy salomlashish ('Hi ...') va xayrlashish ('Best wishes / See you soon') qismlarini kiriting."
+              : "Rasmiy xatda 'Dear Sir/Madam', 'I am writing to...' va yakunda 'Yours sincerely/faithfully' iboralarini ishlating."
+            : "Insho yakunida 'In conclusion...' yoki 'To sum up...' orqali umumiy xulosa chiqaring."
+        );
+      }
+
+      if (foundConnectors.length > 0) {
+        strengths.push(`Bog'lovchi vositalar (${foundConnectors.slice(0, 3).join(', ')}) to'g'ri qo'llanildi.`);
+      } else {
+        improvements.push("Paragraflar orasida 'Furthermore', 'Consequently', 'On the other hand' kabi bog'lovchilarni ishlating.");
+      }
+
+      if (foundAcademic.length >= 2) {
+        strengths.push(`B2/C1 darajasidagi leksika aniqlandi: ${foundAcademic.slice(0, 4).join(', ')}.`);
+      } else {
+        improvements.push("Oddiy so'zlar o'rniga B2/C1 akademik va mavzuviy lug'at boyligini qo'shing.");
+      }
+
+      if (paragraphCount < 3) {
+        improvements.push(`Matnni kamida 3-4 ta alohida xatboshiga (Paragraph) ajratib yozing (hozir ${paragraphCount} ta).`);
+      }
+
+      // Dynamic, task-specific vocabulary recommendations
+      const recommendedVocabulary = activeTab === 'task1'
+        ? subTask1Mode === 'task1_1'
+          ? [
+              { word: 'Drop me a line', meaning: 'Xat yozib yubormoq (Informal)', example: 'Drop me a line when you have some free time!' },
+              { word: 'Keep me posted', meaning: 'Xabardor qilib turmoq', example: 'Please keep me posted on your travel plans.' },
+              { word: 'Make it up to you', meaning: 'O\'rnini qoplamoq', example: 'I promise I will make it up to you next weekend.' },
+            ]
+          : [
+              { word: 'I am writing to inquire', meaning: 'Ma\'lumot so\'rash maqsadida yozmoqdaman', example: 'I am writing to inquire about the upcoming training program.' },
+              { word: 'Look into the matter', meaning: 'Masalani ko\'rib chiqmoq', example: 'I would appreciate it if you could look into this matter promptly.' },
+              { word: 'At your earliest convenience', meaning: 'Imkon bo\'lishi bilanoq (Rasmiy)', example: 'I look forward to hearing from you at your earliest convenience.' },
+            ]
+        : [
+            { word: 'Predominantly', meaning: 'Asosan, ko\'p jihatdan', example: 'Success is predominantly determined by consistent effort.' },
+            { word: 'Mitigate', meaning: 'Yumshatmoq, kamaytirmoq', example: 'Governments must implement policies to mitigate environmental damage.' },
+            { word: 'Indispensable', meaning: 'Ajralmas, juda zarur', example: 'Digital literacy has become an indispensable skill in modern society.' },
+          ];
+
       const evaluation: WritingBandBreakdown = {
         totalScore,
         cefrLevel: cefr,
@@ -178,27 +338,9 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
         lexicalResource: lexicalScore,
         grammaticalRange: grammarScore,
         wordCount,
-        strengths: [
-          wordCount >= minWordsRequired
-            ? `Belgilangan hajm me'yori bajarildi (${wordCount} ta so'z).`
-            : `Fikrlar ifodalangan, lekin hajm to'ldirilishi kerak (${wordCount}/${minWordsRequired}).`,
-          foundComplex.length > 0
-            ? `Bog'lovchi so'zlar qo'llanildi: ${foundComplex.slice(0, 3).join(', ')}.`
-            : `Fikr ketma-ketligi shakllantirildi.`,
-          `Mavzu talablariga mos yozish uslubi saqlangan.`,
-        ],
-        improvements: [
-          wordCount < minWordsRequired
-            ? `So'zlar sonini kamida ${minWordsRequired} taga yetkazing (hozir ${wordCount} ta).`
-            : `B2/C1 darajasidagi akademik bog'lovchilar ('Consequently', 'On the contrary') miqdorini oshiring.`,
-          `Xat yoki inshoda har bir fikr uchun alohida misol (example) keltiring.`,
-          `Grammatik murakkablikni (Compound & Complex sentences) oshiring.`,
-        ],
-        recommendedVocabulary: [
-          { word: 'Substantial', meaning: 'Sezilarli, salmoqli', example: 'This approach offers substantial advantages.' },
-          { word: 'Consequently', meaning: 'Natijada, binobarin', example: 'Consequently, the public benefits directly.' },
-          { word: 'Essential', meaning: 'Juda muhim, asosiy', example: 'Time management is an essential life skill.' },
-        ],
+        strengths: strengths.length > 0 ? strengths : ["Fikrlar tushunarli bayon etilgan."],
+        improvements: improvements.slice(0, 4),
+        recommendedVocabulary,
       };
 
       setResult(evaluation);
@@ -242,14 +384,31 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
 
       saveTestResult(historyItem);
       triggerHaptic('heavy');
-    }, 1500);
+    }, 1200);
   };
+
+  React.useEffect(() => {
+    let interval: any = null;
+    if (isStarted && isTimerRunning && timeLeft > 0 && !result && !isEvaluating) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            handleEvaluate(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isStarted, isTimerRunning, timeLeft, result, isEvaluating]);
 
   const categories = ['ALL', 'EDUCATION', 'TECHNOLOGY', 'HEALTH & LIFESTYLE', 'ENVIRONMENT', 'SOCIETY & COMMUNITY', 'CRIME & SAFETY', 'BUSINESS & WORK', 'CULTURE & GLOBAL SOCIETY'];
 
   return (
     <div className="english-root min-h-screen bg-slate-50 flex flex-col text-slate-900 pb-12 relative">
-      {/* ── Exit Confirmation Modal ── */}
+      {/* ── Exit / Tab Switch Confirmation Modal ── */}
       {showExitConfirmModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-5 animate-in fade-in">
           <div className="bg-white rounded-[2rem] p-6 max-w-sm w-full space-y-4 shadow-2xl border border-slate-100 animate-in zoom-in-95">
@@ -257,9 +416,11 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
               ⚠️
             </div>
             <div className="text-center space-y-1.5">
-              <h4 className="text-base font-black text-slate-900">Sinovni to'xtatmoqchimisiz?</h4>
+              <h4 className="text-base font-black text-slate-900">
+                {pendingTabSwitch ? "Boshqa topshiriqqa o'tmoqchimisiz?" : "Sinovni to'xtatmoqchimisiz?"}
+              </h4>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Hozir chiqib ketsangiz, yozgan matningiz va sinov natijasi saqlanmaydi.
+                Hozir {pendingTabSwitch ? "boshqa bo'limga o'tsangiz" : "chiqib ketsangiz"}, yozgan matningiz va joriy sinov natijasi saqlanmaydi.
               </p>
             </div>
 
@@ -267,6 +428,7 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
               <button
                 onClick={() => {
                   triggerHaptic('medium');
+                  setPendingTabSwitch(null);
                   setShowExitConfirmModal(false);
                 }}
                 className="py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-all active:scale-95"
@@ -277,12 +439,16 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
                 onClick={() => {
                   triggerHaptic('heavy');
                   setShowExitConfirmModal(false);
-                  setIsTimerRunning(false);
-                  onBack();
+                  if (pendingTabSwitch) {
+                    applyTabSwitch(pendingTabSwitch);
+                  } else {
+                    setIsTimerRunning(false);
+                    onBack();
+                  }
                 }}
                 className="py-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-all active:scale-95"
               >
-                Ha, chiqish
+                {pendingTabSwitch ? "Ha, o'tish" : "Ha, chiqish"}
               </button>
             </div>
           </div>
@@ -296,6 +462,7 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
             onClick={() => {
               if (isStarted && !result) {
                 triggerHaptic('medium');
+                setPendingTabSwitch(null);
                 setShowExitConfirmModal(true);
               } else {
                 onBack();
@@ -331,19 +498,14 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
         <div className="flex p-1 bg-slate-200/70 rounded-2xl">
           <button
             onClick={() => {
+              if (activeTab === 'task1') return;
               if (isStarted && !result && essayText.trim().length > 20) {
                 triggerHaptic('medium');
+                setPendingTabSwitch('task1');
                 setShowExitConfirmModal(true);
                 return;
               }
-              triggerHaptic('light');
-              setActiveTab('task1');
-              setEssayText('');
-              setResult(null);
-              setIsStarted(false);
-              setIsTimerRunning(false);
-              setTimeLeft(20 * 60);
-              setShowModelAnswer(false);
+              applyTabSwitch('task1');
             }}
             className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all ${
               activeTab === 'task1'
@@ -355,19 +517,14 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
           </button>
           <button
             onClick={() => {
+              if (activeTab === 'task2') return;
               if (isStarted && !result && essayText.trim().length > 20) {
                 triggerHaptic('medium');
+                setPendingTabSwitch('task2');
                 setShowExitConfirmModal(true);
                 return;
               }
-              triggerHaptic('light');
-              setActiveTab('task2');
-              setEssayText('');
-              setResult(null);
-              setIsStarted(false);
-              setIsTimerRunning(false);
-              setTimeLeft(40 * 60);
-              setShowModelAnswer(false);
+              applyTabSwitch('task2');
             }}
             className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all ${
               activeTab === 'task2'
@@ -433,35 +590,39 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
             {/* ── TASK 1 SECTION ── */}
             {activeTab === 'task1' && currentTask1 && (
           <div className="space-y-4 animate-in fade-in duration-200">
-            {/* Task 1 Exercise Selector */}
+            {/* Task 1 Exercise Selector (Locked once candidate starts writing) */}
             <div className="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-100 shadow-xs">
               <span className="text-xs font-bold text-slate-500">
                 Mashq {task1Idx + 1} / {task1List.length}
               </span>
-              <div className="flex items-center space-x-1.5">
-                <button
-                  onClick={() => {
-                    triggerHaptic('light');
-                    setTask1Idx((prev) => (prev > 0 ? prev - 1 : task1List.length - 1));
-                    setEssayText('');
-                    setResult(null);
-                  }}
-                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"
-                >
-                  ← Oldingi
-                </button>
-                <button
-                  onClick={() => {
-                    triggerHaptic('light');
-                    setTask1Idx((prev) => (prev < task1List.length - 1 ? prev + 1 : 0));
-                    setEssayText('');
-                    setResult(null);
-                  }}
-                  className="px-2.5 py-1 text-xs font-bold rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700"
-                >
-                  Keyingi →
-                </button>
-              </div>
+              {!isExamLocked ? (
+                <div className="flex items-center space-x-1.5">
+                  <button
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setTask1Idx((prev) => (prev > 0 ? prev - 1 : task1List.length - 1));
+                      setEssayText('');
+                      setResult(null);
+                    }}
+                    className="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"
+                  >
+                    ← Oldingi
+                  </button>
+                  <button
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setTask1Idx((prev) => (prev < task1List.length - 1 ? prev + 1 : 0));
+                      setEssayText('');
+                      setResult(null);
+                    }}
+                    className="px-2.5 py-1 text-xs font-bold rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700"
+                  >
+                    Keyingi →
+                  </button>
+                </div>
+              ) : (
+                <span className="text-[11px] font-bold text-amber-600">🔒 Sinov davom etmoqda</span>
+              )}
             </div>
 
             {/* Scenario Email Card */}
@@ -480,7 +641,9 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
               {/* Sub-task switch: Task 1.1 (Friend ~50w) vs Task 1.2 (Coordinator 120-150w) */}
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <button
+                  disabled={isExamLocked}
                   onClick={() => {
+                    if (isExamLocked) return;
                     triggerHaptic('light');
                     setSubTask1Mode('task1_1');
                     setEssayText('');
@@ -490,14 +653,16 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
                     subTask1Mode === 'task1_1'
                       ? 'bg-teal-50/80 border-teal-300 ring-2 ring-teal-500/20'
                       : 'bg-white border-slate-200 opacity-70 hover:opacity-100'
-                  }`}
+                  } ${isExamLocked ? 'cursor-not-allowed' : ''}`}
                 >
                   <span className="text-[10px] font-black uppercase text-teal-700 block">Task 1.1: Do'stga xat</span>
                   <span className="text-xs font-bold text-slate-900">~50 so'z (10 daqiqa)</span>
                 </button>
 
                 <button
+                  disabled={isExamLocked}
                   onClick={() => {
+                    if (isExamLocked) return;
                     triggerHaptic('light');
                     setSubTask1Mode('task1_2');
                     setEssayText('');
@@ -507,7 +672,7 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
                     subTask1Mode === 'task1_2'
                       ? 'bg-teal-50/80 border-teal-300 ring-2 ring-teal-500/20'
                       : 'bg-white border-slate-200 opacity-70 hover:opacity-100'
-                  }`}
+                  } ${isExamLocked ? 'cursor-not-allowed' : ''}`}
                 >
                   <span className="text-[10px] font-black uppercase text-teal-700 block">Task 1.2: Rasmiy xat</span>
                   <span className="text-xs font-bold text-slate-900">120-150 so'z (20 daqiqa)</span>
@@ -526,26 +691,63 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
         {activeTab === 'task2' && currentTask2 && (
           <div className="space-y-4 animate-in fade-in duration-200">
             {/* Category horizontal scrolling selector */}
-            <div className="flex space-x-1.5 overflow-x-auto pb-1 scrollbar-none">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => {
-                    triggerHaptic('light');
-                    setSelectedCategory(cat);
-                    setTask2Idx(0);
-                    setEssayText('');
-                    setResult(null);
-                  }}
-                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all ${
-                    selectedCategory === cat
-                      ? 'bg-teal-600 text-white shadow-xs'
-                      : 'bg-white text-slate-600 border border-slate-200'
-                  }`}
-                >
-                  {cat === 'ALL' ? 'Barchasi (25)' : cat}
-                </button>
-              ))}
+            {!isExamLocked && (
+              <div className="flex space-x-1.5 overflow-x-auto pb-1 scrollbar-none">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setSelectedCategory(cat);
+                      setTask2Idx(0);
+                      setEssayText('');
+                      setResult(null);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all ${
+                      selectedCategory === cat
+                        ? 'bg-teal-600 text-white shadow-xs'
+                        : 'bg-white text-slate-600 border border-slate-200'
+                    }`}
+                  >
+                    {cat === 'ALL' ? `Barchasi (${task2List.length})` : cat}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Task 2 Exercise Selector */}
+            <div className="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-100 shadow-xs">
+              <span className="text-xs font-bold text-slate-500">
+                Mavzu {task2Idx + 1} / {filteredTask2.length}
+              </span>
+              {!isExamLocked ? (
+                <div className="flex items-center space-x-1.5">
+                  <button
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setTask2Idx((prev) => (prev > 0 ? prev - 1 : filteredTask2.length - 1));
+                      setEssayText('');
+                      setResult(null);
+                    }}
+                    className="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"
+                  >
+                    ← Oldingi
+                  </button>
+                  <button
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setTask2Idx((prev) => (prev < filteredTask2.length - 1 ? prev + 1 : 0));
+                      setEssayText('');
+                      setResult(null);
+                    }}
+                    className="px-2.5 py-1 text-xs font-bold rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700"
+                  >
+                    Keyingi →
+                  </button>
+                </div>
+              ) : (
+                <span className="text-[11px] font-bold text-amber-600">🔒 Sinov davom etmoqda</span>
+              )}
             </div>
 
             {/* Task 2 Topic Card */}
@@ -617,7 +819,7 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
           />
 
           <button
-            onClick={handleEvaluate}
+            onClick={() => handleEvaluate(false)}
             disabled={isEvaluating}
             className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-black text-sm shadow-md shadow-teal-500/20 hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
           >
@@ -705,6 +907,26 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
                 ))}
               </div>
             </div>
+
+            {/* Recommended Vocabulary */}
+            {result.recommendedVocabulary && result.recommendedVocabulary.length > 0 && (
+              <div className="space-y-2 pt-1">
+                <h5 className="text-xs font-black text-teal-800 flex items-center space-x-1.5">
+                  <Sparkles size={13} className="text-teal-600" />
+                  <span>Tavsiya etiladigan B2/C1 iboralar:</span>
+                </h5>
+                <div className="grid grid-cols-1 gap-2">
+                  {result.recommendedVocabulary.map((v, i) => (
+                    <div key={i} className="p-3 rounded-xl bg-teal-50/60 border border-teal-100 text-xs space-y-0.5">
+                      <div className="font-black text-teal-900">
+                        {v.word} <span className="font-medium text-slate-600">— {v.meaning}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 italic">"{v.example}"</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Reset Button */}
             <button

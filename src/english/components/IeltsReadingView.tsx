@@ -729,8 +729,10 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
   // Start exam state (Savolni boshlashni bosmaguncha ko'rsatmaslik)
   const [isStarted, setIsStarted] = useState(false);
   const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
+  const [readingMode, setReadingMode] = useState<'single' | 'full'>('single');
+  const [evaluatedTotal, setEvaluatedTotal] = useState<number>(40);
 
-  // Official IELTS Academic Reading: 20 minutes per passage
+  // Official IELTS Academic Reading: 20 minutes per passage or 60 minutes for full 3 passages
   const [timeLeft, setTimeLeft] = useState(20 * 60);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
@@ -743,7 +745,7 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
   const questionsSectionRef = useRef<HTMLDivElement>(null);
   const currentPassage = READING_PASSAGES[selectedPassageIdx];
 
-  // Auto-submit when 20 minutes expire
+  // Auto-submit when timer expires
   useEffect(() => {
     let interval: any = null;
     if (isStarted && isTimerRunning && timeLeft > 0 && !isSubmitted) {
@@ -804,19 +806,40 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
   };
 
   const handleSubmit = () => {
+    // Check if the user answered questions in multiple passages or chose full mode
+    const passagesAnswered = READING_PASSAGES.filter((p) =>
+      p.questions.some((q) => !!answers[q.id])
+    );
+    const isSinglePassageEval = readingMode === 'single' && passagesAnswered.length <= 1;
+
     let totalCorrect = 0;
-    READING_PASSAGES.forEach((passage) => {
-      passage.questions.forEach((q) => {
+    let totalQuestions = 40;
+    let rawScoreForBand = 0;
+
+    if (isSinglePassageEval) {
+      totalQuestions = currentPassage.questions.length;
+      currentPassage.questions.forEach((q) => {
         if (checkIsCorrect(q, answers[q.id])) {
           totalCorrect += 1;
         }
       });
-    });
+      rawScoreForBand = Math.round((totalCorrect / totalQuestions) * 40);
+    } else {
+      READING_PASSAGES.forEach((passage) => {
+        passage.questions.forEach((q) => {
+          if (checkIsCorrect(q, answers[q.id])) {
+            totalCorrect += 1;
+          }
+        });
+      });
+      totalQuestions = 40;
+      rawScoreForBand = totalCorrect;
+    }
 
-    const totalQuestions = 40;
-    const band = calculateIeltsReadingBand(totalCorrect);
+    const band = calculateIeltsReadingBand(rawScoreForBand);
 
     setScore(totalCorrect);
+    setEvaluatedTotal(totalQuestions);
     setBandScore(band);
     setIsSubmitted(true);
     setIsTimerRunning(false);
@@ -842,8 +865,12 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
       startTime,
       endTime,
       testType: 'reading',
-      title: `IELTS Reading (40 ta savol)`,
-      topic: `${READING_PASSAGES[0].title} • ${READING_PASSAGES[1].title} • ${READING_PASSAGES[2].title}`,
+      title: isSinglePassageEval
+        ? `IELTS Reading: Passage ${selectedPassageIdx + 1} (${totalQuestions} savol)`
+        : `IELTS Reading (40 ta savol)`,
+      topic: isSinglePassageEval
+        ? currentPassage.title
+        : `${READING_PASSAGES[0].title} • ${READING_PASSAGES[1].title} • ${READING_PASSAGES[2].title}`,
       overallBand: band,
       criteriaScores: {
         c1Name: 'To\'g\'ri javoblar',
@@ -856,8 +883,10 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
         c4Score: band,
       },
       strengths: [
-        `40 ta savoldan ${totalCorrect} tasiga to'g'ri javob berildi (${Math.round((totalCorrect / totalQuestions) * 100)}%).`,
-        `Haqiqiy IELTS Academic 3 ta Passage va 40 ta savollik to'liq sinov.`,
+        `${totalQuestions} ta savoldan ${totalCorrect} tasiga to'g'ri javob berildi (${Math.round((totalCorrect / totalQuestions) * 100)}%).`,
+        isSinglePassageEval
+          ? `Passage ${selectedPassageIdx + 1} sinovi (40 talik rasmiy shkalada ekvivalenti: ${rawScoreForBand}/40).`
+          : `Haqiqiy IELTS Academic 3 ta Passage va 40 ta savollik to'liq sinov.`,
       ],
       improvements: [
         totalCorrect < totalQuestions
@@ -876,7 +905,7 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
     setIsStarted(false);
     setShowOnlyErrors(false);
     setExpandedAnalysisIds({});
-    setTimeLeft(20 * 60);
+    setTimeLeft(readingMode === 'full' ? 60 * 60 : 20 * 60);
     setIsTimerRunning(false);
   };
 
@@ -1092,24 +1121,60 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
 
             <div className="space-y-1.5">
               <span className="text-[10px] font-black uppercase text-[#7052ff] bg-indigo-50 px-2.5 py-1 rounded-md">
-                {currentPassage.subtitle}
+                {readingMode === 'full' ? 'To\'liq IELTS Academic Reading (3 ta Passage)' : currentPassage.subtitle}
               </span>
               <h3 className="text-xl font-black text-slate-900 leading-snug">
-                {currentPassage.title}
+                {readingMode === 'full' ? '40 ta savollik To\'liq Sinov' : currentPassage.title}
               </h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                20 daqiqalik rasmiy sinov. Tayyor bo'lsangiz, «Sinovni boshlash» tugmasini bosing va topshiriqlarni bajaring.
+                {readingMode === 'full'
+                  ? '60 daqiqalik to\'liq 3 ta Passage sinovi. Barcha 40 ta savol rasmiy Academic shkala bo\'yicha baholanadi.'
+                  : '20 daqiqalik Passage sinovi. Natijangiz tanlangan Passage savollari asosida proporsional Band shkalada baholanadi.'}
               </p>
+            </div>
+
+            {/* Mode Selector: Single Passage (20m) vs Full Mock (60m) */}
+            <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl max-w-sm mx-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  setReadingMode('single');
+                  setTimeLeft(20 * 60);
+                }}
+                className={`py-2 px-3 rounded-xl text-xs font-black transition-all ${
+                  readingMode === 'single'
+                    ? 'bg-white text-[#7052ff] shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                1 ta Passage (20 daq)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  setReadingMode('full');
+                  setTimeLeft(60 * 60);
+                }}
+                className={`py-2 px-3 rounded-xl text-xs font-black transition-all ${
+                  readingMode === 'full'
+                    ? 'bg-white text-[#7052ff] shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                To'liq 3 Passage (60 daq)
+              </button>
             </div>
 
             {/* Exam Benchmarks Badges */}
             <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
               <span className="text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center space-x-1.5">
                 <Clock size={14} className="text-amber-600" />
-                <span>20 daqiqa (Rasmiy me'yor)</span>
+                <span>{readingMode === 'full' ? '60 daqiqa' : '20 daqiqa'} (Rasmiy me'yor)</span>
               </span>
               <span className="text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200 px-3 py-1.5 rounded-xl">
-                📝 {currentPassage.questions.length} ta savol
+                📝 {readingMode === 'full' ? '40 ta savol' : `${currentPassage.questions.length} ta savol`}
               </span>
               <span className="text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-xl">
                 🎯 Band 9.0 aniqlik
@@ -1124,11 +1189,11 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
                   triggerHaptic('heavy');
                   setIsStarted(true);
                   setIsTimerRunning(true);
-                  setTimeLeft(20 * 60);
+                  setTimeLeft(readingMode === 'full' ? 60 * 60 : 20 * 60);
                 }}
                 className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#7052ff] to-[#5938ea] text-white font-black text-sm shadow-lg hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
               >
-                <span>🚀 Sinovni boshlash (20:00)</span>
+                <span>🚀 Sinovni boshlash ({readingMode === 'full' ? '60:00' : '20:00'})</span>
               </button>
             </div>
           </div>
@@ -1200,10 +1265,10 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName 
                   IELTS Reading Natijasi
                 </span>
                 <h4 className="text-xl font-black text-slate-900 mt-1">
-                  {score} / 40 to'g'ri javob
+                  {score} / {evaluatedTotal} to'g'ri javob
                 </h4>
                 <p className="text-xs text-slate-500">
-                  {score === 40 ? 'Barcha savollarga to\'g\'ri javob berdingiz! 🏆' : `${40 - score} ta xato yoki belgilanmagan savol.`}
+                  {score === evaluatedTotal ? 'Barcha savollarga to\'g\'ri javob berdingiz! 🏆' : `${evaluatedTotal - score} ta xato yoki belgilanmagan savol.`}
                 </p>
               </div>
 

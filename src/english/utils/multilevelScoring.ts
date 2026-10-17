@@ -123,6 +123,36 @@ export function evaluateMultilevelSpeech(
   const connectorsFound = DISCOURSE_CONNECTORS.filter((c) => cleanText.includes(c));
   const grammarFound = COMPLEX_GRAMMAR_PATTERNS.filter((g) => cleanText.includes(g));
 
+  // Topic Relevance Check (On-topic vs Off-topic)
+  const questionStopWords = new Set([
+    'what', 'where', 'when', 'which', 'would', 'could', 'should', 'about', 'think',
+    'describe', 'explain', 'people', 'often', 'usually', 'your', 'there', 'their',
+    'have', 'with', 'from', 'that', 'this', 'some', 'many', 'more', 'than', 'important',
+    'picture', 'pictures', 'both', 'show', 'compare', 'feel', 'situations'
+  ]);
+  const questionTextCombined = answers.map((a) => a.question).join(' ').toLowerCase();
+  const questionStems = Array.from(
+    new Set(
+      questionTextCombined
+        .replace(/[^a-z\s]/g, ' ')
+        .split(/\s+/)
+        .filter((w) => w.length >= 4 && !questionStopWords.has(w))
+        .map((w) => w.slice(0, 5))
+    )
+  );
+  const matchedTopicStems = questionStems.filter((stem) => cleanText.includes(stem));
+  const isOffTopic = totalWords >= 20 && questionStems.length >= 2 && matchedTopicStems.length === 0;
+
+  // Speech Articulation & Pronunciation Indicators
+  const polysyllabicWords = words.filter((w) => (w.match(/[aeiouy]+/gi) || []).length >= 3);
+  const polysyllableRatio = totalWords > 0 ? polysyllabicWords.length / totalWords : 0;
+  let stutterCount = 0;
+  for (let i = 1; i < words.length; i++) {
+    if (words[i].length > 2 && words[i] === words[i - 1]) {
+      stutterCount += 1;
+    }
+  }
+
   // Word length ratio (capped at 1.5)
   const lengthRatio = Math.min(1.5, totalWords / targetWords);
 
@@ -136,8 +166,10 @@ export function evaluateMultilevelSpeech(
   if (connectorsFound.length >= 3) fluency += 3;
   if (connectorsFound.length >= 5) fluency += 2;
   if (totalWords >= targetWords) fluency += 2;
+  if (stutterCount >= 3) fluency -= 2;
   if (totalWords < lowThreshold) fluency = Math.min(fluency, 5);
   else if (totalWords < midThreshold) fluency = Math.min(fluency, 11);
+  if (isOffTopic) fluency = Math.min(fluency, 9);
   fluency = Math.min(20, Math.max(2, fluency));
 
   // ── 2. Lexical Resource (max 20 ball) ──
@@ -146,8 +178,10 @@ export function evaluateMultilevelSpeech(
   if (vocabFound.length >= 1) lexical += 3;
   if (vocabFound.length >= 3) lexical += 3;
   if (vocabFound.length >= 5) lexical += 2;
+  if (matchedTopicStems.length >= 2) lexical += 2;
   if (totalWords < lowThreshold) lexical = Math.min(lexical, 5);
   else if (totalWords < midThreshold) lexical = Math.min(lexical, 11);
+  if (isOffTopic) lexical = Math.min(lexical, 9);
   lexical = Math.min(20, Math.max(2, lexical));
 
   // ── 3. Grammatical Range & Accuracy (max 20 ball) ──
@@ -160,8 +194,14 @@ export function evaluateMultilevelSpeech(
   grammar = Math.min(20, Math.max(2, grammar));
 
   // ── 4. Pronunciation & Task Achievement (max 15 ball) ──
-  let pronunciationTask = Math.round(((fluency + lexical + grammar) / 60) * 15);
-  if (totalWords >= targetWords) pronunciationTask = Math.min(15, pronunciationTask + 1);
+  let pronunciationTask = Math.round(lengthRatio * 8);
+  if (polysyllableRatio >= 0.12) pronunciationTask += 2;
+  if (polysyllableRatio >= 0.20) pronunciationTask += 2;
+  if (!isOffTopic && matchedTopicStems.length >= 1) pronunciationTask += 2;
+  if (stutterCount === 0 && totalWords >= targetWords) pronunciationTask += 1;
+  else if (stutterCount >= 3) pronunciationTask -= 2;
+  if (totalWords < lowThreshold) pronunciationTask = Math.min(pronunciationTask, 4);
+  if (isOffTopic) pronunciationTask = Math.min(pronunciationTask, 6);
   pronunciationTask = Math.min(15, Math.max(2, pronunciationTask));
 
   // Jami ball (0 - 75 ball)
@@ -192,6 +232,9 @@ export function evaluateMultilevelSpeech(
 
   // Strengths
   const strengths: string[] = [];
+  if (!isOffTopic && matchedTopicStems.length > 0) {
+    strengths.push("Savollar mavzusiga bevosita va mantiqiy javob berildi (Task Achievement).");
+  }
   if (totalWords >= targetWords) {
     strengths.push(`Nutq hajmi talab darajasida (${totalWords} ta so'z). Mavzu yuzasidan to'liq fikr bildirildi.`);
   }
@@ -210,6 +253,9 @@ export function evaluateMultilevelSpeech(
 
   // Improvements
   const improvements: string[] = [];
+  if (isOffTopic) {
+    improvements.push("Diqqat: Javoblaringiz berilgan savol mavzusidan chetga chiqqan (Off-topic). Savoldagi asosiy kalit so'zlarga bevosita javob bering.");
+  }
   if (totalScore < 50) {
     improvements.push("Nutq davomiyligini oshiring. Har bir savolga kamida 3-4 ta to'liq gap bilan sabab va misol keltirib javob bering.");
   }

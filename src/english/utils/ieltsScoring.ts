@@ -136,6 +136,37 @@ export function evaluateCandidateSpeech(
     full_mock: 280,
   }[testType];
 
+  // Topic Relevance Check (On-topic vs Off-topic)
+  const questionStopWords = new Set([
+    'what', 'where', 'when', 'which', 'would', 'could', 'should', 'about', 'think',
+    'describe', 'explain', 'people', 'often', 'usually', 'your', 'there', 'their',
+    'have', 'with', 'from', 'that', 'this', 'some', 'many', 'more', 'than', 'important',
+    'kind', 'kinds', 'type', 'types', 'like', 'prefer', 'much', 'time', 'future'
+  ]);
+  const questionTextCombined = answers.map((a) => a.question).join(' ').toLowerCase();
+  const questionStems = Array.from(
+    new Set(
+      questionTextCombined
+        .replace(/[^a-z\s]/g, ' ')
+        .split(/\s+/)
+        .filter((w) => w.length >= 4 && !questionStopWords.has(w))
+        .map((w) => w.slice(0, 5))
+    )
+  );
+  const matchedTopicStems = questionStems.filter((stem) => cleanText.includes(stem));
+  const isOffTopic = totalWords >= 20 && questionStems.length >= 2 && matchedTopicStems.length === 0;
+
+  // Speech Articulation & Pronunciation Indicators
+  const polysyllabicWords = words.filter((w) => (w.match(/[aeiouy]+/gi) || []).length >= 3);
+  const polysyllableRatio = totalWords > 0 ? polysyllabicWords.length / totalWords : 0;
+  let stutterCount = 0;
+  for (let i = 1; i < words.length; i++) {
+    if (words[i].length > 2 && words[i] === words[i - 1]) {
+      stutterCount += 1;
+    }
+  }
+  const wordsPerAnswer = totalWords / Math.max(1, validAnswers.length);
+
   // ── 1. Calculate Fluency and Coherence (FC) ──
   let fcRaw = 5.0;
   if (totalWords < 15) {
@@ -150,6 +181,10 @@ export function evaluateCandidateSpeech(
     if (discourseFound.length >= 2) fcRaw += 0.5;
     if (discourseFound.length >= 4) fcRaw += 0.5;
     if (fillersFound.length >= 1) fcRaw += 0.5;
+    if (stutterCount >= 3) fcRaw -= 0.5;
+  }
+  if (isOffTopic) {
+    fcRaw = Math.min(fcRaw, 4.5);
   }
 
   // ── 2. Calculate Lexical Resource (LR) ──
@@ -165,7 +200,11 @@ export function evaluateCandidateSpeech(
     if (vocabFound.length >= 1) lrRaw += 0.5;
     if (vocabFound.length >= 3) lrRaw += 0.5;
     if (idiomsFound.length >= 1) lrRaw += 0.5;
+    if (matchedTopicStems.length >= 2) lrRaw += 0.5;
     if (basicCount > 6 && vocabFound.length === 0) lrRaw -= 0.5;
+  }
+  if (isOffTopic) {
+    lrRaw = Math.min(lrRaw, 4.5);
   }
 
   // ── 3. Calculate Grammatical Range and Accuracy (GRA) ──
@@ -183,8 +222,21 @@ export function evaluateCandidateSpeech(
     if (totalWords >= targetWords) graRaw += 0.5;
   }
 
-  // ── 4. Calculate Pronunciation (PR) ──
-  let prRaw = Math.round(((fcRaw + lrRaw + graRaw) / 3) * 2) / 2;
+  // ── 4. Calculate Pronunciation (PR) based on Articulation & Speech Flow ──
+  let prRaw = 5.0;
+  if (totalWords < 15) {
+    prRaw = 2.0;
+  } else if (totalWords < 30) {
+    prRaw = 3.5;
+  } else if (totalWords < 50) {
+    prRaw = 4.5;
+  } else {
+    if (polysyllableRatio >= 0.12) prRaw += 0.5;
+    if (polysyllableRatio >= 0.20) prRaw += 0.5;
+    if (wordsPerAnswer >= 22) prRaw += 0.5;
+    if (stutterCount === 0 && totalWords >= targetWords) prRaw += 0.5;
+    else if (stutterCount >= 3) prRaw -= 0.5;
+  }
 
   // Bound each criterion strictly between 1.0 and 9.0 in half-band steps
   const clamp = (val: number) => Math.min(9.0, Math.max(1.0, Math.round(val * 2) / 2));
@@ -212,6 +264,9 @@ export function evaluateCandidateSpeech(
 
   // Strengths identification
   const strengths: string[] = [];
+  if (!isOffTopic && matchedTopicStems.length > 0) {
+    strengths.push("Savollar mavzusiga aniq va bevosita javob berildi (On-topic relevance).");
+  }
   if (totalWords >= targetWords) {
     strengths.push(`Javoblar uzunligi yetarli (${totalWords} ta so'z). Fikrlarni to'xtalmasdan kengaytira olish qobiliyati namoyon bo'ldi.`);
   }
@@ -226,11 +281,14 @@ export function evaluateCandidateSpeech(
     strengths.push(`Murakkab sintaktik tuzilmalar (${grammarFound.slice(0, 3).join(', ')}) orqali fikr ifodalangan.`);
   }
   if (strengths.length === 0) {
-    strengths.push("Savollarga to'g'ridan-to'g'ri javob berildi va asosiy g'oyani yetkazib berishga erishildi.");
+    strengths.push("Savollarga javob berishga harakat qilindi va asosiy g'oya ifodalandi.");
   }
 
   // Actionable improvements based on actual band
   const improvements: string[] = [];
+  if (isOffTopic) {
+    improvements.push("Diqqat: Javoblaringiz berilgan savol mavzusidan chetga chiqqan (Off-topic). Savolning kalit so'zlariga bevosita javob bering.");
+  }
   if (overall < 5.0) {
     improvements.push("Javoblar hajmini oshiring. Har bir savolga 'Because...', 'For instance...' deb kamida 2-3 ta to'liq gap bilan javob bering.");
     improvements.push("Oddiy so'zlardan to'liq gaplar tuzishni va savol so'zlarini javobingizda qayta ifodalashni (paraphrasing) mashq qiling.");
