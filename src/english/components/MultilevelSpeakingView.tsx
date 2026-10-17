@@ -314,6 +314,11 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       const p2 = getRandomMultilevelPart2(seen);
       const p3 = getRandomMultilevelPart3(seen);
 
+      markQuestionSeen(p1_1.id);
+      markQuestionSeen(p1_2.id);
+      markQuestionSeen(p2.id);
+      markQuestionSeen(p3.id);
+
       setP1_1Item(p1_1);
       setP1_2Item(p1_2);
       setP2Item(p2);
@@ -738,7 +743,11 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
 
   // ── ACTIVE TEST SCREEN (LOCKED - STRICT COUNTDOWN) ──
   if (step === 'active_test') {
-    const isPrep = currentPhase === 'prep' && selectedPart !== 'part1_1';
+    const isPrep =
+      selectedPart === 'full_mock'
+        ? mockPhase === 'p1_2_prep' || mockPhase === 'p2_prep' || mockPhase === 'p3_prep'
+        : currentPhase === 'prep' && selectedPart !== 'part1_1';
+    const isP1_1Active = selectedPart === 'part1_1' || (selectedPart === 'full_mock' && mockPhase === 'p1_1');
     const isWarning = countdown <= 10;
 
     return (
@@ -829,7 +838,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
             <div
               className={`h-full transition-all duration-1000 ${isWarning ? 'bg-rose-500' : 'bg-teal-500'}`}
               style={{
-                width: `${(countdown / (isPrep ? 60 : selectedPart === 'part1_1' ? 30 : 120)) * 100}%`
+                width: `${(countdown / (isPrep ? 60 : isP1_1Active ? 30 : 120)) * 100}%`
               }}
             />
           </div>
@@ -1001,7 +1010,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
 
         {/* Prep Notes if in Prep */}
         {isPrep && (
-          <div className="bg-white rounded-2xl p-4 border border-slate-100 space-y-2">
+          <div className="bg-white rounded-2xl p-4 border border-slate-100 space-y-2.5">
             <span className="text-xs font-bold text-slate-700">Qoralamalar (Notes):</span>
             <textarea
               value={prepNotes}
@@ -1010,6 +1019,27 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
               rows={2}
               className="w-full text-xs p-3 rounded-xl bg-slate-50 border border-slate-200 outline-none focus:border-teal-500 resize-none"
             />
+            <button
+              type="button"
+              disabled={isExaminerSpeaking || prepDelay !== null}
+              onClick={() => {
+                triggerHaptic('medium');
+                handleTimeExpiredAdvance();
+              }}
+              className={`w-full py-3 rounded-xl font-black text-xs flex items-center justify-center space-x-1.5 transition-all active:scale-95 ${
+                isExaminerSpeaking || prepDelay !== null
+                  ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                  : 'bg-teal-600 hover:bg-teal-700 text-white shadow-md'
+              }`}
+            >
+              <span>
+                {isExaminerSpeaking
+                  ? "Examiner vazifani o'qimoqda..."
+                  : prepDelay !== null
+                  ? `Tayyorlaning (${prepDelay}s)...`
+                  : "🎙️ Tayyor bo'ldim — Nutqni boshlash (2 daqiqa)"}
+              </span>
+            </button>
           </div>
         )}
 

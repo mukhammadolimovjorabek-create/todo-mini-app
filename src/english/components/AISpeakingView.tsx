@@ -14,7 +14,7 @@ interface Props {
 }
 
 type PartSelection = 'part1' | 'part2' | 'part3' | 'full_mock';
-type Step = 'part_select' | 'topic_select' | 'active_test' | 'feedback';
+type Step = 'part_select' | 'active_test' | 'feedback';
 type MockPhase = 'p1' | 'p2_prep' | 'p2_speak' | 'p3';
 
 // Official IELTS response benchmarks
@@ -25,21 +25,9 @@ const TIME_LIMITS = {
   part3Question: 55, // 55 seconds per Part 3 question
 };
 
-// Categorized topic domains
-const TOPIC_DOMAINS = [
-  { id: 'random', name: 'Barcha mavzulardan ixtiyoriy (Random)', icon: '🎲', keywords: [] },
-  { id: 'edu_work', name: "Ta'lim va Ish (Education & Work)", icon: '🎓', keywords: ['work', 'studies', 'school', 'teacher', 'science', 'job', 'ambition', 'career', 'study'] },
-  { id: 'tech_media', name: 'Texnologiya va Internet (Tech & Media)', icon: '💻', keywords: ['social media', 'website', 'internet', 'technology', 'computer', 'app', 'online'] },
-  { id: 'animals_nature', name: 'Hayvonlar va Tabiat (Animals & Nature)', icon: '🐾', keywords: ['animal', 'pet', 'park', 'nature', 'tree', 'flower', 'weather', 'bird'] },
-  { id: 'food_life', name: 'Taomlar va Hayot tarzi (Food & Lifestyle)', icon: '🍔', keywords: ['food', 'cooking', 'restaurant', 'shopping', 'tidiness', 'watch', 'mirror', 'clothes'] },
-  { id: 'travel_cities', name: 'Sayohat va Shaharlar (Travel & Cities)', icon: '✈️', keywords: ['hometown', 'accommodation', 'home', 'travel', 'car', 'city', 'country', 'holiday'] },
-  { id: 'arts_culture', name: 'Musiqa va Madaniyat (Music & Arts)', icon: '🎨', keywords: ['music', 'art', 'museum', 'dream', 'sport', 'game', 'cinema', 'book'] },
-];
-
 export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
   const [step, setStep] = useState<Step>('part_select');
   const [selectedPart, setSelectedPart] = useState<PartSelection>('part1');
-  const [selectedDomainId, setSelectedDomainId] = useState<string>('random');
 
   // Audio SpeechSynthesis (Examiner voice)
   const [speechEnabled, setSpeechEnabled] = useState(true);
@@ -249,36 +237,18 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     setIsTimerRunning(true); // Countdown starts only when mic is ACTUALLY recording
   };
 
-  // Filter topics by domain
-  const filterTopicByDomain = <T extends { topic: string; id: string }>(list: T[], domainId: string): T => {
+  // Pick a random unseen topic (official IELTS style: random questions for every part)
+  const pickRandomUnseenTopic = <T extends { topic: string; id: string }>(list: T[]): T => {
     const seen = new Set(getSeenQuestions().map((s) => s.toLowerCase()));
-    const domain = TOPIC_DOMAINS.find((d) => d.id === domainId);
-
-    let candidates = list;
-    if (domain && domain.keywords.length > 0) {
-      const filtered = list.filter((item) =>
-        domain.keywords.some((kw) => item.topic.toLowerCase().includes(kw))
-      );
-      if (filtered.length > 0) candidates = filtered;
-    }
-
-    // Exclude previously seen
-    const unseen = candidates.filter((item) => !seen.has(item.topic.toLowerCase()) && !seen.has(item.id.toLowerCase()));
-    const pool = unseen.length > 0 ? unseen : candidates;
+    const unseen = list.filter((item) => !seen.has(item.topic.toLowerCase()) && !seen.has(item.id.toLowerCase()));
+    const pool = unseen.length > 0 ? unseen : list;
     return pool[Math.floor(Math.random() * pool.length)] || list[0];
   };
 
-  // Step 1: Select Part -> Go to Topic domain select
-  const handleChoosePart = (part: PartSelection) => {
-    triggerHaptic('medium');
-    setSelectedPart(part);
-    setSelectedDomainId('random');
-    setStep('topic_select');
-  };
-
-  // Step 2: Confirm Topic -> Start Locked Exam
-  const handleStartExam = () => {
+  // Select Part -> Immediately start Locked Exam with random unseen questions
+  const handleStartExam = (part: PartSelection) => {
     triggerHaptic('heavy');
+    setSelectedPart(part);
     isExamActiveRef.current = true;
     micDeniedRef.current = false;
     turnAudioRef.current = null;
@@ -297,8 +267,8 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
 
     const seen = getSeenQuestions();
 
-    if (selectedPart === 'part1') {
-      const topic = filterTopicByDomain(speakingBank.part1, selectedDomainId);
+    if (part === 'part1') {
+      const topic = pickRandomUnseenTopic(speakingBank.part1);
       markQuestionSeen(topic.topic);
       setP1Topic(topic);
       setP1Index(0);
@@ -314,8 +284,8 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
           }
         );
       }, 300);
-    } else if (selectedPart === 'part2') {
-      const topic = filterTopicByDomain(speakingBank.part2, selectedDomainId);
+    } else if (part === 'part2') {
+      const topic = pickRandomUnseenTopic(speakingBank.part2);
       markQuestionSeen(topic.topic);
       setP2Topic(topic);
       setMockPhase('p2_prep');
@@ -332,8 +302,8 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
           }
         );
       }, 300);
-    } else if (selectedPart === 'part3') {
-      const topic = filterTopicByDomain(speakingBank.part3, selectedDomainId);
+    } else if (part === 'part3') {
+      const topic = pickRandomUnseenTopic(speakingBank.part3);
       markQuestionSeen(topic.topic);
       setP3Topic(topic);
       setP3Index(0);
@@ -349,8 +319,8 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
           }
         );
       }, 300);
-    } else if (selectedPart === 'full_mock') {
-      const p1 = filterTopicByDomain(speakingBank.part1, selectedDomainId);
+    } else if (part === 'full_mock') {
+      const p1 = pickRandomUnseenTopic(speakingBank.part1);
       const p2 = getRandomPart2Topic([...seen, p1.topic]);
       const p3 = getRandomPart3Topic([...seen, p1.topic, p2.topic]);
 
@@ -674,12 +644,12 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
                 <span className="text-[9px] font-black bg-[#c4f82a] text-[#121124] px-1.5 py-0.5 rounded">IELTS 9.0</span>
               </div>
               <p className="text-[11px] text-purple-200/90 font-medium mt-0.5">
-                10 marta 9.0 olgan, 10 yillik rasmiy Cambridge/IELTS eksperti
+                9.0 ball sohibi, 10 yillik rasmiy Cambridge/IELTS eksperti
               </p>
             </div>
           </div>
           <p className="text-xs text-purple-200/80 mt-3 relative z-10 border-t border-white/10 pt-2.5 leading-relaxed">
-            "Xush kelibsiz! Imtihon qat'iy vaqt mezonlari asosida o'tadi. Gapirishingiz bilan taymer ishlaydi va vaqt tugasa darhol keyingisiga o'tiladi."
+            "Xush kelibsiz! Imtihon qat'iy vaqt mezonlari asosida o'tadi. Har bir Part uchun savollar haqiqiy imtihondagidek tasodifiy (random) tushadi."
           </p>
         </div>
 
@@ -691,7 +661,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
 
           {/* Part 1 */}
           <div
-            onClick={() => handleChoosePart('part1')}
+            onClick={() => handleStartExam('part1')}
             className="p-4 rounded-2xl bg-white border border-slate-100 shadow-sm hover:border-[#7052ff] cursor-pointer transition-all active:scale-[0.98] flex items-center justify-between group"
           >
             <div className="flex items-center space-x-3">
@@ -700,15 +670,15 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
               </div>
               <div>
                 <p className="text-sm font-black text-slate-900">Part 1: Kirish & Kundalik mavzular</p>
-                <p className="text-[11px] text-slate-500">Har bir savolga 40 soniya · Ovozli nutq</p>
+                <p className="text-[11px] text-slate-500">Har bir savolga 40 soniya · Tasodifiy savollar</p>
               </div>
             </div>
-            <span className="text-xs font-bold text-[#7052ff]">Tanlash →</span>
+            <span className="text-xs font-bold text-[#7052ff]">Boshlash →</span>
           </div>
 
           {/* Part 2 */}
           <div
-            onClick={() => handleChoosePart('part2')}
+            onClick={() => handleStartExam('part2')}
             className="p-4 rounded-2xl bg-white border border-slate-100 shadow-sm hover:border-[#7052ff] cursor-pointer transition-all active:scale-[0.98] flex items-center justify-between group"
           >
             <div className="flex items-center space-x-3">
@@ -720,12 +690,12 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
                 <p className="text-[11px] text-slate-500">1 daqiqa tayyorgarlik · 2 daqiqa nutq</p>
               </div>
             </div>
-            <span className="text-xs font-bold text-amber-600">Tanlash →</span>
+            <span className="text-xs font-bold text-amber-600">Boshlash →</span>
           </div>
 
           {/* Part 3 */}
           <div
-            onClick={() => handleChoosePart('part3')}
+            onClick={() => handleStartExam('part3')}
             className="p-4 rounded-2xl bg-white border border-slate-100 shadow-sm hover:border-[#7052ff] cursor-pointer transition-all active:scale-[0.98] flex items-center justify-between group"
           >
             <div className="flex items-center space-x-3">
@@ -737,12 +707,12 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
                 <p className="text-[11px] text-slate-500">Har bir savolga 55 soniya · Tahlil</p>
               </div>
             </div>
-            <span className="text-xs font-bold text-emerald-600">Tanlash →</span>
+            <span className="text-xs font-bold text-emerald-600">Boshlash →</span>
           </div>
 
           {/* Full Speaking Mock */}
           <div
-            onClick={() => handleChoosePart('full_mock')}
+            onClick={() => handleStartExam('full_mock')}
             className="p-4 rounded-2xl bg-gradient-to-r from-[#110e28] to-[#261763] text-white border border-purple-500/30 shadow-md hover:shadow-lg cursor-pointer transition-all active:scale-[0.98] flex items-center justify-between group"
           >
             <div className="flex items-center space-x-3">
@@ -759,85 +729,17 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
                 </p>
               </div>
             </div>
-            <span className="text-xs font-black text-[#c4f82a] shrink-0 pl-2">Tanlash →</span>
+            <span className="text-xs font-black text-[#c4f82a] shrink-0 pl-2">Boshlash →</span>
+          </div>
+
+          {/* Official Exam Rule Note */}
+          <div className="bg-amber-50 rounded-2xl p-3.5 border border-amber-200 flex items-start space-x-2.5 text-[11px] text-amber-900 leading-relaxed">
+            <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+            <p>
+              <strong>Rasmiy IELTS tartibi:</strong> Bo'lim tanlangach, savollar tasodifiy (random) beriladi va ularni almashtirib bo'lmaydi. Savol o'qib bo'lingach taymer va mikrofon avtomatik ishga tushadi.
+            </p>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // ── SCREEN 2: TOPIC DOMAIN SELECTOR (Foydalanuvchi talabi) ──
-  // ══════════════════════════════════════════════════════════
-  if (step === 'topic_select') {
-    return (
-      <div className="p-5 space-y-5 animate-in fade-in duration-300">
-        <button
-          onClick={() => setStep('part_select')}
-          className="flex items-center space-x-1.5 text-xs font-black text-slate-600 hover:text-slate-900"
-        >
-          <ArrowLeft size={16} />
-          <span>Part tanloviga qaytish</span>
-        </button>
-
-        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-2">
-          <div className="flex items-center space-x-2">
-            <span className="text-xs font-black uppercase tracking-wider text-[#7052ff] bg-purple-50 px-2 py-0.5 rounded-md">
-              {getPartBadgeLabel()}
-            </span>
-            <h3 className="text-base font-black text-slate-900">Mavzular bo'limini tanlang:</h3>
-          </div>
-          <p className="text-xs text-slate-500 leading-relaxed">
-            Qaysi soha bo'yicha savollarga javob bermoqchisiz? Tanlab "Boshlash"ni bosing.
-          </p>
-        </div>
-
-        {/* Categories Grid */}
-        <div className="space-y-2.5">
-          {TOPIC_DOMAINS.map((dom) => (
-            <div
-              key={dom.id}
-              onClick={() => {
-                triggerHaptic('light');
-                setSelectedDomainId(dom.id);
-              }}
-              className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
-                selectedDomainId === dom.id
-                  ? 'border-[#7052ff] bg-indigo-50/60 ring-2 ring-[#7052ff]/20 font-bold'
-                  : 'border-slate-200 bg-white hover:bg-slate-50'
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">{dom.icon}</span>
-                <span className="text-xs font-bold text-slate-800">{dom.name}</span>
-              </div>
-              <span className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                selectedDomainId === dom.id
-                  ? 'border-[#7052ff] bg-[#7052ff] text-white text-xs'
-                  : 'border-slate-300'
-              }`}>
-                {selectedDomainId === dom.id && '✓'}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Warning Note before starting */}
-        <div className="bg-amber-50 rounded-2xl p-3.5 border border-amber-200 flex items-start space-x-2.5 text-[11px] text-amber-900 leading-relaxed">
-          <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
-          <p>
-            <strong>Eslatma:</strong> "Boshlash" bosilgandan so'ng savolni yoki mavzuni almashtirib bo'lmaydi. Savol yangragach taymer boshlanadi va vaqt tugasa darhol keyingisiga o'tadi.
-          </p>
-        </div>
-
-        {/* Big Start Exam Button */}
-        <button
-          onClick={handleStartExam}
-          className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#7052ff] to-[#8b5cf6] text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-indigo-500/25 flex items-center justify-center space-x-2 active:scale-95 transition-all"
-        >
-          <span>Boshlash (Exam Locked)</span>
-          <ChevronRight size={18} />
-        </button>
       </div>
     );
   }
@@ -1014,13 +916,36 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
             </div>
 
             {isP2Prep && (
-              <textarea
-                value={prepNotes}
-                onChange={(e) => setPrepNotes(e.target.value)}
-                placeholder="Tayyorgarlik uchun qisqa qoralamalar (notes)..."
-                rows={2}
-                className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 outline-none focus:border-amber-400 resize-none"
-              />
+              <div className="space-y-2.5">
+                <textarea
+                  value={prepNotes}
+                  onChange={(e) => setPrepNotes(e.target.value)}
+                  placeholder="Tayyorgarlik uchun qisqa qoralamalar (notes)..."
+                  rows={2}
+                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 outline-none focus:border-amber-400 resize-none"
+                />
+                <button
+                  type="button"
+                  disabled={isExaminerSpeaking || prepDelay !== null}
+                  onClick={() => {
+                    triggerHaptic('medium');
+                    handleTimeExpiredAdvance();
+                  }}
+                  className={`w-full py-3 rounded-xl font-black text-xs flex items-center justify-center space-x-1.5 transition-all active:scale-95 ${
+                    isExaminerSpeaking || prepDelay !== null
+                      ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                      : 'bg-amber-500 hover:bg-amber-600 text-white shadow-md'
+                  }`}
+                >
+                  <span>
+                    {isExaminerSpeaking
+                      ? "Examiner mavzuni o'qimoqda..."
+                      : prepDelay !== null
+                      ? `Tayyorlaning (${prepDelay}s)...`
+                      : "🎙️ Tayyor bo'ldim — Nutqni boshlash (2 daqiqa)"}
+                  </span>
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -1244,7 +1169,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
           <p className="text-[11px] text-purple-200/80">
             {feedback.overallBand === 0
               ? "Nomzod tomonidan savollarga ovozli nutq bildirilmagan"
-              : "Dr. Alistair Vance (10x Band 9.0 Cambridge Expert) tahlili"}
+              : "Dr. Alistair Vance (9.0 ball sohibi, Cambridge/IELTS eksperti) tahlili"}
           </p>
 
           <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-4 gap-1 text-center">

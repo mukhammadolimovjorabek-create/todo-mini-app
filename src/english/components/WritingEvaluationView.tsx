@@ -106,8 +106,8 @@ const SAMPLE_TASK2_PROMPTS = [
 
 export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _userName }) => {
   const [activeTab, setActiveTab] = useState<WritingTaskTab>('task1');
-  const [task1Idx, setTask1Idx] = useState(0);
-  const [task2Idx, setTask2Idx] = useState(0);
+  const [task1Idx, setTask1Idx] = useState(() => Math.floor(Math.random() * SAMPLE_TASK1_PROMPTS.length));
+  const [task2Idx, setTask2Idx] = useState(() => Math.floor(Math.random() * SAMPLE_TASK2_PROMPTS.length));
 
   // Separate states for Task 1 and Task 2 to prevent data loss and tab collisions
   const [task1Text, setTask1Text] = useState('');

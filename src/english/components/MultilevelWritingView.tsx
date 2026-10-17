@@ -56,11 +56,15 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
   const [activeTab, setActiveTab] = useState<WritingTab>(initialTab);
   
   // Task 1 state
-  const [task1Idx, setTask1Idx] = useState(0);
+  const [task1Idx, setTask1Idx] = useState(() =>
+    Math.floor(Math.random() * (multilevelWritingBank.task1_exercises?.length || 1))
+  );
   const [subTask1Mode, setSubTask1Mode] = useState<'task1_1' | 'task1_2'>('task1_2');
   
   // Task 2 state
-  const [task2Idx, setTask2Idx] = useState(0);
+  const [task2Idx, setTask2Idx] = useState(() =>
+    Math.floor(Math.random() * (multilevelWritingBank.task2_topics?.length || 1))
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
   // Input & evaluation
