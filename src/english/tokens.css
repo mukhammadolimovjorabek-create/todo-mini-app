@@ -119,4 +119,90 @@
   animation: eng-badge-pulse 2s ease-in-out infinite;
 }
 
+/* ── A1: Shimmer Glass Sweep & Neon Breathing Glow ── */
+@keyframes eng-shimmer-pass {
+  0% {
+    transform: translateX(-140%) skewX(-22deg);
+  }
+  38%, 100% {
+    transform: translateX(260%) skewX(-22deg);
+  }
+}
+
+.eng-shimmer-sweep {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  pointer-events: none;
+  animation: eng-shimmer-pass 5.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.eng-shimmer-sweep-delayed {
+  animation-delay: 2.4s;
+}
+
+@keyframes eng-neon-breathe-indigo {
+  0%, 100% {
+    box-shadow: 0 14px 32px -8px rgba(112, 82, 255, 0.22), inset 0 0 0 1px rgba(129, 140, 248, 0.25);
+  }
+  50% {
+    box-shadow: 0 18px 38px -6px rgba(196, 248, 42, 0.2), 0 0 24px rgba(112, 82, 255, 0.35), inset 0 0 0 1px rgba(196, 248, 42, 0.42);
+  }
+}
+
+@keyframes eng-neon-breathe-emerald {
+  0%, 100% {
+    box-shadow: 0 14px 32px -8px rgba(16, 185, 129, 0.22), inset 0 0 0 1px rgba(52, 211, 153, 0.28);
+  }
+  50% {
+    box-shadow: 0 18px 38px -6px rgba(16, 185, 129, 0.36), 0 0 24px rgba(52, 211, 153, 0.3), inset 0 0 0 1px rgba(110, 231, 183, 0.5);
+  }
+}
+
+.eng-card-ielts-glow {
+  animation: eng-neon-breathe-indigo 4s ease-in-out infinite;
+}
+
+.eng-card-ml-glow {
+  animation: eng-neon-breathe-emerald 4s ease-in-out infinite 1.5s;
+}
+
+/* ── A2: Staggered Cascade Entrance ── */
+@keyframes eng-cascade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.eng-cascade-1 {
+  animation: eng-cascade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.04s;
+}
+.eng-cascade-2 {
+  animation: eng-cascade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.14s;
+}
+.eng-cascade-3 {
+  animation: eng-cascade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.24s;
+}
+.eng-cascade-4 {
+  animation: eng-cascade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.34s;
+}
+
+
 

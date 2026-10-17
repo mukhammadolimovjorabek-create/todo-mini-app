@@ -8,7 +8,7 @@ import { IeltsDashboard } from './components/IeltsDashboard';
 import { MultilevelDashboard } from './components/MultilevelDashboard';
 import { triggerHaptic } from '../utils/telegram';
 import { SpeakingWaveform } from './components/AnimatedSectionIcons';
-import { UzFlagWave } from './components/UzFlagWave';
+import { UzFlagWave, UkFlagWave } from './components/UzFlagWave';
 import './tokens.css';
 
 export interface TelegramUserProps {
@@ -23,10 +23,40 @@ export interface EnglishPracticeModuleProps {
   onExit?: () => void;
 }
 
+interface TiltState {
+  rx: number;
+  ry: number;
+  gx: number;
+  gy: number;
+  active: boolean;
+}
+
 export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
   telegramUser,
   onExit,
 }) => {
+  const [ieltsTilt, setIeltsTilt] = useState<TiltState>({ rx: 0, ry: 0, gx: 50, gy: 50, active: false });
+  const [mlTilt, setMlTilt] = useState<TiltState>({ rx: 0, ry: 0, gx: 50, gy: 50, active: false });
+
+  const handleCardPointerMove = (
+    e: React.PointerEvent<HTMLDivElement>,
+    setter: React.Dispatch<React.SetStateAction<TiltState>>
+  ) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    setter({
+      rx: (0.5 - y) * 9,
+      ry: (x - 0.5) * 9,
+      gx: Math.round(x * 100),
+      gy: Math.round(y * 100),
+      active: true,
+    });
+  };
+
+  const resetCardTilt = (setter: React.Dispatch<React.SetStateAction<TiltState>>) => {
+    setter({ rx: 0, ry: 0, gx: 50, gy: 50, active: false });
+  };
   const [profile, setProfile] = useState<EnglishUserProfile | null>(() => getEnglishProfile());
   const [showSettings, setShowSettings] = useState(false);
   const [selectedExam, setSelectedExam] = useState<ExamType | null>(() => {
@@ -164,12 +194,13 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
         
         {/* Banner Card */}
         <div
-          className="rounded-[2rem] p-6 text-white relative overflow-hidden shadow-xl"
+          className="rounded-[2rem] p-6 text-white relative overflow-hidden shadow-xl eng-cascade-1"
           style={{ background: 'linear-gradient(135deg, #110e28 0%, #1e1552 50%, #351e8c 100%)' }}
         >
+          <div className="eng-shimmer-sweep" />
           <div className="absolute top-0 right-0 w-44 h-44 bg-[#c4f82a]/10 rounded-full blur-3xl pointer-events-none" />
           <div className="relative z-10">
-            <span className="inline-flex items-center space-x-1 bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-[#c4f82a] border border-white/10 mb-3">
+            <span className="inline-flex items-center space-x-1 bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-[#c4f82a] border border-white/10 mb-3 eng-animate-pulse-badge">
               <Sparkles size={11} />
               <span>IELTS & Multilevel AI</span>
             </span>
@@ -184,7 +215,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
 
         {/* ── Section Picker (IELTS va Multilevel dastlabki ekrani) ── */}
         <div className="space-y-4 pt-1">
-          <div className="space-y-1">
+          <div className="space-y-1 eng-cascade-1">
             <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
               IMTIHON DASTURINI TANLANG
             </span>
@@ -197,33 +228,56 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
           <div
             role="button"
             tabIndex={0}
+            onPointerMove={(e) => handleCardPointerMove(e, setIeltsTilt)}
+            onPointerLeave={() => resetCardTilt(setIeltsTilt)}
             onClick={() => {
               triggerHaptic('medium');
               setIeltsInitialView('menu');
               setSelectedExam('ielts');
             }}
-            className="bg-[#181630] border border-indigo-500/30 hover:border-indigo-400/60 rounded-[2.2rem] p-6 shadow-xl relative overflow-hidden space-y-4 text-white group cursor-pointer transition-all active:scale-[0.99]"
+            style={{
+              transform: ieltsTilt.active
+                ? `perspective(900px) rotateX(${ieltsTilt.rx.toFixed(2)}deg) rotateY(${ieltsTilt.ry.toFixed(2)}deg) scale(1.01)`
+                : 'perspective(900px) rotateX(0deg) rotateY(0deg) scale(1)',
+              transition: ieltsTilt.active ? 'transform 80ms ease-out' : 'transform 400ms cubic-bezier(0.22, 1, 0.36, 1)',
+            }}
+            className="bg-[#181630] border border-indigo-500/35 hover:border-indigo-400/70 rounded-[2.2rem] p-6 shadow-xl relative overflow-hidden space-y-4 text-white group cursor-pointer active:scale-[0.99] eng-card-ielts-glow eng-cascade-2"
           >
+            {/* Shimmer Sweep & Interactive Spotlight */}
+            <div className="eng-shimmer-sweep" />
+            <div
+              className="pointer-events-none absolute inset-0 transition-opacity duration-300"
+              style={{
+                opacity: ieltsTilt.active ? 1 : 0.45,
+                background: `radial-gradient(260px circle at ${ieltsTilt.gx}% ${ieltsTilt.gy}%, rgba(196, 248, 42, 0.16), rgba(112, 82, 255, 0.14) 45%, transparent 80%)`,
+              }}
+            />
             <div className="absolute top-0 right-0 w-44 h-44 bg-[#7052ff]/10 rounded-full blur-3xl pointer-events-none" />
 
-            {/* Header: Badge & Animated Waveform */}
+            {/* Header: Badge, Waving UK Flag & Animated Waveform */}
             <div className="flex items-center justify-between relative z-10">
               <div className="flex items-center space-x-2">
-                <span className="text-[9px] font-black uppercase tracking-wider text-[#c4f82a] bg-white/5 border border-white/10 px-3 py-1 rounded-full">
-                  🇬🇧 HALQARO DASTUR
+                <span className="text-[9px] font-black uppercase tracking-wider text-[#c4f82a] bg-white/5 border border-white/10 px-3 py-1 rounded-full flex items-center space-x-1.5">
+                  <span className="inline-block">🇬🇧</span>
+                  <span>XALQARO DASTUR</span>
                 </span>
-                <span className="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 px-2.5 py-1 rounded-full border border-indigo-400/20">
+                <span className="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 px-2.5 py-1 rounded-full border border-indigo-400/20 eng-animate-pulse-badge">
                   Band 9.0
                 </span>
               </div>
 
-              {/* 7-bar SVG native waveform (SMIL) */}
-              <SpeakingWaveform width={55} height={36} />
+              {/* Waving UK Flag Shield + 7-bar SVG native waveform */}
+              <div className="flex items-center space-x-2">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center shadow-inner overflow-hidden">
+                  <UkFlagWave width={28} />
+                </div>
+                <SpeakingWaveform width={50} height={34} />
+              </div>
             </div>
 
             {/* Title & Description */}
             <div className="relative z-10 space-y-1">
-              <h3 className="text-2xl font-black text-white tracking-tight group-hover:text-indigo-300 transition-colors">
+              <h3 className="text-2xl font-black text-white tracking-tight group-hover:text-[#c4f82a] transition-colors">
                 IELTS Exam Practice
               </h3>
               <p className="text-xs text-slate-300/90 leading-relaxed">
@@ -273,7 +327,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
               <span className="text-[11px] font-semibold text-slate-400">
                 Barcha IELTS bo'limlariga o'tish
               </span>
-              <div className="bg-[#c4f82a] group-hover:brightness-105 text-[#121124] font-black text-xs px-4 py-2 rounded-full flex items-center space-x-1.5 shadow-md transition-all">
+              <div className="bg-[#c4f82a] group-hover:brightness-110 group-hover:translate-x-0.5 text-[#121124] font-black text-xs px-4 py-2 rounded-full flex items-center space-x-1.5 shadow-[0_0_20px_rgba(196,248,42,0.35)] transition-all">
                 <span>IELTS ga kirish</span>
                 <ArrowRight size={14} />
               </div>
@@ -284,13 +338,30 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
           <div
             role="button"
             tabIndex={0}
+            onPointerMove={(e) => handleCardPointerMove(e, setMlTilt)}
+            onPointerLeave={() => resetCardTilt(setMlTilt)}
             onClick={() => {
               triggerHaptic('medium');
               setMultilevelInitialView('menu');
               setSelectedExam('multilevel');
             }}
-            className="bg-[#181630] border border-emerald-500/35 hover:border-emerald-400/60 rounded-[2.2rem] p-6 shadow-xl relative overflow-hidden space-y-4 text-white group cursor-pointer transition-all active:scale-[0.99]"
+            style={{
+              transform: mlTilt.active
+                ? `perspective(900px) rotateX(${mlTilt.rx.toFixed(2)}deg) rotateY(${mlTilt.ry.toFixed(2)}deg) scale(1.01)`
+                : 'perspective(900px) rotateX(0deg) rotateY(0deg) scale(1)',
+              transition: mlTilt.active ? 'transform 80ms ease-out' : 'transform 400ms cubic-bezier(0.22, 1, 0.36, 1)',
+            }}
+            className="bg-[#181630] border border-emerald-500/35 hover:border-emerald-400/70 rounded-[2.2rem] p-6 shadow-xl relative overflow-hidden space-y-4 text-white group cursor-pointer active:scale-[0.99] eng-card-ml-glow eng-cascade-3"
           >
+            {/* Shimmer Sweep & Interactive Spotlight */}
+            <div className="eng-shimmer-sweep eng-shimmer-sweep-delayed" />
+            <div
+              className="pointer-events-none absolute inset-0 transition-opacity duration-300"
+              style={{
+                opacity: mlTilt.active ? 1 : 0.45,
+                background: `radial-gradient(260px circle at ${mlTilt.gx}% ${mlTilt.gy}%, rgba(16, 185, 129, 0.2), rgba(52, 211, 153, 0.12) 45%, transparent 80%)`,
+              }}
+            />
             <div className="absolute top-0 right-0 w-44 h-44 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
             {/* Header: Badge & UZ Flag Shield */}
@@ -300,13 +371,16 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
                   <span className="animate-flag-wave inline-block">🇺🇿</span>
                   <span>MILLIY SERTIFIKAT</span>
                 </span>
-                <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded-full border border-emerald-400/20">
+                <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded-full border border-emerald-400/20 eng-animate-pulse-badge">
                   CEFR B1 - C1
                 </span>
               </div>
 
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shadow-inner overflow-hidden">
-                <UzFlagWave width={28} />
+              <div className="flex items-center space-x-2">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shadow-inner overflow-hidden">
+                  <UzFlagWave width={28} />
+                </div>
+                <SpeakingWaveform width={50} height={34} color="#10B981" />
               </div>
             </div>
 
@@ -375,7 +449,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
               <span className="text-[11px] font-semibold text-slate-400">
                 DTM & Milliy baholash sinovlariga o'tish
               </span>
-              <div className="bg-emerald-500 group-hover:bg-emerald-400 text-[#091f1a] font-black text-xs px-4 py-2 rounded-full flex items-center space-x-1.5 shadow-md transition-all">
+              <div className="bg-emerald-500 group-hover:bg-emerald-400 group-hover:translate-x-0.5 text-[#091f1a] font-black text-xs px-4 py-2 rounded-full flex items-center space-x-1.5 shadow-[0_0_20px_rgba(16,185,129,0.35)] transition-all">
                 <span>Multilevel ga kirish</span>
                 <ArrowRight size={14} />
               </div>

@@ -15,6 +15,7 @@ import {
 } from '../utils/gamification';
 import { BadgeUnlockModal } from './BadgeUnlockModal';
 import { SwipeableTaskItem } from './SwipeableTaskItem';
+import { HeroHookSection } from './HeroHookSection';
 
 const CATEGORIES: TaskCategory[] = ['work', 'personal', 'health', 'learning', 'other'];
 const PRIORITIES: TaskPriority[] = ['high', 'medium', 'low'];
@@ -30,9 +31,10 @@ interface ScreenHomeProps {
   userName: string;
   onTasksChange?: () => void;
   onOpenEnglish?: () => void;
+  onBackToHub?: () => void;
 }
 
-export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange, onOpenEnglish }) => {
+export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange, onOpenEnglish, onBackToHub: _onBackToHub }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activeScopeTab, setActiveScopeTab] = useState<'daily' | 'weekly'>('daily');
   const [newScope, setNewScope] = useState<TaskScope>('daily');
@@ -47,6 +49,8 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
   const [coins, setCoins] = useState(() => recalculateCoins());
   const [unlockedBadge, setUnlockedBadge] = useState<BadgeItem | null>(null);
   const [floatingCoin, setFloatingCoin] = useState<{ amount: number; key: number } | null>(null);
+  const [confettiKey, setConfettiKey] = useState<number | null>(null);
+  const [displayPct, setDisplayPct] = useState<number>(0);
 
   const reload = useCallback(() => {
     setTasks(getActiveTasks());
@@ -71,7 +75,9 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
 
       if (willBeDone) {
         setFloatingCoin({ amount: coinDiff, key: Date.now() });
+        setConfettiKey(Date.now());
         setTimeout(() => setFloatingCoin(null), 1800);
+        setTimeout(() => setConfettiKey(null), 1400);
 
         // Nishonlar holatini tekshirish
         const result = checkAndUnlockBadges();
@@ -83,6 +89,21 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
       }
 
       setCoins(recalculateCoins());
+    }
+  };
+
+  const handleQuickAddPreset = (text: string, priority: TaskPriority, category: TaskCategory, duration: number) => {
+    triggerHaptic('heavy');
+    addTask(text, priority, category, duration, activeScopeTab);
+    reload();
+    updateStats();
+    onTasksChange?.();
+    const result = checkAndUnlockBadges();
+    if (result.newBadges.length > 0) {
+      const nextBadge = result.newBadges[0];
+      markBadgeAlertSeen(nextBadge.id);
+      setUnlockedBadge(nextBadge);
+      setCoins(getUserCoins());
     }
   };
 
@@ -124,6 +145,18 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
   const pct = total ? Math.round((done / total) * 100) : 0;
   const pendingCount = total - done;
 
+  // B1: Smooth Count-Up animation for percentage
+  useEffect(() => {
+    if (displayPct === pct) return;
+    const step = displayPct < pct ? 1 : -1;
+    const diff = Math.abs(pct - displayPct);
+    const intervalTime = Math.max(8, Math.floor(350 / Math.max(1, diff)));
+    const timer = setTimeout(() => {
+      setDisplayPct((prev) => prev + step);
+    }, intervalTime);
+    return () => clearTimeout(timer);
+  }, [pct, displayPct]);
+
   // Streak hisoblash (2-rasmdagi seriya uchun)
   const weekDays = getLast7Days().reverse();
   let currentStreak = 0;
@@ -146,102 +179,100 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Xayrli tong' : hour < 17 ? 'Xayrli kun' : 'Xayrli kech';
 
+  const QUICK_PRESETS: { text: string; priority: TaskPriority; category: TaskCategory; duration: number; emoji: string }[] = [
+    { emoji: '🎙️', text: '15 daqiqa AI Speaking mashqi (IELTS / CEFR)', priority: 'high', category: 'learning', duration: 15 },
+    { emoji: '📖', text: '1 ta Reading Passage yechish va tahlil qilish', priority: 'high', category: 'learning', duration: 20 },
+    { emoji: '✍️', text: 'Writing insho yozish va ballini tekshirish', priority: 'medium', category: 'learning', duration: 30 },
+    { emoji: '💪', text: '30 daqiqa sport yoki kitob mutolaasi', priority: 'medium', category: 'health', duration: 30 },
+  ];
+
   return (
-    <div className="flex flex-col min-h-full bg-[#f6f7fb] pb-28">
-      {/* ── Header ── */}
-      <div className="px-5 pt-6 pb-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-slate-400">{greeting},</p>
-            <h1 className="text-2xl font-black text-slate-900 leading-tight tracking-tight">{userName}! 👋</h1>
-            <p className="text-[11px] text-slate-400 mt-0.5 font-medium">
-              {new Date().toLocaleDateString('uz-UZ', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </p>
-          </div>
+    <div className="flex flex-col min-h-full bg-[#f6f7fb] pb-28 relative">
+      <style>{`
+        @keyframes energyOrbit {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes zapPulse {
+          0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(196,248,42,0.6)); }
+          50% { transform: scale(1.18); filter: drop-shadow(0 0 14px rgba(196,248,42,1)); }
+        }
+        @keyframes presetFloat {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-3px); }
+        }
+        @keyframes confettiPop {
+          0% { transform: translate(0, 0) scale(0.4) rotate(0deg); opacity: 1; }
+          100% { transform: translate(var(--tx), var(--ty)) scale(1.1) rotate(var(--rot)); opacity: 0; }
+        }
+      `}</style>
 
-          {/* Yuqoridagi Tangalar Hisoblagichi (Coins Counter) */}
-          <div className="relative">
-            <div className="flex items-center space-x-1.5 bg-gradient-to-r from-amber-500/15 to-yellow-500/10 border border-amber-400/30 px-3.5 py-1.5 rounded-full shadow-xs backdrop-blur-xs">
-              <span className="text-lg select-none">🪙</span>
-              <span className="text-sm font-black text-amber-700 tracking-tight">{coins}</span>
-            </div>
-
-            {/* Uchib chiqadigan +🪙 animatsiyasi */}
-            {floatingCoin && (
-              <div
-                key={floatingCoin.key}
-                className="absolute -top-7 right-1 pointer-events-none text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 shadow-sm animate-bounce"
-              >
-                +{floatingCoin.amount} 🪙
-              </div>
-            )}
-          </div>
+      {/* B1: Dopamine Confetti & Coin Burst Overlay when checking off a task */}
+      {confettiKey && (
+        <div key={confettiKey} className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center overflow-hidden">
+          {[
+            { tx: '-90px', ty: '-120px', rot: '-45deg', char: '🎉' },
+            { tx: '95px', ty: '-110px', rot: '60deg', char: '🪙' },
+            { tx: '-110px', ty: '-30px', rot: '-80deg', char: '✨' },
+            { tx: '115px', ty: '-25px', rot: '75deg', char: '🔥' },
+            { tx: '-60px', ty: '-150px', rot: '30deg', char: '🪙' },
+            { tx: '60px', ty: '-145px', rot: '-35deg', char: '⚡' },
+            { tx: '-75px', ty: '60px', rot: '-50deg', char: '🎉' },
+            { tx: '80px', ty: '55px', rot: '45deg', char: '✨' },
+          ].map((p, idx) => (
+            <span
+              key={idx}
+              className="absolute text-2xl select-none"
+              style={{
+                ['--tx' as string]: p.tx,
+                ['--ty' as string]: p.ty,
+                ['--rot' as string]: p.rot,
+                animation: 'confettiPop 950ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              }}
+            >
+              {p.char}
+            </span>
+          ))}
         </div>
+      )}
 
-        {/* ── 2-rasmdagi zamonaviy to'q binafsha Progress Card ── */}
-        {/* 🚀 Ingliz tili (IELTS / Multilevel) Premium Boshlash Card (Yuqorida va Katta) */}
-        {onOpenEnglish && (
-          <div
-            onClick={onOpenEnglish}
-            className="my-3.5 rounded-[2.2rem] p-5 text-white shadow-xl cursor-pointer border border-indigo-400/30 active:scale-[0.98] transition-all relative overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, #100b2e 0%, #1e135e 50%, #341299 100%)' }}
-          >
-            {/* Ambient neon glow */}
-            <div className="absolute -top-10 -right-10 w-36 h-36 bg-[#c4f82a]/20 rounded-full blur-2xl pointer-events-none" />
+      {/* ── Header + Animated Hero Hook Section (#7, #8, #10) ── */}
+      <div className="px-5 pt-4 pb-2 space-y-3.5">
+        <HeroHookSection
+          userName={userName}
+          greeting={greeting}
+          coins={coins}
+          floatingCoin={floatingCoin}
+          onOpenEnglish={onOpenEnglish}
+        />
 
-            <div className="flex items-center justify-between relative z-10">
-              <div className="flex items-center space-x-3.5 min-w-0 flex-1">
-                <div className="w-12 h-12 rounded-2xl bg-[#c4f82a]/20 border border-[#c4f82a]/40 flex items-center justify-center font-black text-base text-[#c4f82a] shrink-0 shadow-inner backdrop-blur-xs uppercase">
-                  {userName ? userName.slice(0, 2).toUpperCase() : 'ME'}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <span className="animate-bounce inline-block text-[11px] font-black bg-[#c4f82a] text-[#121124] px-2.5 py-0.5 rounded-full shadow-[0_0_12px_rgba(196,248,42,0.9),0_0_22px_rgba(196,248,42,0.5)] whitespace-nowrap">
-                      Yangi 🔥
-                    </span>
-                    <span className="text-[11px] font-bold text-purple-200 uppercase tracking-wider">IELTS & CEFR</span>
-                  </div>
-                  <h4 className="text-sm font-black text-white tracking-tight leading-tight">
-                    IELTS & Multilevel Practice
-                  </h4>
-                  <p className="text-[11px] text-purple-200/90 truncate mt-0.5 font-medium">
-                    AI Examiner (9.0), Writing & Jonli Sheriklik
-                  </p>
-                </div>
-              </div>
+        {/* ── 2-rasmdagi zamonaviy to'q binafsha Progress Card + B2: Living Energy Core ── */}
+        <div className="rounded-[2rem] p-5 bg-[#1e1552] text-white shadow-xl relative overflow-hidden border border-indigo-400/20">
+          {/* Ambient energy glow */}
+          <div className="absolute -bottom-10 -right-10 w-36 h-36 bg-[#c4f82a]/15 rounded-full blur-2xl pointer-events-none" />
 
-              {/* Boshlash tugmasi (eng-cta animation: arrow nudge + shine sweep + press squeeze) */}
-              <div className="pl-2 shrink-0">
-                <button
-                  type="button"
-                  className="eng-cta inline-flex items-center space-x-1.5 bg-[#c4f82a] text-[#121124] px-4 py-2.5 rounded-full text-xs font-black shadow-md select-none cursor-pointer"
-                >
-                  <span>Boshlash</span>
-                  <span className="eng-cta__arrow font-sans font-bold" aria-hidden="true">→</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── 2-rasmdagi zamonaviy to'q binafsha Progress Card ── */}
-        <div className="rounded-[2rem] p-5 bg-[#1e1552] text-white shadow-xl relative overflow-hidden">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between relative z-10">
             {/* Chap tomon: Foiz va vazifalar soni */}
             <div>
-              <p className="text-[11px] font-extrabold text-[#9e91db] tracking-wider uppercase">
-                {activeScopeTab === 'daily' ? 'BUGUNGI PROGRESS' : 'HAFTALIK PROGRESS'}
+              <p className="text-[11px] font-extrabold text-[#9e91db] tracking-wider uppercase flex items-center space-x-1.5">
+                <span>{activeScopeTab === 'daily' ? 'BUGUNGI PROGRESS' : 'HAFTALIK PROGRESS'}</span>
+                {pct === 100 && <span className="animate-bounce">🏆</span>}
               </p>
-              <p className="text-5xl font-black text-white tracking-tight my-1.5">
-                {pct}%
+              <p className="text-5xl font-black text-white tracking-tight my-1.5 font-mono">
+                {displayPct}%
               </p>
               <p className="text-xs font-semibold text-[#b8ace8]">
                 {done} / {total} {activeScopeTab === 'daily' ? 'kunlik' : 'haftalik'} vazifa bajarildi
               </p>
             </div>
 
-            {/* O'ng tomon: Circular neon progress ring va chaqmoq ⚡ */}
+            {/* O'ng tomon: B2 Living Energy Core (Orbiting spark + Pulsing Zap/Crown) */}
             <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
+              {/* Outer rotating dashed energy orbit */}
+              <div
+                className="absolute inset-0 rounded-full border border-dashed border-[#c4f82a]/35 pointer-events-none"
+                style={{ animation: 'energyOrbit 10s linear infinite' }}
+              />
               <svg className="w-20 h-20 -rotate-90" viewBox="0 0 64 64">
                 {/* Background ring */}
                 <circle
@@ -266,15 +297,22 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
                   className="transition-all duration-700 ease-out"
                 />
               </svg>
-              {/* Markaziy yashil chaqmoq belgisi */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Zap size={22} className="text-[#c4f82a] fill-[#c4f82a]" />
+              {/* Markaziy jonli energiya chaqmog'i */}
+              <div
+                className="absolute inset-0 flex items-center justify-center"
+                style={{ animation: 'zapPulse 2.2s infinite ease-in-out' }}
+              >
+                {pct === 100 ? (
+                  <span className="text-2xl">🔥</span>
+                ) : (
+                  <Zap size={22} className="text-[#c4f82a] fill-[#c4f82a]" />
+                )}
               </div>
             </div>
           </div>
 
           {/* 2-rasmdagi och laym-yashil streak banner */}
-          <div className="mt-4 bg-[#c4f82a] text-[#121124] rounded-2xl p-3.5 shadow-sm">
+          <div className="mt-4 bg-[#c4f82a] text-[#121124] rounded-2xl p-3.5 shadow-sm relative z-10">
             <p className="text-xs font-black tracking-tight leading-snug">
               {activeScopeTab === 'daily' ? (
                 total === 0
@@ -377,24 +415,54 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
       {/* ── Task List ── */}
       <div className="px-5 flex-1 space-y-2.5">
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <span className="text-5xl mb-4">
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <span className="text-4xl mb-2" style={{ animation: 'presetFloat 2.8s infinite ease-in-out' }}>
               {activeScopeTab === 'daily' ? '☀️' : '📅'}
             </span>
-            <p className="font-bold text-slate-700 text-base">
+            <p className="font-black text-slate-800 text-sm">
               {currentScopeTasks.length === 0
                 ? activeScopeTab === 'daily'
                   ? "Bugungi kunga hali vazifa yo'q!"
                   : "Bu hafta uchun hali vazifa yo'q!"
                 : "Bu toifada vazifa yo'q"}
             </p>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-[11px] text-slate-400 mt-0.5 mb-4">
               {currentScopeTasks.length === 0
-                ? activeScopeTab === 'daily'
-                  ? "Pastdagi + tugmasini bosib bugun rejalingizni kiriting"
-                  : "Pastdagi + tugmasini bosib hafta davomidagi rejalaringizni kiriting"
+                ? "Tayyor maqsadlardan birini 1 bosishda qo'shing yoki + tugmasini bosing:"
                 : "Boshqa toifani tanlang"}
             </p>
+
+            {/* B3: Floating 1-Tap Quick-Add Chips when task list is empty */}
+            {currentScopeTasks.length === 0 && (
+              <div className="w-full space-y-2 text-left max-w-sm mx-auto">
+                {QUICK_PRESETS.map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleQuickAddPreset(preset.text, preset.priority, preset.category, preset.duration)}
+                    style={{ animation: `presetFloat ${2.6 + idx * 0.3}s infinite ease-in-out ${idx * 0.15}s` }}
+                    className="w-full bg-white hover:bg-indigo-50/80 border border-indigo-100 hover:border-[#7052ff]/40 rounded-2xl p-3 flex items-center justify-between shadow-xs transition-all active:scale-[0.98] group cursor-pointer"
+                  >
+                    <div className="flex items-center space-x-2.5 min-w-0 flex-1">
+                      <span className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-sm shrink-0">
+                        {preset.emoji}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-extrabold text-slate-800 group-hover:text-[#7052ff] truncate transition-colors">
+                          {preset.text}
+                        </p>
+                        <span className="text-[10px] font-bold text-slate-400">
+                          ⏱ {preset.duration} daq • +{getTaskCoins(preset.priority)} 🪙
+                        </span>
+                      </div>
+                    </div>
+                    <span className="ml-2 text-[11px] font-black bg-[#7052ff]/10 group-hover:bg-[#7052ff] text-[#7052ff] group-hover:text-white px-2.5 py-1 rounded-xl transition-all shrink-0">
+                      + Qo'shish
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           filtered.map((task) => (
@@ -408,7 +476,7 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
         )}
       </div>
 
-      {/* ── 1-rasmdagi zamonaviy binafsha FAB (+) tugmasi ── */}
+      {/* ── B4: 1-rasmdagi zamonaviy binafsha FAB (+) tugmasi Sonar To'lqini bilan ── */}
       <button
         onClick={() => {
           triggerHaptic('heavy');
@@ -417,7 +485,10 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
         }}
         className="fixed bottom-24 right-5 w-14 h-14 rounded-full bg-[#7052ff] hover:bg-[#6242f6] text-white shadow-xl shadow-indigo-500/40 flex items-center justify-center active:scale-90 transition-all z-30"
       >
-        <Plus size={26} strokeWidth={2.8} />
+        {currentScopeTasks.length === 0 && (
+          <span className="absolute inset-0 rounded-full bg-[#7052ff] opacity-50 animate-ping pointer-events-none" />
+        )}
+        <Plus size={26} strokeWidth={2.8} className="relative z-10" />
       </button>
 
       {/* ── Add Task Modal ── */}

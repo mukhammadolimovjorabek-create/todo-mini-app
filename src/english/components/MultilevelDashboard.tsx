@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, Award, Users } from 'lucide-react';
 import { MultilevelSpeakingView } from './MultilevelSpeakingView';
 import { MultilevelWritingView } from './MultilevelWritingView';
@@ -33,18 +33,50 @@ export const MultilevelDashboard: React.FC<Props> = ({
   const [activeView, setActiveView] = useState<ActiveView>(initialView);
   const [writingTab, setWritingTab] = useState<'task1' | 'task2'>(initialWritingTab);
   const [showSpeakingModal, setShowSpeakingModal] = useState(false);
+  const [animatedPoints, setAnimatedPoints] = useState(0);
 
-  const { speakingScore, writingScore, readingScore } = useMemo(() => {
+  const { speakingScore, writingScore, readingScore, targetOrAvgPoints, hasRealScore } = useMemo(() => {
     const results = getTestResults();
     const lastSpeaking = results.find((r) => r.id.startsWith('ml_speaking_') || r.id.startsWith('ml_test_'));
     const lastWriting = results.find((r) => r.id.startsWith('ml_writing_'));
     const lastReading = results.find((r) => r.id.startsWith('ml_reading_'));
+
+    const validScores = [
+      lastSpeaking?.overallBand,
+      lastWriting?.overallBand,
+      lastReading?.overallBand,
+    ].filter((v): v is number => typeof v === 'number' && v > 0);
+
+    const avg =
+      validScores.length > 0
+        ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
+        : 68; // Target C1 (65-75 ball)
+
     return {
       speakingScore: lastSpeaking?.overallBand !== undefined ? `${lastSpeaking.overallBand}/75` : null,
       writingScore: lastWriting?.overallBand !== undefined ? `${lastWriting.overallBand}/75` : null,
       readingScore: lastReading?.overallBand !== undefined ? `${Math.round(lastReading.overallBand)}/75` : null,
+      targetOrAvgPoints: avg,
+      hasRealScore: validScores.length > 0,
     };
   }, [activeView]);
+
+  // A2: Smooth count-up animation for the 75-Point Speedometer when entering menu
+  useEffect(() => {
+    if (activeView !== 'menu') return;
+    setAnimatedPoints(0);
+    let frame: number;
+    const duration = 1100;
+    const start = performance.now();
+    const animate = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setAnimatedPoints(Math.round(targetOrAvgPoints * eased));
+      if (p < 1) frame = requestAnimationFrame(animate);
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [activeView, targetOrAvgPoints]);
 
   if (activeView === 'speaking') {
     return <MultilevelSpeakingView onBack={() => setActiveView('menu')} userName={userName} />;
@@ -73,6 +105,11 @@ export const MultilevelDashboard: React.FC<Props> = ({
       />
     );
   }
+
+  const arcLength = 119.38;
+  const arcProgress = Math.min(1, animatedPoints / 75);
+  const strokeDashoffset = arcLength * (1 - arcProgress);
+  const cefrBadge = animatedPoints >= 65 ? 'C1' : animatedPoints >= 51 ? 'B2' : 'B1';
 
   // ── MAIN DASHBOARD MENU ──
   return (
@@ -105,23 +142,62 @@ export const MultilevelDashboard: React.FC<Props> = ({
       </div>
 
       <div className="p-5 flex-1 max-w-lg mx-auto w-full space-y-4">
-        {/* Banner Card */}
+        {/* Banner Card with Animated 75-Point CEFR Speedometer */}
         <div
-          className="rounded-[2.2rem] p-5.5 text-white relative overflow-hidden shadow-xl border border-emerald-500/20"
+          className="rounded-[2.2rem] p-5 text-white relative overflow-hidden shadow-xl border border-emerald-500/30 flex items-center justify-between gap-3 eng-cascade-1"
           style={{ background: 'linear-gradient(135deg, #09211c 0%, #0e3b32 60%, #155e51 100%)' }}
         >
+          <div className="eng-shimmer-sweep" />
           <div className="absolute top-0 right-0 w-36 h-36 bg-[#c4f82a]/15 rounded-full blur-3xl pointer-events-none" />
-          <div className="relative z-10 space-y-2">
-            <span className="inline-flex items-center space-x-1 bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-[#c4f82a]">
+          <div className="relative z-10 space-y-1.5">
+            <span className="inline-flex items-center space-x-1 bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-[#c4f82a] eng-animate-pulse-badge">
               <Award size={12} />
-              <span>CEFR B1 · B2 · C1 Standarti</span>
+              <span>{hasRealScore ? `O'RTACHA BALL (${cefrBadge})` : 'MAQSAD: CEFR C1 (65+ BALL)'}</span>
             </span>
-            <h3 className="text-xl font-black">
+            <h3 className="text-lg font-black leading-snug">
               Multilevel Speaking, Reading & Writing 🎯
             </h3>
-            <p className="text-xs text-teal-100/90 leading-relaxed">
-              Xush kelibsiz, <strong>{userName}</strong>! Rasmiy DTM mezonlari, Speaking, Reading, xat va insho mavzulari tayyor.
+            <p className="text-[11px] text-teal-100/90 leading-relaxed">
+              Xush kelibsiz, <strong>{userName}</strong>! Rasmiy DTM 75 ballik shkala bo'yicha o'z darajangizni sinang.
             </p>
+          </div>
+
+          {/* Animated 75-Ball Speedometer Gauge */}
+          <div className="relative w-24 h-16 shrink-0 flex flex-col items-center justify-end z-10">
+            <svg viewBox="0 0 96 56" className="w-24 h-14 overflow-visible">
+              <defs>
+                <linearGradient id="mlGaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#10b981" />
+                  <stop offset="60%" stopColor="#34d399" />
+                  <stop offset="100%" stopColor="#c4f82a" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M 10 48 A 38 38 0 0 1 86 48"
+                fill="none"
+                stroke="rgba(255,255,255,0.14)"
+                strokeWidth="8"
+                strokeLinecap="round"
+              />
+              <path
+                d="M 10 48 A 38 38 0 0 1 86 48"
+                fill="none"
+                stroke="url(#mlGaugeGrad)"
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray={arcLength}
+                strokeDashoffset={strokeDashoffset}
+                style={{ filter: 'drop-shadow(0 0 6px rgba(52, 211, 153, 0.55))' }}
+              />
+            </svg>
+            <div className="absolute bottom-0.5 flex flex-col items-center leading-none">
+              <span className="text-base font-black text-[#c4f82a] tracking-tight">
+                {animatedPoints} <span className="text-[10px] text-emerald-200">/75</span>
+              </span>
+              <span className="text-[8px] font-black uppercase tracking-widest text-emerald-300">
+                CEFR {cefrBadge}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -135,9 +211,10 @@ export const MultilevelDashboard: React.FC<Props> = ({
               triggerHaptic('medium');
               setShowSpeakingModal(true);
             }}
-            className="p-5 rounded-[2rem] bg-[#181630] border border-white/10 hover:border-emerald-400/50 hover:shadow-lg transition-all cursor-pointer group active:scale-[0.99] space-y-3 text-white"
+            className="p-5 rounded-[2rem] bg-[#181630] border border-white/10 hover:border-emerald-400/50 hover:shadow-lg transition-all cursor-pointer group active:scale-[0.99] space-y-3 text-white relative overflow-hidden eng-cascade-2 eng-card-ml-glow"
           >
-            <div className="flex items-start justify-between">
+            <div className="eng-shimmer-sweep" />
+            <div className="flex items-start justify-between relative z-10">
               <div className="flex items-center space-x-3.5">
                 {/* 52x52 Tile with Waveform & Pulse Ring */}
                 <div
@@ -170,7 +247,7 @@ export const MultilevelDashboard: React.FC<Props> = ({
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-1.5 pt-1">
+            <div className="flex flex-wrap gap-1.5 pt-1 relative z-10">
               <span className="text-[10px] font-bold text-slate-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-xl">
                 Part 1-3
               </span>
@@ -194,9 +271,10 @@ export const MultilevelDashboard: React.FC<Props> = ({
               setWritingTab('task2');
               setActiveView('writing');
             }}
-            className="p-5 rounded-[2rem] bg-[#181630] border border-white/10 hover:border-violet-400/50 hover:shadow-lg transition-all cursor-pointer group active:scale-[0.99] space-y-3 text-white"
+            className="p-5 rounded-[2rem] bg-[#181630] border border-white/10 hover:border-violet-400/50 hover:shadow-lg transition-all cursor-pointer group active:scale-[0.99] space-y-3 text-white relative overflow-hidden eng-cascade-3"
           >
-            <div className="flex items-start justify-between">
+            <div className="eng-shimmer-sweep eng-shimmer-sweep-delayed" />
+            <div className="flex items-start justify-between relative z-10">
               <div className="flex items-center space-x-3.5">
                 {/* 52x52 Tile with Pulse Ring & Drawing Pencil */}
                 <div
@@ -228,7 +306,7 @@ export const MultilevelDashboard: React.FC<Props> = ({
             </div>
 
             {/* Interactive direct task buttons */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
+            <div className="flex flex-wrap items-center gap-2 pt-1 relative z-10">
               <span
                 onClick={(e) => {
                   e.stopPropagation();
@@ -267,9 +345,10 @@ export const MultilevelDashboard: React.FC<Props> = ({
               triggerHaptic('medium');
               setActiveView('reading');
             }}
-            className="p-5 rounded-[2rem] bg-[#181630] border border-white/10 hover:border-sky-400/50 hover:shadow-lg transition-all cursor-pointer group active:scale-[0.99] space-y-3 text-white"
+            className="p-5 rounded-[2rem] bg-[#181630] border border-white/10 hover:border-sky-400/50 hover:shadow-lg transition-all cursor-pointer group active:scale-[0.99] space-y-3 text-white relative overflow-hidden eng-cascade-4"
           >
-            <div className="flex items-start justify-between">
+            <div className="eng-shimmer-sweep" />
+            <div className="flex items-start justify-between relative z-10">
               <div className="flex items-center space-x-3.5">
                 <div
                   className="w-[52px] h-[52px] rounded-[16px] flex items-center justify-center shrink-0 relative"
@@ -299,7 +378,7 @@ export const MultilevelDashboard: React.FC<Props> = ({
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 pt-1">
+            <div className="flex flex-wrap items-center gap-2 pt-1 relative z-10">
               <span className="text-[10px] font-bold text-sky-300 bg-sky-400/10 border border-sky-400/25 px-2.5 py-1 rounded-xl">
                 📖 3 ta Passage (20 / 60 daqiqa)
               </span>

@@ -72,3 +72,68 @@ export function UzFlagWave({ width = 42 }: { width?: number }) {
     </svg>
   );
 }
+
+export function UkFlagWave({ width = 42 }: { width?: number }) {
+  const id = useId().replace(/:/g, '');
+  const height = (width * 38) / 60;
+
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox="0 -4 60 38"
+      aria-hidden="true"
+      className="uz-flag block"
+    >
+      <defs>
+        <clipPath id={`${id}-clip`}>
+          <rect width="60" height="30" />
+        </clipPath>
+        <g id={`${id}-uk-flag`} clipPath={`url(#${id}-clip)`}>
+          {/* Royal Blue field */}
+          <rect width="60" height="30" fill="#012169" />
+          {/* White diagonals (St Andrew & St Patrick saltire background) */}
+          <path d="M0,0 L60,30 M60,0 L0,30" stroke="#FFFFFF" strokeWidth="6" />
+          {/* Red diagonals */}
+          <path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" strokeWidth="2.6" />
+          {/* White cross (St George background) */}
+          <path d="M30,0 V30 M0,15 H60" stroke="#FFFFFF" strokeWidth="10" />
+          {/* Red cross (St George) */}
+          <path d="M30,0 V30 M0,15 H60" stroke="#C8102E" strokeWidth="6" />
+        </g>
+      </defs>
+      {Array.from({ length: SLICES }, (_, i) => {
+        const amp = (0.5 + (2.3 * i) / (SLICES - 1)).toFixed(2);
+        const delay = (-i * 0.11).toFixed(2);
+        const x = i * STEP;
+        return (
+          <svg
+            key={i}
+            x={x}
+            y={-4}
+            width={STEP + 0.5}
+            height="38"
+            viewBox={`${x} -4 ${STEP + 0.5} 38`}
+          >
+            <g
+              className="uz-flag__slice"
+              style={{ ['--a' as string]: amp, animationDelay: `${delay}s` } as React.CSSProperties}
+            >
+              <use href={`#${id}-uk-flag`} />
+              <rect
+                x={x}
+                y="0"
+                width={STEP + 0.5}
+                height="30"
+                fill="#000"
+                className="uz-flag__shade"
+                style={{ animationDelay: `${delay}s` }}
+              />
+            </g>
+          </svg>
+        );
+      })}
+    </svg>
+  );
+}
+
