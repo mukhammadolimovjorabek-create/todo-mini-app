@@ -114,11 +114,17 @@ export const createExamRecorder = (): ExamRecorder => {
   };
 };
 
+import { getTelegramInitData } from '../../utils/telegram';
+
 /** Sends one recorded answer to the server and returns the English transcript. */
 export const transcribeAudio = async (blob: Blob): Promise<string> => {
+  const initData = getTelegramInitData();
   const res = await fetch('/api/transcribe', {
     method: 'POST',
-    headers: { 'Content-Type': blob.type || 'audio/webm' },
+    headers: {
+      'Content-Type': blob.type || 'audio/webm',
+      ...(initData ? { 'X-Telegram-Init-Data': initData } : {}),
+    },
     body: blob,
   });
   if (!res.ok) {

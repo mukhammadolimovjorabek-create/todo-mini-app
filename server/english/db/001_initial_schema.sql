@@ -131,3 +131,18 @@ CREATE TABLE IF NOT EXISTS english_partner_ratings (
   rating INT CHECK (rating BETWEEN 1 AND 5),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- 11. Row Level Security (Supabase PostgREST anon access protection)
+ALTER TABLE english_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE english_usage ENABLE ROW LEVEL SECURITY;
+ALTER TABLE english_writing_prompts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE english_writing_submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE english_speaking_questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE english_speaking_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE english_speaking_turns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE english_queue ENABLE ROW LEVEL SECURITY;
+ALTER TABLE english_rooms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE english_blocks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE english_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE english_partner_ratings ENABLE ROW LEVEL SECURITY;
+

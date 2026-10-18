@@ -6,6 +6,8 @@ import hmac
 import hashlib
 import urllib.parse
 import time
+import html
+import re
 import asyncpg
 from datetime import datetime
 from dotenv import load_dotenv
@@ -56,6 +58,69 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 db_pool = None
 
+# ----------------- SECURITY CONFIG -----------------
+# Webhook secret: Telegram har bir webhook so'rovida X-Telegram-Bot-Api-Secret-Token headerini yuboradi.
+# Env berilmasa BOT_TOKEN'dan deterministik hosil qilinadi (token o'zi maxfiy bo'lgani uchun xavfsiz).
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET") or (
+    hashlib.sha256(f"webhook-secret:{BOT_TOKEN}".encode("utf-8")).hexdigest() if BOT_TOKEN else ""
+)
+# initData necha soniyagacha amal qiladi (replay hujumlariga qarshi)
+INIT_DATA_MAX_AGE = int(os.getenv("INIT_DATA_MAX_AGE", str(24 * 3600)))
+
+def _origin_of(url: str) -> str:
+    try:
+        p = urllib.parse.urlparse(url)
+        return f"{p.scheme}://{p.netloc}" if p.scheme and p.netloc else ""
+    except Exception:
+        return ""
+
+ALLOWED_ORIGINS = {
+    o for o in (
+        [_origin_of(WEB_APP_URL), "http://localhost:5173", "http://127.0.0.1:5173",
+         "http://localhost:4173", "http://127.0.0.1:4173"]
+        + [_origin_of(x.strip()) for x in os.getenv("ALLOWED_ORIGINS", "").split(",") if x.strip()]
+    ) if o
+}
+
+MAX_SYNC_BYTES = 1_000_000
+AI_MAX_SYSTEM_PROMPT = 20_000
+AI_MAX_USER_MESSAGE = 2_500
+AI_MAX_HISTORY_ITEM = 4_000
+TTS_VOICE_RE = re.compile(r"^[a-z]{2,3}-[A-Z]{2}-[A-Za-z]+Neural$")
+ROOM_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+
+def esc(value) -> str:
+    """Telegram HTML parse_mode uchun foydalanuvchi matnini xavfsiz qilish."""
+    return html.escape(str(value or ""), quote=False)
+
+def unauthorized_response():
+    return web.json_response({"error": "Unauthorized: Telegram initData talab qilinadi"}, status=401)
+
+def get_client_ip(request) -> str:
+    cf_ip = request.headers.get("CF-Connecting-IP")
+    if cf_ip:
+        return cf_ip.strip()
+    xff = request.headers.get("X-Forwarded-For")
+    if xff:
+        # Oxirgi qiymatni ishonchli proksi (Render) qo'shadi; birinchisini mijoz soxtalashtira oladi
+        return xff.split(",")[-1].strip()
+    return request.remote or "unknown"
+
+def check_rate_limit(store: dict, key: str, limit: int, window: float = 60.0) -> bool:
+    """True = ruxsat. Eski yozuvlar tozalanadi, lekin faol limitlar hech qachon to'liq o'chirilmaydi."""
+    now_ts = time.time()
+    history = [t for t in store.get(key, []) if now_ts - t < window]
+    if len(history) >= limit:
+        store[key] = history
+        return False
+    history.append(now_ts)
+    store[key] = history
+    if len(store) > 2000:
+        stale = [k for k, v in store.items() if not v or now_ts - v[-1] >= window]
+        for k in stale:
+            store.pop(k, None)
+    return True
+
 # Admin menu
 admin_kb = ReplyKeyboardMarkup(
     keyboard=[[KeyboardButton(text="📊 Hisobot")]],
@@ -68,7 +133,7 @@ def validate_telegram_data(init_data: str) -> dict | None:
     Validates Telegram WebApp initData string using HMAC-SHA256 according to Telegram specifications.
     Returns parsed dictionary containing validated 'user' object if authentic, or None otherwise.
     """
-    if not init_data or not BOT_TOKEN:
+    if not init_data or not BOT_TOKEN or len(init_data) > 4096:
         return None
     try:
         parsed_data = dict(urllib.parse.parse_qsl(init_data, keep_blank_values=True))
@@ -81,11 +146,18 @@ def validate_telegram_data(init_data: str) -> dict | None:
         calculated_hash = hmac.new(secret_key, data_check_string.encode("utf-8"), hashlib.sha256).hexdigest()
         
         if hmac.compare_digest(calculated_hash, received_hash):
+            # Replay himoyasi: eskirgan initData qabul qilinmaydi
+            try:
+                auth_date = int(parsed_data.get("auth_date", "0"))
+            except ValueError:
+                return None
+            if auth_date <= 0 or time.time() - auth_date > INIT_DATA_MAX_AGE:
+                return None
             if "user" in parsed_data:
                 try:
                     parsed_data["user"] = json.loads(parsed_data["user"])
                 except Exception:
-                    pass
+                    return None
             return parsed_data
     except Exception as e:
         logging.warning(f"Telegram initData validation exception: {e}")
@@ -98,7 +170,7 @@ def extract_auth_user(request) -> dict | None:
     init_data = request.headers.get("X-Telegram-Init-Data") or request.query.get("init_data")
     if init_data:
         data = validate_telegram_data(init_data)
-        if data and "user" in data and isinstance(data["user"], dict):
+        if data and "user" in data and isinstance(data["user"], dict) and data["user"].get("id"):
             return data["user"]
     return None
 
@@ -132,8 +204,10 @@ async def init_db():
                     sync_data JSONB NOT NULL,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
+                ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+                ALTER TABLE user_sync ENABLE ROW LEVEL SECURITY;
             """)
-        logging.info("Connected to PostgreSQL Database.")
+        logging.info("Connected to PostgreSQL Database (RLS enabled).")
     else:
         logging.info("No DATABASE_URL found. Falling back to users.json.")
 
@@ -250,10 +324,10 @@ async def user_blocked_bot(event: ChatMemberUpdated):
     user_id = event.from_user.id
     await set_user_status(user_id, "left")
     try:
-        username_txt = f"(@{event.from_user.username})" if event.from_user.username else ""
+        username_txt = f"(@{esc(event.from_user.username)})" if event.from_user.username else ""
         text = (
             "🚪 <b>Foydalanuvchi botni to'xtatdi (blokladi):</b>\n"
-            f"👤 Ismi: {event.from_user.first_name} {username_txt}\n"
+            f"👤 Ismi: {esc(event.from_user.first_name)} {username_txt}\n"
             f"🆔 ID: <code>{user_id}</code>"
         )
         await bot.send_message(chat_id=ADMIN_ID, text=text, parse_mode="HTML")
@@ -278,7 +352,7 @@ async def cmd_start(message: types.Message):
     if len(parts) > 1 and parts[1].startswith("unlock"):
         await save_user(user_id, user_info)
         user_reply = (
-            f"Assalomu alaykum, <b>{message.from_user.first_name}</b>! 👋\n\n"
+            f"Assalomu alaykum, <b>{esc(message.from_user.first_name)}</b>! 👋\n\n"
             "✅ <b>Sizning hisobingiz to'liq faol!</b>\n\n"
             "Barcha bo'limlar, jumladan Jonli Speaking Hamkori bo'limi hech qanday to'lovlarsiz ochiq."
         )
@@ -287,7 +361,7 @@ async def cmd_start(message: types.Message):
     referrer_id = None
     if len(parts) > 1 and parts[1].startswith("ref_"):
         raw_ref = parts[1].replace("ref_", "").strip()
-        if raw_ref.isdigit():
+        if raw_ref.isdigit() and int(raw_ref) != user_id:
             referrer_id = raw_ref
         
     is_new, total_visitors = await save_user(user_id, user_info)
@@ -313,7 +387,7 @@ async def cmd_start(message: types.Message):
     )
     
     caption_text = (
-        f"Assalomu alaykum, <b>{message.from_user.first_name}</b>! 👋\n\n"
+        f"Assalomu alaykum, <b>{esc(message.from_user.first_name)}</b>! 👋\n\n"
         "🌟 <b>StudyMate</b> — IELTS, Multilevel (CEFR) va Smart To-Do platformasiga xush kelibsiz!\n\n"
         "Bitta ilovada barcha imkoniyatlar:\n"
         "📋 <b>Smart To-Do & Odatlar</b> — kunlik vazifalar, streak va tangalar\n"
@@ -336,7 +410,7 @@ async def cmd_start(message: types.Message):
     
     if is_new and referrer_id and referrer_id.isdigit():
         try:
-            inviter_text = f"🎉 <b>Ajoyib yangilik! {message.from_user.first_name}</b> sizning havolangiz orqali qo'shildi!"
+            inviter_text = f"🎉 <b>Ajoyib yangilik! {esc(message.from_user.first_name)}</b> sizning havolangiz orqali qo'shildi!"
             await bot.send_message(chat_id=int(referrer_id), text=inviter_text, parse_mode="HTML")
         except Exception:
             pass
@@ -347,7 +421,7 @@ async def cmd_start(message: types.Message):
             active_count = sum(1 for u in users.values() if u.get("status", "active") == "active")
             alert_text = (
                 "🔔 <b>Yangi foydalanuvchi!</b>\n"
-                f"👤 {message.from_user.first_name}\n🆔 <code>{user_id}</code>\n"
+                f"👤 {esc(message.from_user.first_name)}\n🆔 <code>{user_id}</code>\n"
                 f"👥 Faol: {active_count}\n📈 Jami: {total_visitors}"
             )
             await bot.send_message(chat_id=ADMIN_ID, text=alert_text, parse_mode="HTML")
@@ -549,7 +623,7 @@ async def handle_user_check_photo(message: types.Message):
     user_id = message.from_user.id
     caption = (
         "🧾 <b>YANGI TO'LOV CHEKI!</b>\n"
-        f"👤 <b>{message.from_user.first_name}</b>\n"
+        f"👤 <b>{esc(message.from_user.first_name)}</b>\n"
         f"🆔 <code>{user_id}</code>\n"
         "<i>Chekni tekshirib qulfni ochishingiz mumkin:</i>"
     )
@@ -563,8 +637,13 @@ async def handle_user_check_photo(message: types.Message):
 @dp.callback_query(F.data.startswith("unblock:"))
 async def handle_unblock_callback(callback: types.CallbackQuery):
     if callback.from_user.id != ADMIN_ID:
+        await callback.answer()
         return
-    target = int(callback.data.split(":")[1])
+    raw_target = callback.data.split(":", 1)[1] if ":" in callback.data else ""
+    if not raw_target.isdigit():
+        await callback.answer("Noto'g'ri ID", show_alert=True)
+        return
+    target = int(raw_target)
     await unblock_user_db(target)
     app_url = f"{WEB_APP_URL}?unblocked=1"
     user_kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🚀 Ilovaga kirish", web_app=WebAppInfo(url=app_url))]])
@@ -580,7 +659,7 @@ async def handle_unblock_callback(callback: types.CallbackQuery):
 async def handle_accept_ref(callback: types.CallbackQuery):
     user_id = callback.from_user.id
     ref_parts = callback.data.split(":")
-    if len(ref_parts) < 2 or not ref_parts[1].isdigit():
+    if len(ref_parts) < 2 or not ref_parts[1].isdigit() or int(ref_parts[1]) == user_id:
         await callback.answer("Taklif topilmadi.", show_alert=True)
         return
         
@@ -600,7 +679,7 @@ async def handle_accept_ref(callback: types.CallbackQuery):
                 
     # 2. Xabar berish: taklif qilganga
     try:
-        inviter_text = f"🎉 <b>{callback.from_user.first_name}</b> sizning do'stlik taklifingizni qabul qildi va do'stlaringiz safiga qo'shildi!"
+        inviter_text = f"🎉 <b>{esc(callback.from_user.first_name)}</b> sizning do'stlik taklifingizni qabul qildi va do'stlaringiz safiga qo'shildi!"
         await bot.send_message(chat_id=inviter_id, text=inviter_text, parse_mode="HTML")
     except Exception:
         pass
@@ -621,23 +700,18 @@ async def handle_decline_ref(callback: types.CallbackQuery):
 # ----------------- MAIN RUNNER -----------------
 
 async def api_unfriend(request):
+    auth_user = extract_auth_user(request)
+    if not auth_user:
+        return unauthorized_response()
+
     try:
         data = await request.json()
     except Exception:
         return web.json_response({"error": "invalid json"}, status=400)
     
-    auth_user = extract_auth_user(request)
-    raw_user_id = data.get("user_id")
+    # user_id faqat imzolangan initData'dan olinadi — body'dagi user_id e'tiborga olinmaydi
+    user_id = str(auth_user.get("id"))
     friend_id = data.get("friend_id")
-
-    if auth_user:
-        user_id = str(auth_user.get("id"))
-    elif request.headers.get("X-Telegram-Init-Data"):
-        resp = web.json_response({"error": "Unauthorized / invalid signature"}, status=401)
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        return resp
-    else:
-        user_id = raw_user_id
 
     if not user_id or not friend_id:
         return web.json_response({"error": "user_id and friend_id required"}, status=400)
@@ -671,15 +745,17 @@ async def api_unfriend(request):
     return resp
 
 recent_ratings = {}
+recent_pair_ratings = {}
 
 async def api_rate_partner(request):
     if request.method == 'OPTIONS':
-        resp = web.Response()
-        resp.headers['Access-Control-Allow-Origin'] = '*'
-        resp.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-        resp.headers['Access-Control-Allow-Headers'] = '*'
-        return resp
-        
+        return web.Response()
+
+    auth_user = extract_auth_user(request)
+    if not auth_user:
+        return unauthorized_response()
+    rater_id_raw = str(auth_user.get("id"))
+
     try:
         data = await request.json()
     except Exception:
@@ -688,47 +764,24 @@ async def api_rate_partner(request):
     target_id_raw = data.get("partner_id")
     action = data.get("action")
     
-    auth_user = extract_auth_user(request)
-    if auth_user:
-        rater_id_raw = str(auth_user.get("id"))
-    elif request.headers.get("X-Telegram-Init-Data"):
-        resp = web.json_response({"error": "Unauthorized / invalid signature"}, status=401)
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        return resp
-    else:
-        rater_id_raw = data.get("rater_id") or "anon"
-    
     if not target_id_raw or action not in ["like", "dislike"]:
-        resp = web.json_response({"error": "partner_id and action required"}, status=400)
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        return resp
+        return web.json_response({"error": "partner_id and action required"}, status=400)
         
     try:
         target_id = int(target_id_raw)
     except (ValueError, TypeError):
-        resp = web.json_response({"error": "invalid partner_id"}, status=400)
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        return resp
+        return web.json_response({"error": "invalid partner_id"}, status=400)
 
     # Foydalanuvchi o'ziga o'zi baho bera olmaydi
     if str(rater_id_raw) == str(target_id):
-        resp = web.json_response({"error": "O'zingizni baholay olmaysiz"}, status=400)
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        return resp
+        return web.json_response({"error": "O'zingizni baholay olmaysiz"}, status=400)
         
     # Rate limit: 60 soniya ichida ko'pi bilan 10 marta baholash
-    now_ts = time.time()
-    rate_key = str(rater_id_raw)
-    rater_history = [t for t in recent_ratings.get(rate_key, []) if now_ts - t < 60]
-    if len(rater_history) >= 10:
-        resp = web.json_response({"success": False, "message": "Juda ko'p so'rov, 1 daqiqa kuting"}, status=429)
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        return resp
-    rater_history.append(now_ts)
-    recent_ratings[rate_key] = rater_history
-    if len(recent_ratings) > 500:
-        recent_ratings.clear()
-        recent_ratings[rate_key] = rater_history
+    if not check_rate_limit(recent_ratings, rater_id_raw, limit=10, window=60):
+        return web.json_response({"success": False, "message": "Juda ko'p so'rov, 1 daqiqa kuting"}, status=429)
+    # Bitta sherikni 10 daqiqada faqat 1 marta baholash mumkin (dislike spamiga qarshi)
+    if not check_rate_limit(recent_pair_ratings, f"{rater_id_raw}:{target_id}", limit=1, window=600):
+        return web.json_response({"success": False, "message": "Bu sherikni allaqachon baholagansiz"}, status=429)
         
     if db_pool:
         async with db_pool.acquire() as conn:
@@ -748,72 +801,65 @@ async def api_rate_partner(request):
                 users[target_str]["dislikes"] = cur_dislikes + 1
             await write_users_file(users)
                         
-    resp = web.json_response({"success": True})
-    resp.headers["Access-Control-Allow-Origin"] = "*"
-    return resp
+    return web.json_response({"success": True})
 
 ai_analyze_rate_limits = {}
+ai_analyze_daily_limits = {}
 
 async def api_ai_analyze(request):
     if request.method == 'OPTIONS':
-        resp = web.Response()
-        resp.headers['Access-Control-Allow-Origin'] = '*'
-        resp.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-        resp.headers['Access-Control-Allow-Headers'] = '*'
-        return resp
+        return web.Response()
 
+    # Gemini kalitimiz faqat haqiqiy Telegram foydalanuvchilari uchun
     auth_user = extract_auth_user(request)
-    client_ip = request.remote or "unknown"
-    rate_key = str(auth_user.get("id")) if auth_user else client_ip
+    if not auth_user:
+        return unauthorized_response()
+    rate_key = str(auth_user.get("id"))
 
-    # Rate limit: max 15 requests per 60 seconds
-    now_ts = time.time()
-    history_reqs = [t for t in ai_analyze_rate_limits.get(rate_key, []) if now_ts - t < 60]
-    if len(history_reqs) >= 15:
-        resp = web.json_response({"error": "Juda ko'p so'rov yuborildi. Iltimos, 1 daqiqa kuting."}, status=429)
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        return resp
-    history_reqs.append(now_ts)
-    ai_analyze_rate_limits[rate_key] = history_reqs
-    if len(ai_analyze_rate_limits) > 500:
-        ai_analyze_rate_limits.clear()
-        ai_analyze_rate_limits[rate_key] = history_reqs
+    # Rate limit: max 15 requests per 60 seconds, 200 per day
+    if not check_rate_limit(ai_analyze_rate_limits, rate_key, limit=15, window=60) or \
+       not check_rate_limit(ai_analyze_daily_limits, rate_key, limit=200, window=86400):
+        return web.json_response({"error": "Juda ko'p so'rov yuborildi. Iltimos, keyinroq urinib ko'ring."}, status=429)
         
     try:
         data = await request.json()
     except Exception:
         return web.json_response({"error": "invalid json"}, status=400)
+    if not isinstance(data, dict):
+        return web.json_response({"error": "invalid json"}, status=400)
         
     system_prompt = data.get("systemPrompt", "")
     user_message = data.get("userMessage", "")
     history = data.get("history", [])
+    if not isinstance(system_prompt, str) or not isinstance(user_message, str) or not isinstance(history, list):
+        return web.json_response({"error": "invalid payload"}, status=400)
 
-    if len(user_message) > 2500:
-        resp = web.json_response({"error": "Xabar juda uzun (maksimal 2500 belgi)"}, status=400)
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        return resp
+    if len(user_message) > AI_MAX_USER_MESSAGE:
+        return web.json_response({"error": "Xabar juda uzun (maksimal 2500 belgi)"}, status=400)
+    if len(system_prompt) > AI_MAX_SYSTEM_PROMPT:
+        return web.json_response({"error": "Kontekst juda uzun"}, status=400)
     
     gemini_key = os.getenv("ENGLISH_GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY", "")
     if not gemini_key:
-        resp = web.json_response({"error": "No server API key"}, status=503)
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        return resp
+        return web.json_response({"error": "AI xizmati vaqtincha mavjud emas"}, status=503)
         
     contents = []
     for m in history[-6:]:
+        if not isinstance(m, dict):
+            continue
         contents.append({
             "role": "model" if m.get("role") == "assistant" else "user",
-            "parts": [{"text": m.get("content", "")}]
+            "parts": [{"text": str(m.get("content", ""))[:AI_MAX_HISTORY_ITEM]}]
         })
     contents.append({
         "role": "user",
         "parts": [{"text": user_message}]
     })
     
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key.strip()}"
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
     async with ClientSession() as session:
         try:
-            async with session.post(url, json={
+            async with session.post(url, headers={"x-goog-api-key": gemini_key.strip()}, json={
                 "systemInstruction": {"parts": [{"text": system_prompt}]},
                 "contents": contents,
                 "generationConfig": {"temperature": 0.7, "maxOutputTokens": 500}
@@ -840,20 +886,26 @@ waiting_pool = []
 active_rooms = {}
 
 async def ws_matchmake(request):
-    ws = web.WebSocketResponse(max_msg_size=16 * 1024 * 1024)
-    await ws.prepare(request)
-    
+    # Cross-site WebSocket hijacking'ga qarshi: brauzer Origin'i ruxsat etilganlardan bo'lishi kerak
+    origin = request.headers.get("Origin")
+    if origin and origin not in ALLOWED_ORIGINS:
+        return web.json_response({"error": "Forbidden origin"}, status=403)
+
     auth_user = extract_auth_user(request)
-    if auth_user:
-        user_id = str(auth_user.get("id"))
-        user_name = auth_user.get("first_name") or request.query.get("user_name") or "Foydalanuvchi"
-    else:
-        user_id = request.query.get("user_id") or "guest"
-        user_name = request.query.get("user_name") or "Foydalanuvchi"
-        
-    gender = request.query.get("gender") or "male"
-    filter_gender = request.query.get("filter_gender") or "any"
-    room_id = request.query.get("room_id") or ""
+    if not auth_user:
+        return unauthorized_response()
+
+    user_id = str(auth_user.get("id"))
+    user_name = (auth_user.get("first_name") or request.query.get("user_name") or "Foydalanuvchi").strip()[:40] or "Foydalanuvchi"
+
+    gender = request.query.get("gender") if request.query.get("gender") in ("male", "female") else "male"
+    filter_gender = request.query.get("filter_gender") if request.query.get("filter_gender") in ("male", "female", "any") else "any"
+    raw_room = (request.query.get("room_id") or "").strip()
+    room_id = raw_room if ROOM_ID_RE.match(raw_room) else ""
+
+    # Ovozli xabarlar (base64) uchun 3 MB yetarli; 16 MB DoS uchun juda katta edi
+    ws = web.WebSocketResponse(max_msg_size=3 * 1024 * 1024, heartbeat=30)
+    await ws.prepare(request)
     
     user_data = {"name": user_name, "username": "", "likes": 0, "dislikes": 0, "gender": gender}
     is_unblocked = True
@@ -891,14 +943,14 @@ async def ws_matchmake(request):
         'active_room': None
     }
     
-    # Filter out dead/closed sockets
-    clean_pool = [p for p in waiting_pool if not p['ws'].closed and p['ws'] != ws]
+    # Filter out dead/closed sockets va shu foydalanuvchining eski navbatdagi yozuvlari
+    clean_pool = [p for p in waiting_pool if not p['ws'].closed and p['ws'] != ws and p['user_id'] != user_id]
     waiting_pool.clear()
     waiting_pool.extend(clean_pool)
     
     matched = False
     for p in waiting_pool:
-        if p['ws'].closed or p['ws'] == ws:
+        if p['ws'].closed or p['ws'] == ws or p['user_id'] == user_id:
             continue
             
         is_compatible = False
@@ -953,7 +1005,7 @@ async def ws_matchmake(request):
                     data = msg.json()
                 except Exception:
                     continue
-                if data.get("type") in ["match_found"]:
+                if not isinstance(data, dict) or data.get("type") in ["match_found", "partner_left", "waiting"]:
                     continue
                 active_room_id = me['active_room']
                 if active_room_id and active_room_id in active_rooms:
@@ -984,10 +1036,9 @@ async def ws_matchmake(request):
 
 async def api_get_friends(request):
     auth_user = extract_auth_user(request)
-    raw_user_id = request.query.get("user_id")
-    user_id = str(auth_user.get("id")) if auth_user else raw_user_id
-    if not user_id:
-        return web.json_response({"error": "user_id required"}, status=400)
+    if not auth_user:
+        return unauthorized_response()
+    user_id = str(auth_user.get("id"))
     
     friends = []
     added_ids = set()
@@ -1076,15 +1127,12 @@ async def api_get_friends(request):
 
 async def api_user_status(request):
     if request.method == "OPTIONS":
-        resp = web.Response()
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        resp.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-        resp.headers["Access-Control-Allow-Headers"] = "*"
-        return resp
+        return web.Response()
 
-    user_id = request.query.get("user_id")
-    if not user_id:
-        return web.json_response({"error": "user_id required"}, status=400)
+    auth_user = extract_auth_user(request)
+    if not auth_user:
+        return unauthorized_response()
+    user_id = str(auth_user.get("id"))
     
     cur_likes = 0
     cur_dislikes = 0
@@ -1103,7 +1151,7 @@ async def api_user_status(request):
         cur_likes = udata.get("likes", 0) or 0
         cur_dislikes = udata.get("dislikes", 0) or 0
         
-    resp = web.json_response({
+    return web.json_response({
         "user_id": str(user_id),
         "likes": cur_likes,
         "dislikes": cur_dislikes,
@@ -1112,8 +1160,6 @@ async def api_user_status(request):
         "is_unblocked": True,
         "is_locked": False
     })
-    resp.headers["Access-Control-Allow-Origin"] = "*"
-    return resp
 
 import edge_tts
 import urllib.parse
@@ -1124,27 +1170,16 @@ tts_rate_limits = {}
 
 async def api_tts(request):
     if request.method == "OPTIONS":
-        resp = web.Response()
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        resp.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-        resp.headers["Access-Control-Allow-Headers"] = "*"
-        return resp
+        return web.Response()
 
-    client_ip = request.remote or "unknown"
-    now_ts = time.time()
-    ip_history = [t for t in tts_rate_limits.get(client_ip, []) if now_ts - t < 60]
-    if len(ip_history) >= 30:
-        resp = web.json_response({"error": "TTS so'rovlari ko'payib ketdi, 1 daqiqa kuting"}, status=429)
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        return resp
-    ip_history.append(now_ts)
-    tts_rate_limits[client_ip] = ip_history
-    if len(tts_rate_limits) > 500:
-        tts_rate_limits.clear()
-        tts_rate_limits[client_ip] = ip_history
+    client_ip = get_client_ip(request)
+    if not check_rate_limit(tts_rate_limits, client_ip, limit=30, window=60):
+        return web.json_response({"error": "TTS so'rovlari ko'payib ketdi, 1 daqiqa kuting"}, status=429)
 
     text = request.query.get("text", "").strip()[:500]
     voice = request.query.get("voice", "en-GB-RyanNeural").strip()
+    if not TTS_VOICE_RE.match(voice):
+        voice = "en-GB-RyanNeural"
     if not text:
         return web.json_response({"error": "text required"}, status=400)
 
@@ -1188,23 +1223,18 @@ async def api_tts(request):
 
 async def api_sync_data(request):
     if request.method == "OPTIONS":
-        resp = web.Response()
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-        resp.headers["Access-Control-Allow-Headers"] = "*"
-        return resp
+        return web.Response()
 
+    # Faqat imzolangan initData egasi o'z ma'lumotini o'qiy/yoza oladi (IDOR himoyasi)
     auth_user = extract_auth_user(request)
+    if not auth_user:
+        return unauthorized_response()
+    try:
+        uid = int(auth_user.get("id"))
+    except (ValueError, TypeError):
+        return unauthorized_response()
 
     if request.method == "GET":
-        user_id_raw = str(auth_user.get("id")) if auth_user else request.query.get("user_id")
-        if not user_id_raw:
-            return web.json_response({"error": "user_id required"}, status=400)
-        try:
-            uid = int(user_id_raw)
-        except (ValueError, TypeError):
-            return web.json_response({"error": "invalid user_id"}, status=400)
-
         data = None
         if db_pool:
             try:
@@ -1216,29 +1246,30 @@ async def api_sync_data(request):
             except Exception as e:
                 logging.error(f"Error fetching sync data: {e}")
 
-        resp = web.json_response({"success": True, "data": data})
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        return resp
+        return web.json_response({"success": True, "data": data})
 
     if request.method == "POST":
+        if request.content_length and request.content_length > MAX_SYNC_BYTES:
+            return web.json_response({"error": "Ma'lumot hajmi juda katta"}, status=413)
         try:
             body = await request.json()
+        except web.HTTPRequestEntityTooLarge:
+            return web.json_response({"error": "Ma'lumot hajmi juda katta"}, status=413)
         except Exception:
             return web.json_response({"error": "invalid json"}, status=400)
+        if not isinstance(body, dict):
+            return web.json_response({"error": "invalid json"}, status=400)
 
-        user_id_raw = str(auth_user.get("id")) if auth_user else body.get("user_id")
         sync_payload = body.get("data")
-        if not user_id_raw or sync_payload is None:
-            return web.json_response({"error": "user_id and data required"}, status=400)
+        if not isinstance(sync_payload, dict):
+            return web.json_response({"error": "data required"}, status=400)
 
-        try:
-            uid = int(user_id_raw)
-        except (ValueError, TypeError):
-            return web.json_response({"error": "invalid user_id"}, status=400)
+        payload_json = json.dumps(sync_payload)
+        if len(payload_json.encode("utf-8")) > MAX_SYNC_BYTES:
+            return web.json_response({"error": "Ma'lumot hajmi juda katta"}, status=413)
 
         if db_pool:
             try:
-                payload_json = json.dumps(sync_payload)
                 async with db_pool.acquire() as conn:
                     await conn.execute("""
                         INSERT INTO user_sync (user_id, sync_data, updated_at)
@@ -1247,10 +1278,11 @@ async def api_sync_data(request):
                     """, uid, payload_json)
             except Exception as e:
                 logging.error(f"Error saving sync data: {e}")
+                return web.json_response({"error": "Saqlashda xatolik"}, status=500)
 
-        resp = web.json_response({"success": True})
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        return resp
+        return web.json_response({"success": True})
+
+    return web.json_response({"error": "Method not allowed"}, status=405)
 
 @web.middleware
 async def cors_middleware(request, handler):
@@ -1259,19 +1291,42 @@ async def cors_middleware(request, handler):
     else:
         try:
             resp = await handler(request)
+        except web.HTTPException as e:
+            resp = web.json_response({"error": e.reason}, status=e.status)
         except Exception as e:
-            logging.error(f"Error handling request {request.path}: {e}")
-            resp = web.json_response({"error": str(e)}, status=500)
-    resp.headers["Access-Control-Allow-Origin"] = "*"
-    resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS, PUT, DELETE"
-    resp.headers["Access-Control-Allow-Headers"] = "*"
+            # Ichki xato tafsilotlari faqat logga yoziladi, mijozga umumiy xabar qaytadi
+            logging.exception(f"Error handling request {request.path}: {e}")
+            resp = web.json_response({"error": "Internal server error"}, status=500)
+
+    # WebSocket kabi allaqachon yuborilgan javoblarning headerlarini o'zgartirib bo'lmaydi
+    if getattr(resp, "prepared", False):
+        return resp
+
+    origin = request.headers.get("Origin")
+    for h in ("Access-Control-Allow-Origin", "Access-Control-Allow-Methods", "Access-Control-Allow-Headers"):
+        resp.headers.pop(h, None)
+    if origin and origin in ALLOWED_ORIGINS:
+        resp.headers["Access-Control-Allow-Origin"] = origin
+        resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Telegram-Init-Data"
+        resp.headers["Access-Control-Max-Age"] = "600"
+    resp.headers["Vary"] = "Origin"
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["Referrer-Policy"] = "no-referrer"
     return resp
 
 async def on_app_startup(app: web.Application):
     await init_db()
     if WEBHOOK_URL:
-        await bot.set_webhook(f"{WEBHOOK_URL}/webhook", drop_pending_updates=False)
-        logging.info(f"Webhook set to {WEBHOOK_URL}/webhook")
+        # secret_token: Telegram har bir so'rovga X-Telegram-Bot-Api-Secret-Token qo'shadi,
+        # shuning uchun soxta (masalan, "admin" nomidan) update yuborib bo'lmaydi
+        await bot.set_webhook(
+            f"{WEBHOOK_URL}/webhook",
+            drop_pending_updates=False,
+            secret_token=WEBHOOK_SECRET,
+            allowed_updates=["message", "chat_member", "my_chat_member", "callback_query"],
+        )
+        logging.info(f"Webhook set to {WEBHOOK_URL}/webhook (secret token enabled)")
     else:
         await bot.delete_webhook(drop_pending_updates=False)
         app['polling_task'] = asyncio.create_task(
@@ -1318,7 +1373,7 @@ def main():
     app.on_cleanup.append(on_app_cleanup)
 
     if WEBHOOK_URL:
-        webhook_requests_handler = SimpleRequestHandler(dispatcher=dp, bot=bot)
+        webhook_requests_handler = SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET)
         webhook_requests_handler.register(app, path="/webhook")
         setup_application(app, dp, bot=bot)
 
