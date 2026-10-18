@@ -50,7 +50,7 @@ export const MultilevelDashboard: React.FC<Props> = ({
     const avg =
       validScores.length > 0
         ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
-        : 68; // Target C1 (65-75 ball)
+        : 0;
 
     return {
       speakingScore: lastSpeaking?.overallBand !== undefined ? `${lastSpeaking.overallBand}/75` : null,
@@ -64,6 +64,10 @@ export const MultilevelDashboard: React.FC<Props> = ({
   // A2: Smooth count-up animation for the 75-Point Speedometer when entering menu
   useEffect(() => {
     if (activeView !== 'menu') return;
+    if (!hasRealScore) {
+      setAnimatedPoints(0);
+      return;
+    }
     setAnimatedPoints(0);
     let frame: number;
     const duration = 1100;
@@ -76,7 +80,7 @@ export const MultilevelDashboard: React.FC<Props> = ({
     };
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, [activeView, targetOrAvgPoints]);
+  }, [activeView, targetOrAvgPoints, hasRealScore]);
 
   if (activeView === 'speaking') {
     return <MultilevelSpeakingView onBack={() => setActiveView('menu')} userName={userName} />;
@@ -107,15 +111,21 @@ export const MultilevelDashboard: React.FC<Props> = ({
   }
 
   const arcLength = 119.38;
-  const arcProgress = Math.min(1, animatedPoints / 75);
+  const arcProgress = hasRealScore ? Math.min(1, animatedPoints / 75) : 0;
   const strokeDashoffset = arcLength * (1 - arcProgress);
-  const cefrBadge = animatedPoints >= 65 ? 'C1' : animatedPoints >= 51 ? 'B2' : 'B1';
+  const cefrBadge = animatedPoints >= 65 ? 'C1' : animatedPoints >= 51 ? 'B2' : animatedPoints >= 38 ? 'B1' : '—';
 
   // ── MAIN DASHBOARD MENU ──
   return (
-    <div className="english-root min-h-screen bg-[#0e0d1d] flex flex-col text-white pb-10">
+    <div
+      className="english-root english-dark min-h-screen flex flex-col text-white pb-10"
+      style={{ backgroundColor: '#0e0d1d', minHeight: '100vh', color: '#ffffff' }}
+    >
       {/* ── Top Header ── */}
-      <div className="px-5 pt-5 pb-3 flex items-center justify-between sticky top-0 z-20 bg-[#0e0d1d]/90 backdrop-blur-md">
+      <div
+        className="px-5 pt-5 pb-3 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md"
+        style={{ backgroundColor: 'rgba(14, 13, 29, 0.95)' }}
+      >
         <button
           onClick={onBack}
           className="w-9 h-9 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
@@ -155,10 +165,12 @@ export const MultilevelDashboard: React.FC<Props> = ({
               <span>{hasRealScore ? `O'RTACHA BALL (${cefrBadge})` : 'MAQSAD: CEFR C1 (65+ BALL)'}</span>
             </span>
             <h3 className="text-lg font-black leading-snug">
-              Multilevel Speaking, Reading & Writing 🎯
+              {hasRealScore ? `Multilevel Natijangiz: ${animatedPoints} ball` : 'Hali sinov topshirilmadi'}
             </h3>
             <p className="text-[11px] text-teal-100/90 leading-relaxed">
-              Xush kelibsiz, <strong>{userName}</strong>! Rasmiy DTM 75 ballik shkala bo'yicha o'z darajangizni sinang.
+              {hasRealScore
+                ? `Xush kelibsiz, ${userName}! DTM 75 ballik shkala bo'yicha har bir test natijangiz yangilanadi.`
+                : `Xush kelibsiz, ${userName}! Speaking, Reading yoki Writing testini topshiring va 75 ballik rasmiy bahongizni oling.`}
             </p>
           </div>
 
@@ -179,24 +191,39 @@ export const MultilevelDashboard: React.FC<Props> = ({
                 strokeWidth="8"
                 strokeLinecap="round"
               />
-              <path
-                d="M 10 48 A 38 38 0 0 1 86 48"
-                fill="none"
-                stroke="url(#mlGaugeGrad)"
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeDasharray={arcLength}
-                strokeDashoffset={strokeDashoffset}
-                style={{ filter: 'drop-shadow(0 0 6px rgba(52, 211, 153, 0.55))' }}
-              />
+              {hasRealScore && (
+                <path
+                  d="M 10 48 A 38 38 0 0 1 86 48"
+                  fill="none"
+                  stroke="url(#mlGaugeGrad)"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray={arcLength}
+                  strokeDashoffset={strokeDashoffset}
+                  style={{ filter: 'drop-shadow(0 0 6px rgba(52, 211, 153, 0.55))' }}
+                />
+              )}
             </svg>
             <div className="absolute bottom-0.5 flex flex-col items-center leading-none">
-              <span className="text-base font-black text-[#c4f82a] tracking-tight">
-                {animatedPoints} <span className="text-[10px] text-emerald-200">/75</span>
-              </span>
-              <span className="text-[8px] font-black uppercase tracking-widest text-emerald-300">
-                CEFR {cefrBadge}
-              </span>
+              {hasRealScore ? (
+                <>
+                  <span className="text-base font-black text-[#c4f82a] tracking-tight">
+                    {animatedPoints} <span className="text-[10px] text-emerald-200">/75</span>
+                  </span>
+                  <span className="text-[8px] font-black uppercase tracking-widest text-emerald-300">
+                    CEFR {cefrBadge}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-base font-black text-emerald-300 tracking-tight">
+                    —
+                  </span>
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-emerald-400">
+                    / 75 BALL
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>

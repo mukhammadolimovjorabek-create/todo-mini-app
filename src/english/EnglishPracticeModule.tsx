@@ -93,7 +93,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
 
   if (selectedExam === 'ielts') {
     return (
-      <div className="english-root">
+      <div className="english-root english-dark min-h-screen" style={{ backgroundColor: '#0e0d1d', minHeight: '100vh' }}>
         {!profile && (
           <RegistrationModal
             initialName={telegramUser?.first_name}
@@ -113,7 +113,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
 
   if (selectedExam === 'multilevel') {
     return (
-      <div className="english-root">
+      <div className="english-root english-dark min-h-screen" style={{ backgroundColor: '#0e0d1d', minHeight: '100vh' }}>
         {!profile && (
           <RegistrationModal
             initialName={telegramUser?.first_name}

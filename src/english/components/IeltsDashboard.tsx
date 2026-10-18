@@ -48,7 +48,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
     const avg =
       validScores.length > 0
         ? Math.round((validScores.reduce((a, b) => a + b, 0) / validScores.length) * 2) / 2
-        : 7.5;
+        : 0;
 
     return {
       readingScore:
@@ -73,6 +73,10 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
   // A2 & A3: Smooth count-up animation for the Band Speedometer when entering menu
   useEffect(() => {
     if (activeView !== 'menu') return;
+    if (!hasRealScore) {
+      setAnimatedBand(0);
+      return;
+    }
     setAnimatedBand(0);
     let frame: number;
     const duration = 1100;
@@ -85,7 +89,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
     };
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, [activeView, targetOrAvgBand]);
+  }, [activeView, targetOrAvgBand, hasRealScore]);
 
   if (activeView === 'reading') {
     return <IeltsReadingView onBack={() => setActiveView('menu')} userName={userName} />;
@@ -105,13 +109,19 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
 
   // Arc math for semi-circle gauge (radius = 38, circumference half = PI * 38 ≈ 119.38)
   const arcLength = 119.38;
-  const arcProgress = Math.min(1, animatedBand / 9.0);
+  const arcProgress = hasRealScore ? Math.min(1, animatedBand / 9.0) : 0;
   const strokeDashoffset = arcLength * (1 - arcProgress);
 
   return (
-    <div className="english-root min-h-screen bg-[#0e0d1d] flex flex-col text-white pb-10">
+    <div
+      className="english-root english-dark min-h-screen flex flex-col text-white pb-10"
+      style={{ backgroundColor: '#0e0d1d', minHeight: '100vh', color: '#ffffff' }}
+    >
       {/* ── Top Header ── */}
-      <div className="px-5 pt-5 pb-3 flex items-center justify-between sticky top-0 z-20 bg-[#0e0d1d]/90 backdrop-blur-md">
+      <div
+        className="px-5 pt-5 pb-3 flex items-center justify-between sticky top-0 z-20 backdrop-blur-md"
+        style={{ backgroundColor: 'rgba(14, 13, 29, 0.95)' }}
+      >
         <button
           onClick={onBack}
           className="w-9 h-9 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all"
@@ -134,7 +144,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
       <div className="p-5 flex-1 max-w-md mx-auto w-full space-y-4">
         {/* Title Section */}
         <div className="space-y-1 eng-cascade-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300/80">
+          <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300">
             BO'LIMNI TANLANG
           </span>
           <h1 className="text-2xl font-black text-white leading-tight">
@@ -151,15 +161,15 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
           <div className="space-y-1 relative z-10 pr-2">
             <span className="inline-flex items-center space-x-1 text-[9px] font-black uppercase tracking-wider text-[#c4f82a] bg-white/10 px-2.5 py-0.5 rounded-full border border-white/10">
               <Sparkles size={10} />
-              <span>{hasRealScore ? "O'RTACHA NATIJANGIZ" : 'MAQSAD REJASI (TARGET)'}</span>
+              <span>{hasRealScore ? "O'RTACHA NATIJANGIZ" : 'MAQSAD: BAND 7.5+'}</span>
             </span>
             <h3 className="text-base font-black text-white leading-snug pt-0.5">
-              {hasRealScore ? `Hozirgi daraja: Band ${animatedBand.toFixed(1)}` : 'Maqsad: IELTS Band 7.5+'}
+              {hasRealScore ? `Hozirgi daraja: Band ${animatedBand.toFixed(1)}` : 'Hali sinov topshirilmadi'}
             </h3>
             <p className="text-[11px] text-indigo-200/80 leading-relaxed">
               {hasRealScore
                 ? 'Har bir yangi mashq natijangizni 9.0 shkala bo‘yicha yangilaydi.'
-                : 'Speaking, Reading va Writing sinovlarini topshirib, Band ballingizni oshiring!'}
+                : 'Speaking, Reading yoki Writing sinovini topshirib, o\'z haqiqiy Band darajangizni aniqlang!'}
             </p>
           </div>
 
@@ -181,25 +191,40 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
                 strokeWidth="8"
                 strokeLinecap="round"
               />
-              {/* Animated Foreground Arc */}
-              <path
-                d="M 10 48 A 38 38 0 0 1 86 48"
-                fill="none"
-                stroke="url(#ieltsGaugeGrad)"
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeDasharray={arcLength}
-                strokeDashoffset={strokeDashoffset}
-                style={{ filter: 'drop-shadow(0 0 6px rgba(196, 248, 42, 0.5))' }}
-              />
+              {/* Animated Foreground Arc (only when user has actual scores) */}
+              {hasRealScore && (
+                <path
+                  d="M 10 48 A 38 38 0 0 1 86 48"
+                  fill="none"
+                  stroke="url(#ieltsGaugeGrad)"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray={arcLength}
+                  strokeDashoffset={strokeDashoffset}
+                  style={{ filter: 'drop-shadow(0 0 6px rgba(196, 248, 42, 0.5))' }}
+                />
+              )}
             </svg>
             <div className="absolute bottom-0.5 flex flex-col items-center leading-none">
-              <span className="text-base font-black text-[#c4f82a] tracking-tight">
-                {animatedBand.toFixed(1)}
-              </span>
-              <span className="text-[8px] font-bold uppercase tracking-widest text-indigo-300">
-                / 9.0 BAND
-              </span>
+              {hasRealScore ? (
+                <>
+                  <span className="text-base font-black text-[#c4f82a] tracking-tight">
+                    {animatedBand.toFixed(1)}
+                  </span>
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-indigo-300">
+                    / 9.0 BAND
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-base font-black text-indigo-300 tracking-tight">
+                    —
+                  </span>
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-indigo-400">
+                    / 9.0 BAND
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
