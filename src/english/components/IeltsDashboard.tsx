@@ -30,12 +30,19 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
   // Compute last scores & active days from test history (refreshes whenever activeView changes back to 'menu')
   const { readingScore, writingScore, speakingScore, activeDaysCount, targetOrAvgBand, hasRealScore } = useMemo(() => {
     const results = getTestResults();
-    const lastReading = results.find((r) => r.testType === 'reading' && !r.id.startsWith('ml_'));
+    const isIeltsValid = (r: { id: string; title: string; overallBand: number }) =>
+      !r.id.startsWith('ml_') &&
+      !r.title.includes('Multilevel') &&
+      typeof r.overallBand === 'number' &&
+      r.overallBand > 0 &&
+      r.overallBand <= 9.0;
+
+    const lastReading = results.find((r) => r.testType === 'reading' && isIeltsValid(r));
     const lastWriting = results.find(
-      (r) => (r.testType === 'writing_task1' || r.testType === 'writing_task2') && !r.id.startsWith('ml_')
+      (r) => (r.testType === 'writing_task1' || r.testType === 'writing_task2') && isIeltsValid(r)
     );
     const lastSpeaking = results.find(
-      (r) => r.testType.startsWith('speaking_') && !r.id.startsWith('ml_') && r.overallBand <= 9.0
+      (r) => r.testType.startsWith('speaking_') && isIeltsValid(r)
     );
     const uniqueDates = new Set(results.map((r) => r.date).filter(Boolean));
 
@@ -43,7 +50,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
       lastReading?.overallBand,
       lastWriting?.overallBand,
       lastSpeaking?.overallBand,
-    ].filter((v): v is number => typeof v === 'number' && v > 0);
+    ].filter((v): v is number => typeof v === 'number' && v > 0 && v <= 9.0);
 
     const avg =
       validScores.length > 0
@@ -51,19 +58,9 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
         : 0;
 
     return {
-      readingScore:
-        lastReading?.overallBand !== undefined
-          ? lastReading.overallBand === 0
-            ? 'None'
-            : lastReading.overallBand.toFixed(1)
-          : null,
-      writingScore: lastWriting?.overallBand ? lastWriting.overallBand.toFixed(1) : null,
-      speakingScore:
-        lastSpeaking?.overallBand !== undefined
-          ? lastSpeaking.overallBand === 0
-            ? '0.0'
-            : lastSpeaking.overallBand.toFixed(1)
-          : null,
+      readingScore: lastReading ? lastReading.overallBand.toFixed(1) : null,
+      writingScore: lastWriting ? lastWriting.overallBand.toFixed(1) : null,
+      speakingScore: lastSpeaking ? lastSpeaking.overallBand.toFixed(1) : null,
       activeDaysCount: Math.max(1, uniqueDates.size),
       targetOrAvgBand: avg,
       hasRealScore: validScores.length > 0,

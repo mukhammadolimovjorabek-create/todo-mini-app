@@ -2,7 +2,8 @@ import type { EnglishUserProfile, TestResultItem } from '../types';
 
 const PROFILE_KEY = 'english_profile_v1';
 const RULES_ACCEPTED_KEY = 'english_rules_accepted_v1';
-const TEST_RESULTS_KEY = 'english_test_results_v1';
+const LEGACY_TEST_RESULTS_KEY = 'english_test_results_v1';
+const TEST_RESULTS_KEY = 'english_test_results_v2';
 const SEEN_QUESTIONS_KEY = 'english_seen_questions_v1';
 
 export const getEnglishProfile = (): EnglishUserProfile | null => {
@@ -36,6 +37,10 @@ export const acceptEnglishRules = () => {
 // ── Test History Results ──
 export const getTestResults = (): TestResultItem[] => {
   try {
+    // Wipe legacy v1 uncalibrated/corrupted scores from existing users' devices
+    if (localStorage.getItem(LEGACY_TEST_RESULTS_KEY) !== null) {
+      localStorage.removeItem(LEGACY_TEST_RESULTS_KEY);
+    }
     const raw = localStorage.getItem(TEST_RESULTS_KEY);
     if (raw) return JSON.parse(raw);
   } catch {}
@@ -44,6 +49,10 @@ export const getTestResults = (): TestResultItem[] => {
 
 export const saveTestResult = (item: TestResultItem): void => {
   try {
+    // Never save empty/zero-score attempts as real completed mocks
+    if (!item || typeof item.overallBand !== 'number' || item.overallBand <= 0) {
+      return;
+    }
     const existing = getTestResults();
     const updated = [item, ...existing];
     localStorage.setItem(TEST_RESULTS_KEY, JSON.stringify(updated.slice(0, 50)));

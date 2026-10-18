@@ -37,9 +37,11 @@ export const MultilevelDashboard: React.FC<Props> = ({
 
   const { speakingScore, writingScore, readingScore, targetOrAvgPoints, hasRealScore } = useMemo(() => {
     const results = getTestResults();
-    const lastSpeaking = results.find((r) => r.id.startsWith('ml_speaking_') || r.id.startsWith('ml_test_'));
-    const lastWriting = results.find((r) => r.id.startsWith('ml_writing_'));
-    const lastReading = results.find((r) => r.id.startsWith('ml_reading_'));
+    const lastSpeaking = results.find(
+      (r) => (r.id.startsWith('ml_speaking_') || r.id.startsWith('ml_test_')) && r.overallBand > 0
+    );
+    const lastWriting = results.find((r) => r.id.startsWith('ml_writing_') && r.overallBand > 0);
+    const lastReading = results.find((r) => r.id.startsWith('ml_reading_') && r.overallBand > 0);
 
     const validScores = [
       lastSpeaking?.overallBand,
@@ -53,9 +55,9 @@ export const MultilevelDashboard: React.FC<Props> = ({
         : 0;
 
     return {
-      speakingScore: lastSpeaking?.overallBand !== undefined ? `${lastSpeaking.overallBand}/75` : null,
-      writingScore: lastWriting?.overallBand !== undefined ? `${lastWriting.overallBand}/75` : null,
-      readingScore: lastReading?.overallBand !== undefined ? `${Math.round(lastReading.overallBand)}/75` : null,
+      speakingScore: lastSpeaking ? `${lastSpeaking.overallBand}/75` : null,
+      writingScore: lastWriting ? `${lastWriting.overallBand}/75` : null,
+      readingScore: lastReading ? `${Math.round(lastReading.overallBand)}/75` : null,
       targetOrAvgPoints: avg,
       hasRealScore: validScores.length > 0,
     };
