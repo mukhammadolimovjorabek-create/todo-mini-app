@@ -7,6 +7,7 @@ interface HeroHookSectionProps {
   coins: number;
   floatingCoin: { amount: number; key: number } | null;
   onOpenEnglish?: () => void;
+  hideIeltsCard?: boolean;
 }
 
 const TYPEWRITER_PHRASES = [
@@ -23,6 +24,7 @@ export const HeroHookSection: React.FC<HeroHookSectionProps> = ({
   coins,
   floatingCoin,
   onOpenEnglish,
+  hideIeltsCard = false,
 }) => {
   const hour = new Date().getHours();
   const isNight = hour >= 18 || hour < 6;
@@ -190,7 +192,7 @@ export const HeroHookSection: React.FC<HeroHookSectionProps> = ({
       {/* ══════════════════════════════════════════════════════════════════ */}
       {/* #10: IELTS & MULTILEVEL CARD WITH 3D TILT & SPOTLIGHT (NO #6)      */}
       {/* ══════════════════════════════════════════════════════════════════ */}
-      {onOpenEnglish && (
+      {onOpenEnglish && !hideIeltsCard && (
         <div
           ref={cardRef}
           onClick={onOpenEnglish}

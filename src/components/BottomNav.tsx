@@ -10,6 +10,7 @@ interface Props {
   userInitial?: string;
   userAvatar?: string;
   progressPct?: number;
+  onOpenEnglish?: (exam?: 'ielts' | 'multilevel' | null) => void;
 }
 
 export const BottomNav: React.FC<Props> = ({
@@ -18,22 +19,23 @@ export const BottomNav: React.FC<Props> = ({
   pendingCount = 0,
   userInitial = 'J',
   userAvatar = '',
+  onOpenEnglish,
 }) => {
   return (
-    <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-40 px-4 pb-4 select-none">
+    <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-40 px-3 pb-4 select-none">
       {/* Zamonaviy suzuvchi dock */}
-      <div className="bg-[#121124]/95 backdrop-blur-xl rounded-full p-2 flex items-center justify-between shadow-[0_12px_36px_rgba(0,0,0,0.45)] border border-white/10">
+      <div className="bg-[#121124]/95 backdrop-blur-xl rounded-full p-1.5 flex items-center justify-between shadow-[0_12px_36px_rgba(0,0,0,0.45)] border border-white/10">
         
         {/* 1. Vazifalar (Home) Tab */}
         {activeScreen === 'home' ? (
           <button
             onClick={() => { triggerHaptic('light'); onChangeScreen('home'); }}
-            className="flex items-center space-x-2 bg-[#c4f82a] text-[#121124] px-4 py-2.5 rounded-full font-bold text-xs shadow-lg shadow-lime-400/20 transition-all duration-300 active:scale-95"
+            className="flex items-center space-x-1.5 bg-[#c4f82a] text-[#121124] px-3.5 py-2 rounded-full font-bold text-xs shadow-lg shadow-lime-400/20 transition-all duration-300 active:scale-95"
           >
-            <Home size={18} strokeWidth={2.5} />
-            <span className="tracking-tight text-[13px] font-black">Vazifalar</span>
+            <Home size={17} strokeWidth={2.5} />
+            <span className="tracking-tight text-[12px] font-black">Vazifalar</span>
             {pendingCount > 0 && (
-              <span className="w-5 h-5 rounded-full bg-[#121124] text-[#c4f82a] text-[10px] font-black flex items-center justify-center">
+              <span className="w-4 h-4 rounded-full bg-[#121124] text-[#c4f82a] text-[9px] font-black flex items-center justify-center">
                 {pendingCount}
               </span>
             )}
@@ -41,15 +43,41 @@ export const BottomNav: React.FC<Props> = ({
         ) : (
           <button
             onClick={() => { triggerHaptic('light'); onChangeScreen('home'); }}
-            className="relative w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 active:scale-90"
+            className="relative w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200 active:scale-90"
             title="Vazifalar"
           >
-            <Home size={20} strokeWidth={2} />
+            <Home size={19} strokeWidth={2} />
             {pendingCount > 0 && (
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#c4f82a] ring-2 ring-[#121124]" />
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#c4f82a] ring-2 ring-[#121124]" />
             )}
           </button>
         )}
+
+        {/* 2. EXPERT NEON REACTOR TAB: IELTS & Multilevel (Vazifalar yonida!) */}
+        <button
+          onClick={() => {
+            triggerHaptic('heavy');
+            onOpenEnglish?.(null);
+          }}
+          className="relative p-[1.5px] rounded-full overflow-hidden shadow-[0_0_14px_rgba(196,248,42,0.28)] active:scale-90 transition-all duration-200 group cursor-pointer"
+          title="IELTS & Multilevel Practice"
+        >
+          {/* Spinning Laser Ring */}
+          <span
+            className="absolute -inset-full pointer-events-none animate-spin"
+            style={{
+              background: 'conic-gradient(from 0deg, #c4f82a, #7052ff, #00f2fe, #c4f82a)',
+              animationDuration: '3.5s',
+            }}
+          />
+          <span className="relative bg-gradient-to-r from-[#191246] to-[#2b1770] group-hover:from-[#231961] group-hover:to-[#381d91] text-white px-2.5 py-1.5 rounded-full flex items-center space-x-1">
+            <span className="text-sm group-hover:scale-110 transition-transform leading-none">🎓</span>
+            <span className="text-[10px] font-black tracking-tight text-white">IELTS</span>
+            <span className="text-[8px] font-black bg-[#c4f82a] text-[#121124] px-1 py-0.2 rounded-full leading-tight font-mono shadow-xs">
+              9.0
+            </span>
+          </span>
+        </button>
 
         {/* 2. AI Murabbiy Tab */}
         {activeScreen === 'ai' ? (

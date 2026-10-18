@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, Flag, Tag, X, Clock, Zap } from 'lucide-react';
 import type { Task, TaskCategory, TaskPriority, TaskScope } from '../types';
 import {
@@ -16,6 +16,8 @@ import {
 import { BadgeUnlockModal } from './BadgeUnlockModal';
 import { SwipeableTaskItem } from './SwipeableTaskItem';
 import { HeroHookSection } from './HeroHookSection';
+import { UkFlagWave, UzFlagWave } from '../english/components/UzFlagWave';
+import { SpeakingWaveform } from '../english/components/AnimatedSectionIcons';
 
 const CATEGORIES: TaskCategory[] = ['work', 'personal', 'health', 'learning', 'other'];
 const PRIORITIES: TaskPriority[] = ['high', 'medium', 'low'];
@@ -30,7 +32,7 @@ const DURATION_PRESETS = [15, 30, 60, 90, 120];
 interface ScreenHomeProps {
   userName: string;
   onTasksChange?: () => void;
-  onOpenEnglish?: () => void;
+  onOpenEnglish?: (exam?: 'ielts' | 'multilevel' | null) => void;
   onBackToHub?: () => void;
 }
 
@@ -51,6 +53,39 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
   const [floatingCoin, setFloatingCoin] = useState<{ amount: number; key: number } | null>(null);
   const [confettiKey, setConfettiKey] = useState<number | null>(null);
   const [displayPct, setDisplayPct] = useState<number>(0);
+
+  // Kreativ Holographic Portal Button holatlari (IELTS ⇄ CEFR auto-morph & drawer)
+  const [morphMode, setMorphMode] = useState<'ielts' | 'cefr'>('ielts');
+  const [showExamPortal, setShowExamPortal] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMorphMode((prev) => (prev === 'ielts' ? 'cefr' : 'ielts'));
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // 3D Tilt & Spotlight for IELTS Card (#10)
+  const ieltsCardRef = useRef<HTMLDivElement>(null);
+  const [ieltsTilt, setIeltsTilt] = useState({ rotateX: 0, rotateY: 0, spotX: 50, spotY: 50, active: false });
+
+  const handleIeltsPointerMove = (clientX: number, clientY: number) => {
+    if (!ieltsCardRef.current) return;
+    const rect = ieltsCardRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    const pctX = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    const pctY = Math.max(0, Math.min(100, (y / rect.height) * 100));
+
+    const rotateY = ((pctX - 50) / 50) * 8; // -8deg to +8deg
+    const rotateX = -((pctY - 50) / 50) * 7; // -7deg to +7deg
+
+    setIeltsTilt({ rotateX, rotateY, spotX: pctX, spotY: pctY, active: true });
+  };
+
+  const resetIeltsTilt = () => {
+    setIeltsTilt((prev) => ({ ...prev, rotateX: 0, rotateY: 0, active: false }));
+  };
 
   const reload = useCallback(() => {
     setTasks(getActiveTasks());
@@ -157,14 +192,13 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
     return () => clearTimeout(timer);
   }, [pct, displayPct]);
 
-  // Streak hisoblash (2-rasmdagi seriya uchun)
+  // Streak hisoblash (seriya uchun)
   const weekDays = getLast7Days().reverse();
   let currentStreak = 0;
   for (const d of weekDays) {
     if (d.done > 0) currentStreak++;
     else break;
   }
-  const nextStreak = currentStreak + (done > 0 ? 1 : 1);
 
   // SVG Circular ring hisobi
   const ringRadius = 26;
@@ -205,6 +239,14 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
           0% { transform: translate(0, 0) scale(0.4) rotate(0deg); opacity: 1; }
           100% { transform: translate(var(--tx), var(--ty)) scale(1.1) rotate(var(--rot)); opacity: 0; }
         }
+        @keyframes cardShimmerSweep {
+          0% { transform: translateX(-140%) skewX(-20deg); }
+          45%, 100% { transform: translateX(240%) skewX(-20deg); }
+        }
+        @keyframes laserSpin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
       `}</style>
 
       {/* B1: Dopamine Confetti & Coin Burst Overlay when checking off a task */}
@@ -243,38 +285,154 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
           greeting={greeting}
           coins={coins}
           floatingCoin={floatingCoin}
-          onOpenEnglish={onOpenEnglish}
+          onOpenEnglish={() => onOpenEnglish?.(null)}
+          hideIeltsCard={true}
         />
 
-        {/* ── 2-rasmdagi zamonaviy to'q binafsha Progress Card + B2: Living Energy Core ── */}
-        <div className="rounded-[2rem] p-5 bg-[#1e1552] text-white shadow-xl relative overflow-hidden border border-indigo-400/20">
-          {/* Ambient energy glow */}
-          <div className="absolute -bottom-10 -right-10 w-36 h-36 bg-[#c4f82a]/15 rounded-full blur-2xl pointer-events-none" />
+        {/* ── YANGI DIZAYN: IELTS & Multilevel Practice (Kattaroq) + Bugungi Progress (To'rtburchak chekkada) ── */}
+        <div className="flex items-stretch gap-2.5">
+          {/* 1. IELTS & Multilevel Practice (Kattaroq, Dominant + 3D Dual-Portal Tugmalar) */}
+          <div
+            ref={ieltsCardRef}
+            onClick={() => {
+              triggerHaptic('heavy');
+              onOpenEnglish?.(null);
+            }}
+            onMouseMove={(e) => handleIeltsPointerMove(e.clientX, e.clientY)}
+            onMouseLeave={resetIeltsTilt}
+            onTouchMove={(e) => {
+              if (e.touches[0]) handleIeltsPointerMove(e.touches[0].clientX, e.touches[0].clientY);
+            }}
+            onTouchEnd={resetIeltsTilt}
+            style={{
+              background: 'linear-gradient(135deg, #100b2e 0%, #1e135e 50%, #341299 100%)',
+              transform: `perspective(850px) rotateX(${ieltsTilt.rotateX}deg) rotateY(${ieltsTilt.rotateY}deg) scale(${ieltsTilt.active ? 1.02 : 1})`,
+              transition: ieltsTilt.active ? 'transform 60ms linear' : 'transform 350ms cubic-bezier(0.22, 1, 0.36, 1)',
+              boxShadow: ieltsTilt.active
+                ? '0 20px 40px -12px rgba(112, 82, 255, 0.55), 0 0 24px rgba(196, 248, 42, 0.3)'
+                : undefined,
+            }}
+            className="flex-1 rounded-[2rem] p-3.5 sm:p-4 text-white shadow-xl cursor-pointer border border-indigo-400/35 relative overflow-hidden select-none flex flex-col justify-between group transition-all"
+          >
+            {/* Ambient neon glow */}
+            <div className="absolute -top-10 -right-10 w-28 h-28 bg-[#c4f82a]/20 rounded-full blur-xl pointer-events-none" />
 
-          <div className="flex items-center justify-between relative z-10">
-            {/* Chap tomon: Foiz va vazifalar soni */}
-            <div>
-              <p className="text-[11px] font-extrabold text-[#9e91db] tracking-wider uppercase flex items-center space-x-1.5">
-                <span>{activeScopeTab === 'daily' ? 'BUGUNGI PROGRESS' : 'HAFTALIK PROGRESS'}</span>
-                {pct === 100 && <span className="animate-bounce">🏆</span>}
-              </p>
-              <p className="text-5xl font-black text-white tracking-tight my-1.5 font-mono">
-                {displayPct}%
-              </p>
-              <p className="text-xs font-semibold text-[#b8ace8]">
-                {done} / {total} {activeScopeTab === 'daily' ? 'kunlik' : 'haftalik'} vazifa bajarildi
+            {/* Interactive Finger/Mouse Spotlight */}
+            <div
+              className="absolute inset-0 pointer-events-none transition-opacity duration-300"
+              style={{
+                opacity: ieltsTilt.active ? 1 : 0,
+                background: `radial-gradient(180px circle at ${ieltsTilt.spotX}% ${ieltsTilt.spotY}%, rgba(196, 248, 42, 0.24), rgba(112, 82, 255, 0.16) 45%, transparent 80%)`,
+              }}
+            />
+
+            {/* Periodic Glass Shimmer Sweep */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <div
+                className="w-1/3 h-full bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                style={{ animation: 'cardShimmerSweep 4.5s infinite ease-in-out' }}
+              />
+            </div>
+
+            {/* Top row: Badges */}
+            <div className="flex items-center justify-between gap-1 relative z-10">
+              <span className="animate-bounce inline-block text-[10px] font-black bg-[#c4f82a] text-[#121124] px-2.5 py-0.5 rounded-full shadow-[0_0_12px_rgba(196,248,42,0.9),0_0_22px_rgba(196,248,42,0.5)] whitespace-nowrap">
+                Yangi 🔥
+              </span>
+              <span className="text-[9px] font-black text-[#c4f82a] bg-white/10 border border-[#c4f82a]/30 px-2 py-0.5 rounded-full tracking-wider uppercase">
+                AI 9.0 & CEFR
+              </span>
+            </div>
+
+            {/* Sarlavha */}
+            <div className="my-1.5 relative z-10">
+              <h4 className="text-[14px] sm:text-[15px] font-black text-white tracking-tight leading-tight">
+                IELTS & Multilevel Practice
+              </h4>
+              <p className="text-[10px] text-purple-200/90 font-medium mt-0.5 leading-tight">
+                AI Examiner, Writing & Jonli Sherik
               </p>
             </div>
 
-            {/* O'ng tomon: B2 Living Energy Core (Orbiting spark + Pulsing Zap/Crown) */}
-            <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
-              {/* Outer rotating dashed energy orbit */}
+            {/* ── EXPERT BUTTON #1: Dual Waving-Flag Direct Portal Mini-Buttons ── */}
+            <div className="grid grid-cols-2 gap-1.5 my-1.5 relative z-10">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic('heavy');
+                  onOpenEnglish?.('ielts');
+                }}
+                className="flex items-center space-x-1.5 bg-white/10 hover:bg-white/20 active:scale-95 border border-indigo-300/30 hover:border-[#c4f82a]/70 rounded-xl px-2 py-1.5 transition-all cursor-pointer group/btn shadow-xs"
+                title="IELTS Academic 9.0 bo'limiga to'g'ridan-to'g'ri o'tish"
+              >
+                <div className="shrink-0 overflow-hidden rounded-xs">
+                  <UkFlagWave width={17} />
+                </div>
+                <span className="text-[10px] font-black text-white group-hover/btn:text-[#c4f82a] truncate transition-colors">
+                  IELTS 9.0
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic('heavy');
+                  onOpenEnglish?.('multilevel');
+                }}
+                className="flex items-center space-x-1.5 bg-white/10 hover:bg-white/20 active:scale-95 border border-cyan-300/30 hover:border-[#c4f82a]/70 rounded-xl px-2 py-1.5 transition-all cursor-pointer group/btn shadow-xs"
+                title="Milliy Sertifikat (Multilevel CEFR) bo'limiga to'g'ridan-to'g'ri o'tish"
+              >
+                <div className="shrink-0 overflow-hidden rounded-xs">
+                  <UzFlagWave width={17} />
+                </div>
+                <span className="text-[10px] font-black text-white group-hover/btn:text-[#c4f82a] truncate transition-colors">
+                  CEFR 75b
+                </span>
+              </button>
+            </div>
+
+            {/* ── EXPERT BUTTON #2: 3D Tactile Cyber-Plasma CTA Button with Live Audio Waveform ── */}
+            <div className="relative z-10 pt-0.5">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic('heavy');
+                  onOpenEnglish?.(null);
+                }}
+                className="eng-cta w-full bg-gradient-to-r from-[#c4f82a] via-[#d4ff47] to-[#b8f014] text-[#121124] py-2 px-3 rounded-xl text-xs font-black flex items-center justify-between shadow-[0_3.5px_0_#7aa300,0_8px_18px_rgba(196,248,42,0.35)] active:translate-y-[3px] active:shadow-[0_0.5px_0_#7aa300] transition-all select-none cursor-pointer"
+              >
+                <div className="flex items-center space-x-1.5">
+                  <SpeakingWaveform width={18} height={13} color="#121124" />
+                  <span className="tracking-tight">Sinovni Boshlash</span>
+                </div>
+                <span className="w-5 h-5 rounded-lg bg-[#121124] text-[#c4f82a] flex items-center justify-center">
+                  <span className="eng-cta__arrow font-sans font-bold text-xs leading-none" aria-hidden="true">→</span>
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Bugungi Progress (To'rtburchak qilib chekkaroqqa qo'yilgan) */}
+          <div className="w-[125px] sm:w-[138px] shrink-0 rounded-[2rem] p-3.5 bg-[#1e1552] text-white shadow-xl relative overflow-hidden border border-indigo-400/25 flex flex-col justify-between items-center text-center">
+            {/* Ambient energy glow */}
+            <div className="absolute -bottom-8 -right-8 w-24 h-24 bg-[#c4f82a]/15 rounded-full blur-xl pointer-events-none" />
+
+            {/* Top Label */}
+            <p className="text-[10px] font-extrabold text-[#9e91db] tracking-wider uppercase relative z-10">
+              {activeScopeTab === 'daily' ? 'PROGRESS' : 'HAFTALIK'}
+            </p>
+
+            {/* Markaziy Circular Energy Ring */}
+            <div className="relative w-16 h-16 flex items-center justify-center my-1 relative z-10">
+              {/* Outer rotating dashed ring */}
               <div
-                className="absolute inset-0 rounded-full border border-dashed border-[#c4f82a]/35 pointer-events-none"
+                className="absolute inset-0 rounded-full border border-dashed border-[#c4f82a]/30 pointer-events-none"
                 style={{ animation: 'energyOrbit 10s linear infinite' }}
               />
-              <svg className="w-20 h-20 -rotate-90" viewBox="0 0 64 64">
-                {/* Background ring */}
+              <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
                 <circle
                   cx="32"
                   cy="32"
@@ -283,7 +441,6 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
                   strokeWidth="5"
                   fill="none"
                 />
-                {/* Neon Lime progress arc */}
                 <circle
                   cx="32"
                   cy="32"
@@ -297,84 +454,183 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
                   className="transition-all duration-700 ease-out"
                 />
               </svg>
-              {/* Markaziy jonli energiya chaqmog'i */}
-              <div
-                className="absolute inset-0 flex items-center justify-center"
-                style={{ animation: 'zapPulse 2.2s infinite ease-in-out' }}
-              >
+
+              {/* Foiz ko'rsatkichi markazda */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-base font-black text-white font-mono leading-none">
+                  {displayPct}%
+                </span>
                 {pct === 100 ? (
-                  <span className="text-2xl">🔥</span>
+                  <span className="text-xs mt-0.5">🏆</span>
                 ) : (
-                  <Zap size={22} className="text-[#c4f82a] fill-[#c4f82a]" />
+                  <Zap size={11} className="text-[#c4f82a] fill-[#c4f82a] mt-0.5" />
                 )}
               </div>
             </div>
-          </div>
 
-          {/* 2-rasmdagi och laym-yashil streak banner */}
-          <div className="mt-4 bg-[#c4f82a] text-[#121124] rounded-2xl p-3.5 shadow-sm relative z-10">
-            <p className="text-xs font-black tracking-tight leading-snug">
-              {activeScopeTab === 'daily' ? (
-                total === 0
-                  ? "Bugungi rejalaringizni kiriting va seriyani boshlang!"
-                  : pendingCount === 0
-                  ? "Ajoyib! Bugungi barcha vazifalar bajarildi 🔥"
-                  : `Yana ${pendingCount} ta vazifa, va ${nextStreak} kunlik seriya ochiladi`
-              ) : (
-                total === 0
-                  ? "Haftalik maqsadlaringizni rejalashtiring va hafta davomida bajaring!"
-                  : pendingCount === 0
-                  ? "Qoyilmaqom! Ushbu haftaning barcha rejalari bajarildi! 🏆"
-                  : `Hafta davomida yana ${pendingCount} ta vazifangiz qoldi. Olg'a!`
-              )}
-            </p>
+            {/* Pastki qism: Bajarilgan vazifalar soni */}
+            <div className="w-full bg-[#c4f82a] text-[#121124] rounded-xl py-1 px-1.5 shadow-xs relative z-10">
+              <p className="text-[10px] font-black leading-tight truncate">
+                {pendingCount === 0 && total > 0 ? (
+                  `Bajarildi! 🔥 ${currentStreak || 1}k`
+                ) : total === 0 ? (
+                  `0 ta vazifa`
+                ) : (
+                  `${done}/${total} (${pendingCount} qoldi)`
+                )}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ── Vazifalar bo'limi: Kunlik va Haftalik (Foydalanuvchi talabi) ── */}
-      <div className="px-5 mt-3 mb-2.5">
-        <div className="flex bg-slate-200/80 p-1.5 rounded-2xl border border-slate-300/40 shadow-xs">
-          <button
-            onClick={() => {
-              triggerHaptic('light');
-              setActiveScopeTab('daily');
-              setFilterCat('all');
-            }}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 ${
-              activeScopeTab === 'daily'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <span>☀️ Kunlik</span>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-              activeScopeTab === 'daily' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-300/70 text-slate-600'
-            }`}>
-              {dailyTasks.length}
-            </span>
-          </button>
+      {/* ── Vazifalar bo'limi: Kunlik / Haftalik + Yonidagi Holographic Speed-Portal Tugmasi ── */}
+      <div className="px-5 mt-3 mb-2.5 space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="flex-1 flex bg-slate-200/80 p-1.5 rounded-2xl border border-slate-300/40 shadow-xs">
+            <button
+              onClick={() => {
+                triggerHaptic('light');
+                setActiveScopeTab('daily');
+                setFilterCat('all');
+              }}
+              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 ${
+                activeScopeTab === 'daily'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span>☀️ Kunlik</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                activeScopeTab === 'daily' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-300/70 text-slate-600'
+              }`}>
+                {dailyTasks.length}
+              </span>
+            </button>
 
+            <button
+              onClick={() => {
+                triggerHaptic('light');
+                setActiveScopeTab('weekly');
+                setFilterCat('all');
+              }}
+              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 ${
+                activeScopeTab === 'weekly'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span>📅 Haftalik</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                activeScopeTab === 'weekly' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-300/70 text-slate-600'
+              }`}>
+                {weeklyTasks.length}
+              </span>
+            </button>
+          </div>
+
+          {/* ── EXPERT BUTTON #3: Spinning-Laser Auto-Morphing Portal Button (IELTS ⇄ CEFR) ── */}
           <button
+            type="button"
             onClick={() => {
-              triggerHaptic('light');
-              setActiveScopeTab('weekly');
-              setFilterCat('all');
+              triggerHaptic('heavy');
+              setShowExamPortal((prev) => !prev);
             }}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 ${
-              activeScopeTab === 'weekly'
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className="relative p-[1.5px] rounded-2xl overflow-hidden shadow-lg shadow-indigo-500/20 active:scale-95 transition-all shrink-0 cursor-pointer group"
+            title="IELTS & Multilevel Tezkor Portalini ochish"
           >
-            <span>📅 Haftalik</span>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-              activeScopeTab === 'weekly' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-300/70 text-slate-600'
-            }`}>
-              {weeklyTasks.length}
-            </span>
+            {/* Spinning Conic Laser Border */}
+            <div
+              className="absolute -inset-full pointer-events-none"
+              style={{
+                background: 'conic-gradient(from 0deg, #c4f82a, #7052ff, #00f2fe, #c4f82a)',
+                animation: 'laserSpin 3.5s linear infinite',
+              }}
+            />
+
+            {/* Inner Dark Glass Core */}
+            <div className="relative bg-[#140e38] hover:bg-[#1c144d] text-white px-2.5 py-1.5 rounded-[14.5px] flex items-center space-x-2 transition-colors">
+              {/* Live Morphing Flag & Radar Dot */}
+              <div className="relative w-7 h-7 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center shrink-0">
+                {morphMode === 'ielts' ? (
+                  <UkFlagWave width={18} />
+                ) : (
+                  <UzFlagWave width={18} />
+                )}
+                <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c4f82a] opacity-80" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#c4f82a]" />
+                </span>
+              </div>
+
+              {/* Morphing Label */}
+              <div className="text-left pr-0.5 min-w-[58px]">
+                <div className="flex items-center space-x-1">
+                  <span className="text-[11px] font-black text-white tracking-tight leading-none">
+                    {morphMode === 'ielts' ? 'IELTS' : 'CEFR'}
+                  </span>
+                  <span className="text-[8px] font-black bg-[#c4f82a] text-[#121124] px-1 py-0.2 rounded font-mono leading-tight">
+                    {morphMode === 'ielts' ? '9.0' : 'C1'}
+                  </span>
+                </div>
+                <span className="text-[9px] font-extrabold text-[#c4f82a] tracking-wide uppercase block mt-0.5">
+                  {showExamPortal ? 'Yopish ▲' : 'Portal ▼'}
+                </span>
+              </div>
+            </div>
           </button>
         </div>
+
+        {/* ── Expandable Holographic 3-Portal Speed-Launcher Drawer ── */}
+        {showExamPortal && (
+          <div className="rounded-2xl p-2.5 bg-gradient-to-r from-[#120d31] via-[#1d1452] to-[#2c1678] border border-indigo-400/40 shadow-xl grid grid-cols-3 gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic('heavy');
+                setShowExamPortal(false);
+                onOpenEnglish?.('ielts');
+              }}
+              className="flex flex-col items-center justify-center bg-white/10 hover:bg-[#c4f82a] text-white hover:text-[#121124] border border-white/15 rounded-xl py-2 px-1.5 transition-all active:scale-95 group cursor-pointer"
+            >
+              <div className="mb-1">
+                <UkFlagWave width={22} />
+              </div>
+              <span className="text-[11px] font-black leading-tight">IELTS 9.0</span>
+              <span className="text-[9px] font-bold text-indigo-200 group-hover:text-[#121124]/80">AI Mock →</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic('heavy');
+                setShowExamPortal(false);
+                onOpenEnglish?.('multilevel');
+              }}
+              className="flex flex-col items-center justify-center bg-white/10 hover:bg-[#c4f82a] text-white hover:text-[#121124] border border-white/15 rounded-xl py-2 px-1.5 transition-all active:scale-95 group cursor-pointer"
+            >
+              <div className="mb-1">
+                <UzFlagWave width={22} />
+              </div>
+              <span className="text-[11px] font-black leading-tight">Multilevel</span>
+              <span className="text-[9px] font-bold text-cyan-200 group-hover:text-[#121124]/80">CEFR 75b →</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic('heavy');
+                setShowExamPortal(false);
+                onOpenEnglish?.(null);
+              }}
+              className="flex flex-col items-center justify-center bg-[#c4f82a]/20 hover:bg-[#c4f82a] text-[#c4f82a] hover:text-[#121124] border border-[#c4f82a]/40 rounded-xl py-2 px-1.5 transition-all active:scale-95 group cursor-pointer"
+            >
+              <span className="text-base mb-0.5 leading-none">🏛️</span>
+              <span className="text-[11px] font-black leading-tight">Markaz</span>
+              <span className="text-[9px] font-bold opacity-85">Hammasi →</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Category Filters ── */}

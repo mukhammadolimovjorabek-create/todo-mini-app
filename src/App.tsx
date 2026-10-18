@@ -6,18 +6,22 @@ import { ScreenHome } from './components/ScreenHome';
 import { ScreenAI } from './components/ScreenAI';
 import { ScreenAnalytics } from './components/ScreenAnalytics';
 import { ScreenProfile } from './components/ScreenProfile';
+import { ScreenHub } from './components/ScreenHub';
 import { BottomNav } from './components/BottomNav';
 import { EnglishPracticeModule } from './english';
 
 export function App() {
   const [screen, setScreen] = useState<ScreenType>('home');
-  const [isEnglishModule, setIsEnglishModule] = useState(() => {
+  const [appMode, setAppMode] = useState<'hub' | 'todo' | 'english'>(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      return params.get('module') === 'english' || Boolean(params.get('room'));
+      if (params.get('module') === 'english' || Boolean(params.get('room'))) {
+        return 'english';
+      }
     } catch {
-      return false;
+      // ignore
     }
+    return 'todo';
   });
   const [user, setUser] = useState<TelegramUser>({
     id: 1,
@@ -26,6 +30,12 @@ export function App() {
   });
   const [customProfile, setCustomProfile] = useState(() => getCustomProfile());
   const [taskStats, setTaskStats] = useState({ pending: 0, pct: 0 });
+  const [englishInitialExam, setEnglishInitialExam] = useState<'ielts' | 'multilevel' | null>(null);
+
+  const handleOpenEnglish = (exam?: 'ielts' | 'multilevel' | null) => {
+    setEnglishInitialExam(exam ?? null);
+    setAppMode('english');
+  };
 
   const updateStatsFromStorage = () => {
     const allActive = getActiveTasks();
@@ -55,7 +65,7 @@ export function App() {
     if (u) setUser(u);
 
     updateStatsFromStorage();
-  }, [screen]);
+  }, [screen, appMode]);
 
   useEffect(() => {
     restoreFromCloud().then((restored) => {
@@ -73,19 +83,51 @@ export function App() {
     <div className="min-h-screen w-full bg-slate-300 flex flex-col items-center justify-start py-0 md:py-8">
       {/* Phone frame on desktop */}
       <div className="w-full max-w-md min-h-screen md:min-h-[820px] md:max-h-[900px] bg-[#f6f7fb] md:rounded-[2.8rem] shadow-2xl overflow-y-auto overflow-x-hidden relative flex flex-col border-0 md:border-8 md:border-slate-800">
-        {isEnglishModule ? (
+        {appMode === 'hub' ? (
+          <ScreenHub
+            userName={currentName}
+            userAvatar={customProfile.avatarUrl}
+            userInitial={userInitial}
+            pendingTasks={taskStats.pending}
+            progressPct={taskStats.pct}
+            onSelectEnglish={() => setAppMode('english')}
+            onSelectTodo={() => {
+              setScreen('home');
+              setAppMode('todo');
+            }}
+            onOpenAiCoach={() => {
+              setScreen('ai');
+              setAppMode('todo');
+            }}
+            onOpenLeaderboard={() => {
+              setScreen('analytics');
+              setAppMode('todo');
+            }}
+          />
+        ) : appMode === 'english' ? (
           <EnglishPracticeModule
             telegramUser={{
               id: user.id,
               first_name: currentName,
               username: user.username,
             }}
-            onExit={() => setIsEnglishModule(false)}
+            initialExam={englishInitialExam}
+            onExit={() => {
+              setEnglishInitialExam(null);
+              setAppMode('todo');
+            }}
           />
         ) : (
           <>
             <div className="flex-1">
-              {screen === 'home'      && <ScreenHome userName={currentName} onTasksChange={updateStatsFromStorage} onOpenEnglish={() => setIsEnglishModule(true)} />}
+              {screen === 'home' && (
+                <ScreenHome
+                  userName={currentName}
+                  onTasksChange={updateStatsFromStorage}
+                  onOpenEnglish={handleOpenEnglish}
+                  onBackToHub={() => setAppMode('hub')}
+                />
+              )}
               {screen === 'ai'        && <ScreenAI onTaskCreated={updateStatsFromStorage} />}
               {screen === 'analytics' && <ScreenAnalytics />}
               {screen === 'profile'   && <ScreenProfile user={user} onProfileUpdate={reloadProfile} />}
@@ -98,6 +140,7 @@ export function App() {
               userInitial={userInitial}
               userAvatar={customProfile.avatarUrl}
               progressPct={taskStats.pct}
+              onOpenEnglish={handleOpenEnglish}
             />
           </>
         )}

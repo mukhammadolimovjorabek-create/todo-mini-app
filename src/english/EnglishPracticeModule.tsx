@@ -20,6 +20,7 @@ export interface TelegramUserProps {
 export interface EnglishPracticeModuleProps {
   telegramUser?: TelegramUserProps;
   apiBaseUrl?: string;
+  initialExam?: ExamType | null;
   onExit?: () => void;
 }
 
@@ -33,6 +34,7 @@ interface TiltState {
 
 export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
   telegramUser,
+  initialExam = null,
   onExit,
 }) => {
   const [ieltsTilt, setIeltsTilt] = useState<TiltState>({ rx: 0, ry: 0, gx: 50, gy: 50, active: false });
@@ -64,7 +66,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
       const p = new URLSearchParams(window.location.search);
       if (p.get('room')) return 'ielts';
     } catch {}
-    return null;
+    return initialExam;
   });
   const [ieltsInitialView, setIeltsInitialView] = useState<'menu' | 'reading' | 'writing' | 'speaking' | 'ai_speaking' | 'partner_speaking'>(() => {
     try {
