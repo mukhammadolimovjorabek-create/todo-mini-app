@@ -28,7 +28,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
   const [animatedBand, setAnimatedBand] = useState(0);
 
   // Compute last scores & active days from test history (refreshes whenever activeView changes back to 'menu')
-  const { readingScore, writingScore, speakingScore, activeDaysCount, targetOrAvgBand, hasRealScore } = useMemo(() => {
+  const { readingScore, writingScore, speakingScore, activeDaysCount } = useMemo(() => {
     const results = getTestResults();
     const isIeltsValid = (r: { id: string; title: string; overallBand: number }) =>
       !r.id.startsWith('ml_') &&
@@ -46,47 +46,31 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
     );
     const uniqueDates = new Set(results.map((r) => r.date).filter(Boolean));
 
-    const validScores = [
-      lastReading?.overallBand,
-      lastWriting?.overallBand,
-      lastSpeaking?.overallBand,
-    ].filter((v): v is number => typeof v === 'number' && v > 0 && v <= 9.0);
-
-    const avg =
-      validScores.length > 0
-        ? Math.round((validScores.reduce((a, b) => a + b, 0) / validScores.length) * 2) / 2
-        : 0;
-
     return {
       readingScore: lastReading ? lastReading.overallBand.toFixed(1) : null,
       writingScore: lastWriting ? lastWriting.overallBand.toFixed(1) : null,
       speakingScore: lastSpeaking ? lastSpeaking.overallBand.toFixed(1) : null,
       activeDaysCount: Math.max(1, uniqueDates.size),
-      targetOrAvgBand: avg,
-      hasRealScore: validScores.length > 0,
     };
   }, [activeView]);
 
   // A2 & A3: Smooth count-up animation for the Band Speedometer when entering menu
   useEffect(() => {
     if (activeView !== 'menu') return;
-    if (!hasRealScore) {
-      setAnimatedBand(0);
-      return;
-    }
     setAnimatedBand(0);
     let frame: number;
     const duration = 1100;
+    const targetBand = 7.5;
     const start = performance.now();
     const animate = (now: number) => {
       const p = Math.min(1, (now - start) / duration);
       const eased = 1 - Math.pow(1 - p, 3);
-      setAnimatedBand(Number((targetOrAvgBand * eased).toFixed(1)));
+      setAnimatedBand(Number((targetBand * eased).toFixed(1)));
       if (p < 1) frame = requestAnimationFrame(animate);
     };
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, [activeView, targetOrAvgBand, hasRealScore]);
+  }, [activeView]);
 
   if (activeView === 'reading') {
     return <IeltsReadingView onBack={() => setActiveView('menu')} userName={userName} />;
@@ -106,7 +90,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
 
   // Arc math for semi-circle gauge (radius = 38, circumference half = PI * 38 ≈ 119.38)
   const arcLength = 119.38;
-  const arcProgress = hasRealScore ? Math.min(1, animatedBand / 9.0) : 0;
+  const arcProgress = Math.min(1, animatedBand / 9.0);
   const strokeDashoffset = arcLength * (1 - arcProgress);
 
   return (
@@ -158,15 +142,13 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
           <div className="space-y-1 relative z-10 pr-2">
             <span className="inline-flex items-center space-x-1 text-[9px] font-black uppercase tracking-wider text-[#c4f82a] bg-white/10 px-2.5 py-0.5 rounded-full border border-white/10">
               <Sparkles size={10} />
-              <span>{hasRealScore ? "O'RTACHA NATIJANGIZ" : 'MAQSAD: BAND 7.5+'}</span>
+              <span>YUQORI NATIJA SARI</span>
             </span>
             <h3 className="text-base font-black text-white leading-snug pt-0.5">
-              {hasRealScore ? `Hozirgi daraja: Band ${animatedBand.toFixed(1)}` : 'Hali sinov topshirilmadi'}
+              Maqsadimiz 7.5 +
             </h3>
             <p className="text-[11px] text-indigo-200/80 leading-relaxed">
-              {hasRealScore
-                ? 'Har bir yangi mashq natijangizni 9.0 shkala bo‘yicha yangilaydi.'
-                : 'Speaking, Reading yoki Writing sinovini topshirib, o\'z haqiqiy Band darajangizni aniqlang!'}
+              Speaking, Reading va Writing bo‘limlarida muntazam mashq qilib, yuqori darajaga erishing!
             </p>
           </div>
 
@@ -188,40 +170,25 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
                 strokeWidth="8"
                 strokeLinecap="round"
               />
-              {/* Animated Foreground Arc (only when user has actual scores) */}
-              {hasRealScore && (
-                <path
-                  d="M 10 48 A 38 38 0 0 1 86 48"
-                  fill="none"
-                  stroke="url(#ieltsGaugeGrad)"
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                  strokeDasharray={arcLength}
-                  strokeDashoffset={strokeDashoffset}
-                  style={{ filter: 'drop-shadow(0 0 6px rgba(196, 248, 42, 0.5))' }}
-                />
-              )}
+              {/* Animated Foreground Arc */}
+              <path
+                d="M 10 48 A 38 38 0 0 1 86 48"
+                fill="none"
+                stroke="url(#ieltsGaugeGrad)"
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray={arcLength}
+                strokeDashoffset={strokeDashoffset}
+                style={{ filter: 'drop-shadow(0 0 6px rgba(196, 248, 42, 0.5))' }}
+              />
             </svg>
             <div className="absolute bottom-0.5 flex flex-col items-center leading-none">
-              {hasRealScore ? (
-                <>
-                  <span className="text-base font-black text-[#c4f82a] tracking-tight">
-                    {animatedBand.toFixed(1)}
-                  </span>
-                  <span className="text-[8px] font-bold uppercase tracking-widest text-indigo-300">
-                    / 9.0 BAND
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="text-base font-black text-indigo-300 tracking-tight">
-                    —
-                  </span>
-                  <span className="text-[8px] font-bold uppercase tracking-widest text-indigo-400">
-                    / 9.0 BAND
-                  </span>
-                </>
-              )}
+              <span className="text-base font-black text-[#c4f82a] tracking-tight">
+                {animatedBand.toFixed(1)}+
+              </span>
+              <span className="text-[8px] font-bold uppercase tracking-widest text-indigo-300">
+                / 9.0 BAND
+              </span>
             </div>
           </div>
         </div>
