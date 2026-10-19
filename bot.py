@@ -82,6 +82,20 @@ ALLOWED_ORIGINS = {
     ) if o
 }
 
+def is_allowed_origin(origin: str) -> bool:
+    if not origin:
+        return True
+    if origin in ALLOWED_ORIGINS:
+        return True
+    try:
+        parsed = urllib.parse.urlparse(origin)
+        host = (parsed.hostname or "").lower()
+        if host.endswith(".vercel.app") or host.endswith(".telegram.org") or host in ("localhost", "127.0.0.1"):
+            return True
+    except Exception:
+        pass
+    return False
+
 MAX_SYNC_BYTES = 1_000_000
 AI_MAX_SYSTEM_PROMPT = 20_000
 AI_MAX_USER_MESSAGE = 2_500
@@ -888,20 +902,27 @@ active_rooms = {}
 async def ws_matchmake(request):
     # Cross-site WebSocket hijacking'ga qarshi: brauzer Origin'i ruxsat etilganlardan bo'lishi kerak
     origin = request.headers.get("Origin")
-    if origin and origin not in ALLOWED_ORIGINS:
+    if origin and not is_allowed_origin(origin):
         return web.json_response({"error": "Forbidden origin"}, status=403)
 
+    raw_room = (request.query.get("room_id") or "").strip()
+    room_id = raw_room if ROOM_ID_RE.match(raw_room) else ""
+
     auth_user = extract_auth_user(request)
-    if not auth_user:
+    if not auth_user and not room_id:
         return unauthorized_response()
 
-    user_id = str(auth_user.get("id"))
-    user_name = (auth_user.get("first_name") or request.query.get("user_name") or "Foydalanuvchi").strip()[:40] or "Foydalanuvchi"
+    if auth_user:
+        user_id = str(auth_user.get("id"))
+        user_name = (auth_user.get("first_name") or request.query.get("user_name") or "Foydalanuvchi").strip()[:40] or "Foydalanuvchi"
+    else:
+        # To'g'ridan-to'g'ri taklif havolasi orqali kirgan do'st
+        raw_uid = (request.query.get("user_id") or "").strip()
+        user_id = raw_uid[:40] if raw_uid else f"guest_{uuid.uuid4().hex[:8]}"
+        user_name = (request.query.get("user_name") or "Do'st").strip()[:40] or "Do'st"
 
     gender = request.query.get("gender") if request.query.get("gender") in ("male", "female") else "male"
     filter_gender = request.query.get("filter_gender") if request.query.get("filter_gender") in ("male", "female", "any") else "any"
-    raw_room = (request.query.get("room_id") or "").strip()
-    room_id = raw_room if ROOM_ID_RE.match(raw_room) else ""
 
     # Ovozli xabarlar (base64) uchun 3 MB yetarli; 16 MB DoS uchun juda katta edi
     ws = web.WebSocketResponse(max_msg_size=3 * 1024 * 1024, heartbeat=30)
@@ -1305,7 +1326,7 @@ async def cors_middleware(request, handler):
     origin = request.headers.get("Origin")
     for h in ("Access-Control-Allow-Origin", "Access-Control-Allow-Methods", "Access-Control-Allow-Headers"):
         resp.headers.pop(h, None)
-    if origin and origin in ALLOWED_ORIGINS:
+    if origin and is_allowed_origin(origin):
         resp.headers["Access-Control-Allow-Origin"] = origin
         resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
         resp.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Telegram-Init-Data"

@@ -61,6 +61,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   const [copiedInvite, setCopiedInvite] = useState(false);
   const [, setWs] = useState<WebSocket | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const wsRetryCountRef = useRef<number>(0);
 
   // Audio / Push-to-talk states
   const [isRecording, setIsRecording] = useState(false);
@@ -167,8 +168,13 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
 
   const handleShareInvite = () => {
     triggerHaptic('medium');
+    setConnectionError(null);
+    wsRetryCountRef.current = 0;
     setIsDirectInvite(true);
     setMatchStatus('searching');
+    try {
+      fetch(`${API_BASE_URL}/health`, { mode: 'no-cors' }).catch(() => {});
+    } catch {}
     const inviteUrl = `${window.location.origin}?room=${roomId}&module=english`;
     const shareText = `Salom! Men bilan IELTS Speaking mashq qilasizmi? Bosing va kiring: ${inviteUrl}`;
     
@@ -317,6 +323,9 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   // WebSocket Search logic
   useEffect(() => {
     let interval: any;
+    let reconnectTimeout: any = null;
+    let isCancelled = false;
+
     if (matchStatus === 'searching') {
       interval = setInterval(() => {
         setSearchTimer((prev: number) => {
@@ -327,59 +336,117 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
           return prev + 1;
         });
       }, 1000);
-      
-      const targetRoom = isDirectInvite ? roomId : '';
-      const initData = getTelegramInitData();
-      const wsUrl = `${WS_BASE_URL}/ws/matchmake?user_id=${userId}&user_name=${encodeURIComponent(userName)}&gender=${userGender || 'male'}&filter_gender=${filterGender}&room_id=${targetRoom}${initData ? `&init_data=${encodeURIComponent(initData)}` : ''}`;
-      const socket = new WebSocket(wsUrl);
-      wsRef.current = socket;
-      setWs(socket);
 
-      socket.onerror = () => {
-        setConnectionError("Server bilan aloqa o'rnatilmadi. Render serveri uyg'onmoqda (30-40 soniya ketishi mumkin).");
+      const connectSocket = () => {
+        if (isCancelled) return;
+        if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
+          return;
+        }
+
+        const targetRoom = isDirectInvite ? roomId : '';
+        const initData = getTelegramInitData();
+        const wsUrl = `${WS_BASE_URL}/ws/matchmake?user_id=${userId}&user_name=${encodeURIComponent(userName)}&gender=${userGender || 'male'}&filter_gender=${filterGender}&room_id=${targetRoom}${initData ? `&init_data=${encodeURIComponent(initData)}` : ''}`;
+        const socket = new WebSocket(wsUrl);
+        wsRef.current = socket;
+        setWs(socket);
+
+        socket.onopen = () => {
+          if (isCancelled) return;
+          wsRetryCountRef.current = 0;
+          setConnectionError(null);
+        };
+
+        socket.onerror = () => {
+          if (isCancelled) return;
+          // Silent retry up to 2 times before showing error banner (handles WebView background transitions)
+          if (wsRetryCountRef.current < 2) {
+            wsRetryCountRef.current += 1;
+            if (!reconnectTimeout && !isCancelled) {
+              reconnectTimeout = setTimeout(() => {
+                reconnectTimeout = null;
+                if (!isCancelled && matchStatus === 'searching') {
+                  connectSocket();
+                }
+              }, 1500);
+            }
+          } else {
+            setConnectionError("Server bilan aloqa o'rnatilmadi. Render serveri uyg'onmoqda (30-40 soniya ketishi mumkin).");
+          }
+        };
+
+        socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'match_found') {
+              setMatchedPartner(data.partner);
+              setMatchStatus('matched');
+              triggerHaptic('heavy');
+              unlockAudioContext();
+            } else if (data.type === 'voice_note') {
+              if (data.audio) {
+                setLastAudioUrl(data.audio);
+                triggerHaptic('heavy');
+                playIncomingAudio(data.audio);
+              }
+            } else if (data.type === 'chat_message') {
+              if (data.text === 'TURN_SWITCH') {
+                setSpeakerTurn(prev => prev === 'me' ? 'partner' : 'me');
+                triggerHaptic('light');
+              } else if (data.text.startsWith('PART_SELECT_')) {
+                const chosen = data.text.replace('PART_SELECT_', '').toLowerCase() as RoomPart;
+                setSelectedPart(chosen);
+                triggerHaptic('heavy');
+              } else if (data.text === 'PART_DESELECT') {
+                setSelectedPart(null);
+                triggerHaptic('light');
+              }
+            } else if (data.type === 'partner_left') {
+              handleEndSession();
+            }
+          } catch (e) {
+            console.error("WS error parsing message:", e);
+          }
+        };
+
+        socket.onclose = () => {
+          if (wsRef.current === socket) {
+            wsRef.current = null;
+            setWs(null);
+          }
+        };
       };
 
-      socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'match_found') {
-          setMatchedPartner(data.partner);
-          setMatchStatus('matched');
-          triggerHaptic('heavy');
-          unlockAudioContext();
-        } else if (data.type === 'voice_note') {
-          if (data.audio) {
-            setLastAudioUrl(data.audio);
-            triggerHaptic('heavy');
-            playIncomingAudio(data.audio);
+      // Connect immediately
+      connectSocket();
+
+      // Listen for window focus / visibility change (e.g. returning from Telegram share dialog)
+      const handleAppResume = () => {
+        if (document.visibilityState === 'visible' && !isCancelled) {
+          if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED || wsRef.current.readyState === WebSocket.CLOSING) {
+            connectSocket();
           }
-        } else if (data.type === 'chat_message') {
-          if (data.text === 'TURN_SWITCH') {
-            setSpeakerTurn(prev => prev === 'me' ? 'partner' : 'me');
-            triggerHaptic('light');
-          } else if (data.text.startsWith('PART_SELECT_')) {
-            const chosen = data.text.replace('PART_SELECT_', '').toLowerCase() as RoomPart;
-            setSelectedPart(chosen);
-            triggerHaptic('heavy');
-          } else if (data.text === 'PART_DESELECT') {
-            setSelectedPart(null);
-            triggerHaptic('light');
-          }
-        } else if (data.type === 'partner_left') {
-          handleEndSession();
         }
       };
-      socket.onclose = () => {
-        setWs(null);
-        wsRef.current = null;
+
+      document.addEventListener('visibilitychange', handleAppResume);
+      window.addEventListener('focus', handleAppResume);
+
+      return () => {
+        isCancelled = true;
+        if (interval) clearInterval(interval);
+        if (reconnectTimeout) clearTimeout(reconnectTimeout);
+        document.removeEventListener('visibilitychange', handleAppResume);
+        window.removeEventListener('focus', handleAppResume);
+        // NOTE: Do NOT close socket here because when transitioning from searching -> matched,
+        // React unmounts this effect and closing the socket would kill the active match!
       };
     }
 
     return () => {
       if (interval) clearInterval(interval);
-      // NOTE: Do NOT close socket here because when transitioning from searching -> matched,
-      // React unmounts this effect and closing the socket would kill the active match!
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
     };
-  }, [matchStatus, userId]);
+  }, [matchStatus, userId, isDirectInvite, roomId, userName, userGender, filterGender]);
 
   // Part 2 Timer
   useEffect(() => {
@@ -419,9 +486,14 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
 
   const handleStartSearch = () => {
     triggerHaptic('medium');
+    setConnectionError(null);
+    wsRetryCountRef.current = 0;
     setIsDirectInvite(false);
     setSearchTimer(0);
     setMatchStatus('searching');
+    try {
+      fetch(`${API_BASE_URL}/health`, { mode: 'no-cors' }).catch(() => {});
+    } catch {}
   };
 
   const handleCancelSearch = () => {
@@ -431,6 +503,8 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
       wsRef.current = null;
       setWs(null);
     }
+    setConnectionError(null);
+    wsRetryCountRef.current = 0;
     setMatchStatus('idle');
     setSearchTimer(0);
   };
@@ -704,7 +778,11 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
                   type="button"
                   onClick={() => {
                     setConnectionError(null);
+                    wsRetryCountRef.current = 0;
                     setSearchTimer(0);
+                    try {
+                      fetch(`${API_BASE_URL}/health`, { mode: 'no-cors' }).catch(() => {});
+                    } catch {}
                     handleCancelSearch();
                     setTimeout(() => setMatchStatus('searching'), 200);
                   }}
