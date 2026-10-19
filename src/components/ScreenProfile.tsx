@@ -5,7 +5,8 @@ import {
   Flame, 
   Camera, 
   Check, 
-  Pencil 
+  Pencil,
+  MessageCircle
 } from 'lucide-react';
 import type { TelegramUser } from '../types';
 import { 
@@ -14,7 +15,7 @@ import {
   getCustomProfile, 
   saveCustomProfile 
 } from '../utils/storage';
-import { triggerHaptic } from '../utils/telegram';
+import { triggerHaptic, getTelegramWebApp } from '../utils/telegram';
 import { ALL_BADGES, getUnlockedBadgeIds, getUserCoins } from '../utils/gamification';
 
 interface Props {
@@ -247,6 +248,43 @@ export const ScreenProfile: React.FC<Props> = ({ user, onProfileUpdate }) => {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* ── Support & Feedback Section ── */}
+      <div className="px-5 mt-6">
+        <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-[#7052ff] flex items-center justify-center font-bold text-lg">
+              💬
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-slate-800">Support & Takliflar</h4>
+              <p className="text-[11px] text-slate-400">Biz bilan to'g'ridan-to'g'ri bog'laning</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic('medium');
+              const tg = getTelegramWebApp();
+              const url = 'https://t.me/+FVJ6NWIOhzBjOTQy';
+              if (tg && typeof (tg as any).openTelegramLink === 'function') {
+                (tg as any).openTelegramLink(url);
+              } else {
+                window.open(url, '_blank');
+              }
+            }}
+            className="w-full py-3.5 px-4 rounded-2xl bg-[#7052ff] hover:bg-[#5e43f3] text-white text-xs font-black shadow-md shadow-indigo-500/20 flex items-center justify-center space-x-2 transition-all active:scale-98"
+          >
+            <MessageCircle size={16} />
+            <span>Support guruhiga o'tish</span>
+          </button>
+
+          <p className="text-[11px] text-slate-500 leading-relaxed text-center px-1">
+            Ilovada qotish (lag), xatoliklar yoki boshqa kamchiliklar bo'lsa, ushbu guruhga yozib qoldirishingiz mumkin. Biz har bir fikrni o'rganib chiqamiz! 🤝
+          </p>
         </div>
       </div>
     </div>

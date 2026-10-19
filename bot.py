@@ -27,13 +27,13 @@ from aiogram.types import (
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 # Configuration
-ADMIN_ID = 5466728043
 BASE_DIR = os.path.dirname(__file__)
 USERS_FILE = os.path.join(BASE_DIR, "users.json")
 BANNER_PATH = os.path.join(BASE_DIR, "welcome_banner.jpg")
 
 # Load environment variables
 load_dotenv(os.path.join(BASE_DIR, ".env"))
+ADMIN_ID = int(os.getenv("ADMIN_ID", "5466728043"))
 
 def get_bot_token():
     env_token = os.getenv("BOT_TOKEN", "")
@@ -248,20 +248,29 @@ async def write_users_file(users: dict):
 async def load_users():
     if db_pool:
         users_dict = {}
-        async with db_pool.acquire() as conn:
-            rows = await conn.fetch("SELECT * FROM users")
-            for row in rows:
-                users_dict[str(row['user_id'])] = { 'is_accepted': row.get('is_accepted', False),
-                    "first_name": row['first_name'],
-                    "username": row['username'],
-                    "status": row['status'],
-                    "joined_at": row['joined_at'].strftime("%Y-%m-%d %H:%M:%S") if row['joined_at'] else "",
-                    "last_active": row['last_active'].strftime("%Y-%m-%d %H:%M:%S") if row['last_active'] else "",
-                    "referred_by": row['referred_by'],
-                    "likes": row['likes'] if 'likes' in row else 0,
-                    "dislikes": row['dislikes'],
-                    "is_unblocked": row['is_unblocked']
-                }
+        try:
+            async with db_pool.acquire() as conn:
+                rows = await conn.fetch("SELECT * FROM users")
+                for row in rows:
+                    row_dict = dict(row)
+                    uid = str(row_dict.get('user_id', ''))
+                    if not uid:
+                        continue
+                    users_dict[uid] = {
+                        'is_accepted': row_dict.get('is_accepted', False),
+                        "first_name": row_dict.get('first_name', ''),
+                        "username": row_dict.get('username', ''),
+                        "status": row_dict.get('status', 'active'),
+                        "joined_at": row_dict['joined_at'].strftime("%Y-%m-%d %H:%M:%S") if row_dict.get('joined_at') else "",
+                        "last_active": row_dict['last_active'].strftime("%Y-%m-%d %H:%M:%S") if row_dict.get('last_active') else "",
+                        "referred_by": row_dict.get('referred_by'),
+                        "likes": row_dict.get('likes', 0) or 0,
+                        "dislikes": row_dict.get('dislikes', 0) or 0,
+                        "is_unblocked": row_dict.get('is_unblocked', False)
+                    }
+        except Exception as e:
+            logging.error(f"Foydalanuvchilarni bazadan yuklashda xatolik: {e}")
+            return await read_users_file()
         return users_dict
     else:
         return await read_users_file()
@@ -448,21 +457,32 @@ async def show_stats(message: types.Message):
     if message.from_user.id != ADMIN_ID:
         await message.answer("📊 Ushbu hisobot faqat bot administratori uchun mo'ljallangan.")
         return
-    users = await load_users()
-    total_visitors = len(users)
-    today_str = datetime.now().strftime("%Y-%m-%d")
-    today_new = sum(1 for u in users.values() if str(u.get("joined_at", "")).startswith(today_str))
-    active_users = sum(1 for u in users.values() if u.get("status", "active") == "active")
-    left_users = sum(1 for u in users.values() if u.get("status") == "left")
-    
-    report_text = (
-        "📊 <b>BOT HISOBOTI</b>\n\n"
-        f"🆕 <b>Bugun:</b> {today_new}\n"
-        f"👥 <b>Faol:</b> {active_users}\n"
-        f"🚪 <b>Chiqib ketganlar:</b> {left_users}\n"
-        f"📈 <b>Jami:</b> {total_visitors}"
-    )
-    await message.answer(report_text, parse_mode="HTML")
+    try:
+        if db_pool:
+            async with db_pool.acquire() as conn:
+                total_visitors = await conn.fetchval("SELECT COUNT(*) FROM users") or 0
+                today_new = await conn.fetchval("SELECT COUNT(*) FROM users WHERE joined_at >= CURRENT_DATE") or 0
+                active_users = await conn.fetchval("SELECT COUNT(*) FROM users WHERE status = 'active'") or 0
+                left_users = await conn.fetchval("SELECT COUNT(*) FROM users WHERE status = 'left'") or 0
+        else:
+            users = await load_users()
+            total_visitors = len(users)
+            today_str = datetime.now().strftime("%Y-%m-%d")
+            today_new = sum(1 for u in users.values() if str(u.get("joined_at", "")).startswith(today_str))
+            active_users = sum(1 for u in users.values() if u.get("status", "active") == "active")
+            left_users = sum(1 for u in users.values() if u.get("status") == "left")
+        
+        report_text = (
+            "📊 <b>BOT HISOBOTI</b>\n\n"
+            f"🆕 <b>Bugun:</b> {today_new}\n"
+            f"👥 <b>Faol:</b> {active_users}\n"
+            f"🚪 <b>Chiqib ketganlar:</b> {left_users}\n"
+            f"📈 <b>Jami:</b> {total_visitors}"
+        )
+        await message.answer(report_text, parse_mode="HTML")
+    except Exception as e:
+        logging.error(f"Error in show_stats: {e}")
+        await message.answer(f"⚠️ Hisobotni hisoblashda xatolik yuz berdi: {e}")
 
 @dp.message(F.chat.id == ADMIN_ID, Command("unblock"))
 async def cmd_manual_unblock(message: types.Message):
