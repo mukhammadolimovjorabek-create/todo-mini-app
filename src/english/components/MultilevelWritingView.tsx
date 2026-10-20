@@ -122,12 +122,13 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
   };
 
   const handleEvaluate = (isAutoSubmit = false) => {
-    if (!isAutoSubmit && wordCount < 25) {
+    if (!isAutoSubmit && wordCount === 0) {
       triggerHaptic('heavy');
-      alert(`Iltimos, baholash uchun kamida 25 ta so'z yozing. Hozirda: ${wordCount} ta so'z.`);
+      return;
       return;
     }
 
+    setResult(null);
     setIsEvaluating(true);
     setIsTimerRunning(false);
     triggerHaptic('heavy');

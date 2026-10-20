@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Sparkles, CheckCircle2, RotateCcw, Award, AlertCircle, BarChart3, FileText, Clock, TrendingUp } from 'lucide-react';
 import { triggerHaptic } from '../../utils/telegram';
 import { saveTestResult } from '../utils/storage';
@@ -35,6 +35,7 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
+  const resultsSectionRef = useRef<HTMLDivElement | null>(null);
 
   // Active task derived values
   const essayText = activeTab === 'task1' ? task1Text : task2Text;
@@ -70,13 +71,13 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
   const wordCount = essayText.trim() ? essayText.trim().split(/\s+/).length : 0;
   const minWordsRequired = activeTab === 'task1' ? 150 : 250;
 
-  const handleEvaluate = (isAutoSubmit = false) => {
-    if (!isAutoSubmit && wordCount < 40) {
-      alert(`Iltimos, matnni kamida 40 ta so'zdan iborat qilib yozing (IELTS talabi: ${minWordsRequired}+ so'z).`);
+  const handleEvaluate = (_isAutoSubmit = false) => {
+    if (wordCount === 0) {
       return;
     }
 
     triggerHaptic('medium');
+    setResult(null);
     setIsEvaluating(true);
     setIsTimerRunning(false);
 
@@ -86,6 +87,9 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
 
       setResult(evaluation);
       setIsEvaluating(false);
+      setTimeout(() => {
+        resultsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
 
       // Save to Test Results History
       const now = new Date();
@@ -456,7 +460,7 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
 
             {/* ── Results Breakdown ── */}
             {result && (
-              <div className="space-y-4 animate-in fade-in duration-300">
+              <div ref={resultsSectionRef} className="space-y-4 animate-in fade-in duration-300">
                 {/* Overall Score Badge */}
                 <div
                   className="rounded-3xl p-6 text-white text-center shadow-xl relative overflow-hidden"
