@@ -95,7 +95,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
 
   if (showPlacementTest) {
     return (
-      <div className="english-root english-dark min-h-screen" style={{ backgroundColor: '#0e0d1d', minHeight: '100vh' }}>
+      <div className="english-root min-h-screen flex-1 flex flex-col">
         <GrammarPlacementView
           onBack={() => {
             setShowPlacementTest(false);
@@ -108,7 +108,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
 
   if (selectedExam === 'ielts') {
     return (
-      <div className="english-root english-dark min-h-screen" style={{ backgroundColor: '#0e0d1d', minHeight: '100vh' }}>
+      <div className="english-root min-h-screen flex-1 flex flex-col">
         {!profile && (
           <RegistrationModal
             initialName={telegramUser?.first_name}
@@ -128,7 +128,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
 
   if (selectedExam === 'multilevel') {
     return (
-      <div className="english-root english-dark min-h-screen" style={{ backgroundColor: '#0e0d1d', minHeight: '100vh' }}>
+      <div className="english-root min-h-screen flex-1 flex flex-col">
         {!profile && (
           <RegistrationModal
             initialName={telegramUser?.first_name}
