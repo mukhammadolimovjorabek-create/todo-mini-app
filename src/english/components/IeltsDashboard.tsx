@@ -4,6 +4,7 @@ import { AISpeakingView } from './AISpeakingView';
 import { PartnerSpeakingView } from './PartnerSpeakingView';
 import { WritingEvaluationView } from './WritingEvaluationView';
 import { IeltsReadingView } from './IeltsReadingView';
+import { GrammarPlacementView } from './GrammarPlacementView';
 import { triggerHaptic } from '../../utils/telegram';
 import { getTestResults } from '../utils/storage';
 import {
@@ -20,7 +21,7 @@ interface Props {
   initialView?: ActiveView;
 }
 
-type ActiveView = 'menu' | 'reading' | 'writing' | 'speaking' | 'ai_speaking' | 'partner_speaking';
+type ActiveView = 'menu' | 'reading' | 'writing' | 'speaking' | 'ai_speaking' | 'partner_speaking' | 'placement';
 
 export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, initialView = 'menu' }) => {
   const [activeView, setActiveView] = useState<ActiveView>(initialView);
@@ -86,6 +87,10 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
 
   if (activeView === 'partner_speaking') {
     return <PartnerSpeakingView onBack={() => setActiveView('menu')} userName={userName} userGender={userGender} />;
+  }
+
+  if (activeView === 'placement') {
+    return <GrammarPlacementView onBack={() => setActiveView('menu')} />;
   }
 
   // Arc math for semi-circle gauge (radius = 38, circumference half = PI * 38 ≈ 119.38)
@@ -335,6 +340,34 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
                 </span>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* ── 3. DARAJANI ANIQLASH (50 TA FULL GRAMMAR TEST) ── */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            triggerHaptic('medium');
+            setActiveView('placement');
+          }}
+          className="bg-gradient-to-r from-[#1a1638] via-[#211a4a] to-[#1a1638] border border-[#c4f82a]/35 hover:border-[#c4f82a]/70 rounded-[2rem] p-4.5 flex items-center justify-between cursor-pointer active:scale-[0.99] transition-all shadow-lg group relative overflow-hidden eng-cascade-3"
+        >
+          <div className="eng-shimmer-sweep" />
+          <div className="space-y-1 relative z-10 pr-3">
+            <span className="inline-flex items-center space-x-1 text-[9px] font-black uppercase tracking-wider text-[#c4f82a] bg-[#c4f82a]/10 px-2.5 py-0.5 rounded-full border border-[#c4f82a]/25">
+              <Sparkles size={10} />
+              <span>50 TA SAVOL • FULL GRAMMATIKA</span>
+            </span>
+            <h4 className="text-base font-black text-white group-hover:text-[#c4f82a] transition-colors pt-0.5">
+              Darajani aniqlash (Placement Test)
+            </h4>
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              IELTS Band (4.0–8.5) va Multilevel CEFR (A2–C1) darajangizni 50 ta grammatik test orqali aniqlang.
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-[#c4f82a] text-[#0e0d1d] flex items-center justify-center shrink-0 font-black shadow-[0_0_16px_rgba(196,248,42,0.4)] group-hover:scale-105 transition-all relative z-10">
+            <ArrowRight size={16} />
           </div>
         </div>
 

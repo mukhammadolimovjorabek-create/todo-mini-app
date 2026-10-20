@@ -6,6 +6,7 @@ import { RegistrationModal } from './components/RegistrationModal';
 import { SettingsSheet } from './components/SettingsSheet';
 import { IeltsDashboard } from './components/IeltsDashboard';
 import { MultilevelDashboard } from './components/MultilevelDashboard';
+import { GrammarPlacementView } from './components/GrammarPlacementView';
 import { triggerHaptic } from '../utils/telegram';
 import { SpeakingWaveform } from './components/AnimatedSectionIcons';
 import { UzFlagWave, UkFlagWave } from './components/UzFlagWave';
@@ -78,6 +79,7 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
   const [multilevelInitialView, setMultilevelInitialView] = useState<'menu' | 'speaking' | 'writing' | 'reading' | 'partner_speaking'>('menu');
   const [multilevelInitialWritingTab, setMultilevelInitialWritingTab] = useState<'task1' | 'task2'>('task2');
   const [results, setResults] = useState<TestResultItem[]>(() => getTestResults());
+  const [showPlacementTest, setShowPlacementTest] = useState(false);
   const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
 
   // Active display name and gender
@@ -90,6 +92,19 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
     setMultilevelInitialView('menu');
     setResults(getTestResults()); // Refresh test results history
   };
+
+  if (showPlacementTest) {
+    return (
+      <div className="english-root english-dark min-h-screen" style={{ backgroundColor: '#0e0d1d', minHeight: '100vh' }}>
+        <GrammarPlacementView
+          onBack={() => {
+            setShowPlacementTest(false);
+            setResults(getTestResults());
+          }}
+        />
+      </div>
+    );
+  }
 
   if (selectedExam === 'ielts') {
     return (
@@ -456,6 +471,42 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
                 <ArrowRight size={14} />
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* ── 3. DARAJANI ANIQLASH (50 TA FULL GRAMMATIK SAVOL) ── */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            triggerHaptic('medium');
+            setShowPlacementTest(true);
+          }}
+          className="bg-gradient-to-r from-[#181630] via-[#221a4c] to-[#13322b] border border-[#c4f82a]/40 hover:border-[#c4f82a] rounded-[2.2rem] p-5 shadow-xl relative overflow-hidden space-y-3 text-white group cursor-pointer active:scale-[0.99] transition-all eng-cascade-3"
+        >
+          <div className="eng-shimmer-sweep" />
+          <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center space-x-2">
+              <span className="text-[9px] font-black uppercase tracking-wider text-[#c4f82a] bg-[#c4f82a]/15 border border-[#c4f82a]/30 px-3 py-1 rounded-full flex items-center space-x-1">
+                <Sparkles size={11} />
+                <span>DARAJANI ANIQLASH</span>
+              </span>
+              <span className="text-[9px] font-bold text-amber-300 bg-amber-500/20 px-2.5 py-1 rounded-full border border-amber-400/25">
+                50 ta savol • Full Grammar
+              </span>
+            </div>
+            <div className="w-9 h-9 rounded-full bg-[#c4f82a] text-[#0e0d1d] flex items-center justify-center font-black shadow-[0_0_16px_rgba(196,248,42,0.4)] group-hover:translate-x-0.5 transition-all">
+              <ArrowRight size={16} />
+            </div>
+          </div>
+
+          <div className="relative z-10 space-y-1">
+            <h3 className="text-xl font-black text-white tracking-tight group-hover:text-[#c4f82a] transition-colors">
+              Darajani aniqlash (Placement Test)
+            </h3>
+            <p className="text-xs text-slate-300/90 leading-relaxed">
+              50 ta xalqaro standartdagi grammatik savollar orqali ham IELTS Band (4.0–8.5), ham Multilevel CEFR (A2–C1, 75 ballik) darajangizni aniqlang!
+            </p>
           </div>
         </div>
 

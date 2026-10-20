@@ -30,7 +30,14 @@ export interface SpeakingBank {
   part3: Part3Topic[];
 }
 
-export const speakingBank: SpeakingBank = bankData as SpeakingBank;
+const rawBank = bankData as SpeakingBank;
+
+// Official 2022–2026 Cambridge / British Council / IDP Speaking Bank (capped at 50 per part)
+export const speakingBank: SpeakingBank = {
+  part1: (rawBank.part1 || []).slice(0, 50),
+  part2: (rawBank.part2 || []).slice(0, 50),
+  part3: (rawBank.part3 || []).slice(0, 50),
+};
 
 export const getRandomPart1Topic = (seenIdentifiers: string[] = []): Part1Topic => {
   const seenSet = new Set(seenIdentifiers.map((s) => s.toLowerCase()));

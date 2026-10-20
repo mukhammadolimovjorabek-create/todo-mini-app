@@ -4,6 +4,7 @@ import { MultilevelSpeakingView } from './MultilevelSpeakingView';
 import { MultilevelWritingView } from './MultilevelWritingView';
 import { PartnerSpeakingView } from './PartnerSpeakingView';
 import { IeltsReadingView } from './IeltsReadingView';
+import { GrammarPlacementView } from './GrammarPlacementView';
 import { triggerHaptic } from '../../utils/telegram';
 import { getTestResults } from '../utils/storage';
 import {
@@ -21,7 +22,7 @@ interface Props {
   initialWritingTab?: 'task1' | 'task2';
 }
 
-type ActiveView = 'menu' | 'speaking' | 'writing' | 'reading' | 'partner_speaking';
+type ActiveView = 'menu' | 'speaking' | 'writing' | 'reading' | 'partner_speaking' | 'placement';
 
 export const MultilevelDashboard: React.FC<Props> = ({
   onBack,
@@ -100,6 +101,10 @@ export const MultilevelDashboard: React.FC<Props> = ({
 
   if (activeView === 'reading') {
     return <IeltsReadingView onBack={() => setActiveView('menu')} userName={userName} examType="multilevel" />;
+  }
+
+  if (activeView === 'placement') {
+    return <GrammarPlacementView onBack={() => setActiveView('menu')} />;
   }
 
   if (activeView === 'partner_speaking') {
@@ -245,7 +250,6 @@ export const MultilevelDashboard: React.FC<Props> = ({
             <div className="eng-shimmer-sweep" />
             <div className="flex items-start justify-between relative z-10">
               <div className="flex items-center space-x-3.5">
-                {/* 52x52 Tile with Waveform & Pulse Ring */}
                 <div
                   className="w-[52px] h-[52px] rounded-[16px] flex items-center justify-center shrink-0 relative"
                   style={{ background: 'rgba(16, 185, 129, 0.16)' }}
@@ -305,7 +309,6 @@ export const MultilevelDashboard: React.FC<Props> = ({
             <div className="eng-shimmer-sweep eng-shimmer-sweep-delayed" />
             <div className="flex items-start justify-between relative z-10">
               <div className="flex items-center space-x-3.5">
-                {/* 52x52 Tile with Pulse Ring & Drawing Pencil */}
                 <div
                   className="w-[52px] h-[52px] rounded-[16px] flex items-center justify-center shrink-0 relative"
                   style={{ background: 'rgba(169,155,255,.18)' }}
@@ -324,7 +327,7 @@ export const MultilevelDashboard: React.FC<Props> = ({
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    19 ta rasmiy xat va 25 ta B2/C1 insho mavzulari
+                    2022–2026 rasmiy xat va B2/C1 insho mavzulari (50 tagacha)
                   </p>
                 </div>
               </div>
@@ -416,6 +419,38 @@ export const MultilevelDashboard: React.FC<Props> = ({
                   Oxirgi: {readingScore}
                 </span>
               )}
+            </div>
+          </div>
+
+          {/* 4. Darajani aniqlash (50 ta Full Grammar Test) */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              triggerHaptic('medium');
+              setActiveView('placement');
+            }}
+            className="p-5 rounded-[2rem] bg-gradient-to-r from-[#0d2922] via-[#13382f] to-[#181630] border border-[#c4f82a]/35 hover:border-[#c4f82a]/70 hover:shadow-lg transition-all cursor-pointer group active:scale-[0.99] flex items-center justify-between text-white relative overflow-hidden eng-cascade-4"
+          >
+            <div className="eng-shimmer-sweep" />
+            <div className="space-y-1 relative z-10 pr-3">
+              <div className="flex items-center space-x-2">
+                <span className="text-[9px] font-black uppercase tracking-wider bg-[#c4f82a]/15 text-[#c4f82a] border border-[#c4f82a]/30 px-2.5 py-0.5 rounded-full">
+                  50 TA SAVOL • FULL GRAMMATIKA
+                </span>
+                <span className="text-[9px] font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">
+                  A2 – C1
+                </span>
+              </div>
+              <h4 className="text-base font-black text-white group-hover:text-[#c4f82a] transition-colors pt-0.5">
+                Darajani aniqlash (Placement Test)
+              </h4>
+              <p className="text-xs text-slate-300">
+                Multilevel (75 ballik CEFR) va IELTS darajangizni 50 ta grammatik savol bilan aniqlang
+              </p>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-[#c4f82a] text-[#091f1a] flex items-center justify-center shrink-0 font-black shadow-[0_0_16px_rgba(196,248,42,0.4)] group-hover:scale-105 transition-all relative z-10">
+              <ArrowRight size={16} />
             </div>
           </div>
 
