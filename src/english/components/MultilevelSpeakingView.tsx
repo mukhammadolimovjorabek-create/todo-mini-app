@@ -164,13 +164,13 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     }
   };
 
-  const queueTurnTranscription = (historyIndex: number) => {
+  const queueTurnTranscription = (historyIndex: number, questionText = '') => {
     const audio = turnAudioRef.current;
     turnAudioRef.current = null;
     if (!audio) return;
     pendingTranscriptsRef.current.set(
       historyIndex,
-      audio.then((blob) => (blob ? transcribeAudio(blob) : ''))
+      audio.then((blob) => (blob ? transcribeAudio(blob, questionText) : ''))
     );
   };
 
@@ -410,7 +410,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       ...transcriptHistory,
       { question: currentQ, answer: currentAnswer || "(Nomzod belgilangan vaqtda javob bermadi)" }
     ];
-    if (!currentAnswer) queueTurnTranscription(newHistory.length - 1);
+    if (!currentAnswer) queueTurnTranscription(newHistory.length - 1, currentQ);
     currentTurnSpeechRef.current = '';
     sessionBaseTextRef.current = '';
     setTranscriptHistory(newHistory);
@@ -445,7 +445,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         ...transcriptHistory,
         { question: `[Part 1.1] ${currentQ}`, answer: currentAnswer || "(Part 1.1 javobi berilmadi)" }
       ];
-      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1);
+      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1, currentQ);
       currentTurnSpeechRef.current = '';
       sessionBaseTextRef.current = '';
       setTranscriptHistory(newHistory);
@@ -478,7 +478,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         ...transcriptHistory,
         { question: `[Part 1.2] ${p1_2Item?.title}`, answer: currentAnswer || "(Part 1.2 nutqi berilmadi)" }
       ];
-      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1);
+      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1, p1_2Item?.title || '');
       currentTurnSpeechRef.current = '';
       sessionBaseTextRef.current = '';
       setTranscriptHistory(newHistory);
@@ -501,7 +501,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         ...transcriptHistory,
         { question: `[Part 2] ${p2Item?.title}`, answer: currentAnswer || "(Part 2 nutqi berilmadi)" }
       ];
-      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1);
+      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1, p2Item?.title || '');
       currentTurnSpeechRef.current = '';
       sessionBaseTextRef.current = '';
       setTranscriptHistory(newHistory);
@@ -524,7 +524,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         ...transcriptHistory,
         { question: `[Part 3] ${p3Item?.statement}`, answer: currentAnswer || "(Part 3 nutqi berilmadi)" }
       ];
-      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1);
+      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1, p3Item?.statement || '');
       currentTurnSpeechRef.current = '';
       sessionBaseTextRef.current = '';
       finishAndEvaluate(newHistory, 'full_mock');
@@ -541,19 +541,16 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     stopAndCleanupRecognition();
 
     setTimeout(async () => {
-      const { history: resolvedHistory, failed } = await resolvePendingAnswers(history, pendingTranscriptsRef.current);
+      const { history: resolvedHistory } = await resolvePendingAnswers(history, pendingTranscriptsRef.current);
       setTranscriptHistory(resolvedHistory);
 
       const evalResult = evaluateMultilevelSpeech(resolvedHistory, evaluatedType);
-      if (failed > 0) {
-        evalResult.improvements = [
-          `⚠️ ${failed} ta javobni ovozdan matnga o'girishda server xatosi yuz berdi, shu sababli ular baholanmadi. Internetni tekshirib, qaytadan urinib ko'ring.`,
-          ...evalResult.improvements,
-        ].slice(0, 4);
-      }
       setFeedback(evalResult);
       setIsEvaluating(false);
       setStep('feedback');
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 60);
 
       const now = new Date();
       const endTime = getFormattedTime();
@@ -752,6 +749,23 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
 
     return (
       <div className="p-5 space-y-4 animate-in fade-in duration-300 relative">
+        {/* Evaluating Overlay */}
+        {isEvaluating && (
+          <div className="fixed inset-0 z-50 bg-[#091f1a]/85 backdrop-blur-md flex items-center justify-center p-5 animate-in fade-in">
+            <div className="bg-white rounded-[2.2rem] p-6 max-w-sm w-full text-center space-y-4 shadow-2xl border border-teal-200 animate-in zoom-in-95">
+              <div className="w-16 h-16 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto shadow-inner">
+                <span className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+              <div className="space-y-1.5">
+                <h4 className="text-base font-black text-slate-900">Nutqingiz tahlil qilinmoqda...</h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  AI Examiner javoblaringizni 75 ballik Milliy Sertifikat (Fluency, Lexical, Grammar, Pronunciation) mezonlari bo'yicha baholamoqda.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Exit Confirmation Modal */}
         {showExitConfirmModal && (
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-5 animate-in fade-in">

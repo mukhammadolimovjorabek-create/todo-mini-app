@@ -759,6 +759,7 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName,
   });
 
   const questionsSectionRef = useRef<HTMLDivElement>(null);
+  const resultsCardRef = useRef<HTMLDivElement>(null);
   const currentPassage = READING_PASSAGES[selectedPassageIdx];
 
   // Auto-submit when timer expires
@@ -870,6 +871,9 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName,
     setIsSubmitted(true);
     setIsTimerRunning(false);
     triggerHaptic('heavy');
+    setTimeout(() => {
+      resultsCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
 
     // Auto-open analyses of wrong questions in current passage
     const initialExpanded: Record<number, boolean> = {};
@@ -1305,7 +1309,7 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName,
 
         {/* ── Submission Results Card (Shows immediately after submit) ── */}
         {isSubmitted && (
-          <div className="bg-white rounded-[2rem] p-5 border-2 border-indigo-200 shadow-lg space-y-4 animate-in fade-in zoom-in-95">
+          <div ref={resultsCardRef} className="bg-white rounded-[2rem] p-5 border-2 border-indigo-200 shadow-lg space-y-4 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-black uppercase text-[#7052ff] bg-indigo-50 px-2 py-0.5 rounded-md">

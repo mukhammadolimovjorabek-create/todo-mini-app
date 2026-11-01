@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ArrowLeft, Sparkles, CheckCircle2, AlertCircle, Clock, Eye, EyeOff } from 'lucide-react';
 import { triggerHaptic } from '../../utils/telegram';
 import { saveTestResult } from '../utils/storage';
@@ -72,6 +72,7 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
   const [showModelAnswer, setShowModelAnswer] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [result, setResult] = useState<WritingBandBreakdown | null>(null);
+  const resultsSectionRef = useRef<HTMLDivElement | null>(null);
 
   // Exam Start, Exit Confirmation, and Pending Tab Switch
   const [isStarted, setIsStarted] = useState(false);
@@ -350,6 +351,9 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
 
       setResult(evaluation);
       setIsEvaluating(false);
+      setTimeout(() => {
+        resultsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
 
       // Save to Test Results History
       const now = new Date();
@@ -844,7 +848,7 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
 
         {/* ── EVALUATION RESULTS CARD: OFFICIAL 75-BALL DTM TIZIMI ── */}
         {result && (
-          <div className="bg-white rounded-[2rem] p-5 border border-teal-200 shadow-lg space-y-4 animate-in fade-in duration-300">
+          <div ref={resultsSectionRef} className="bg-white rounded-[2rem] p-5 border border-teal-200 shadow-lg space-y-4 animate-in fade-in duration-300">
             {/* Result Card: Official 75-Point Scale */}
             <div
               className="rounded-[2.2rem] p-6 text-white text-center shadow-xl relative overflow-hidden"

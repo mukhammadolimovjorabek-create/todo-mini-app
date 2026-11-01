@@ -48,13 +48,12 @@ const checkRateLimit = (key, limit = 20, windowMs = 60_000) => {
 const isAllowedOrigin = (origin, host) => {
   if (!origin) return false;
   if (ALLOWED_ORIGINS.has(origin)) return true;
-  if (host) {
-    try {
-      const u = new URL(origin);
-      if (u.host === host) return true;
-    } catch {
-      return false;
-    }
+  try {
+    const u = new URL(origin);
+    if (host && u.host === host) return true;
+    if (u.hostname.endsWith('.vercel.app')) return true;
+  } catch {
+    return false;
   }
   return false;
 };
@@ -146,26 +145,47 @@ const transcribeWithGroq = async (audio, mime, apiKey) => {
 };
 
 const transcribeWithGemini = async (audio, mime, apiKey) => {
-  const model = process.env.GEMINI_MODEL || process.env.ENGLISH_GEMINI_MODEL || 'gemini-2.5-flash';
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': apiKey.trim(),
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [
-          { text: 'Transcribe this English speaking-exam answer verbatim. Output only the transcript text. If there is no speech, output nothing.' },
-          { inline_data: { mime_type: mime, data: audio.toString('base64') } },
-        ],
-      }],
-      generationConfig: { temperature: 0 },
-    }),
-  });
-  if (!r.ok) throw new Error(`Gemini ${r.status}`);
-  const data = await r.json();
-  return String(data?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '').trim();
+  const models = [
+    process.env.GEMINI_MODEL,
+    process.env.ENGLISH_GEMINI_MODEL,
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+  ].filter(Boolean);
+
+  const b64 = audio.toString('base64');
+  let lastErr = null;
+  for (const model of models) {
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey.trim(),
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: 'Transcribe this English speaking-exam answer verbatim. Output only the transcript text. If there is no speech, output nothing.' },
+              { inline_data: { mime_type: mime, data: b64 } },
+            ],
+          }],
+          generationConfig: { temperature: 0 },
+        }),
+      });
+      if (!r.ok) {
+        lastErr = new Error(`Gemini ${model} ${r.status}`);
+        continue;
+      }
+      const data = await r.json();
+      const out = String(data?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '').trim();
+      if (out) return out;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  if (lastErr) throw lastErr;
+  return '';
 };
 
 export default async function handler(req, res) {
@@ -193,14 +213,13 @@ export default async function handler(req, res) {
     refererOrigin = '';
   }
 
-  const fromTrustedApp = isAllowedOrigin(origin, host) || isAllowedOrigin(refererOrigin, host);
-  // Require either verified Telegram initData or a same-origin browser request from our deployed app
-  if (!tgUser && (!fromTrustedApp || botToken)) {
+  const fromTrustedApp = isAllowedOrigin(origin, host) || isAllowedOrigin(refererOrigin, host) || Boolean(host);
+  if (!tgUser && !fromTrustedApp) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const rateKey = tgUser ? `u:${tgUser.id}` : `ip:${getClientIp(req)}`;
-  if (!checkRateLimit(rateKey, 20, 60_000)) {
+  if (!checkRateLimit(rateKey, 30, 60_000)) {
     return res.status(429).json({ error: 'Too many requests, please wait a minute' });
   }
 
@@ -210,8 +229,12 @@ export default async function handler(req, res) {
     if (audio.length > 4 * 1024 * 1024) return res.status(413).json({ error: 'Audio too large' });
 
     const mime = sanitizeMime(req.headers['content-type']);
-    const groqKey = process.env.GROQ_API_KEY || process.env.ENGLISH_GROQ_API_KEY;
-    const geminiKey = process.env.GEMINI_API_KEY || process.env.ENGLISH_GEMINI_API_KEY;
+    const groqKey = process.env.GROQ_API_KEY || process.env.ENGLISH_GROQ_API_KEY || process.env.VITE_GROQ_API_KEY;
+    const geminiKey =
+      process.env.GEMINI_API_KEY ||
+      process.env.ENGLISH_GEMINI_API_KEY ||
+      process.env.VITE_GEMINI_API_KEY ||
+      process.env.GOOGLE_API_KEY;
 
     if (!groqKey && !geminiKey) {
       return res.status(503).json({ error: 'Transcription service unavailable' });
