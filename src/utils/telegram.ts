@@ -1,5 +1,7 @@
 import type { TelegramUser } from '../types';
 
+export const BOT_USERNAME = 'aitasklistbot';
+
 declare global {
   interface Window {
     Telegram?: {
@@ -7,10 +9,12 @@ declare global {
         initData: string;
         initDataUnsafe: {
           user?: TelegramUser;
+          start_param?: string;
         };
         ready: () => void;
         expand: () => void;
         close: () => void;
+        openTelegramLink?: (url: string) => void;
         HapticFeedback: {
           impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
           notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
@@ -37,6 +41,24 @@ export const getTelegramWebApp = () => {
     return window.Telegram.WebApp;
   }
   return null;
+};
+
+export const getTelegramStartParam = (): string => {
+  const tg = getTelegramWebApp();
+  if (tg?.initDataUnsafe?.start_param) {
+    return String(tg.initDataUnsafe.start_param).trim();
+  }
+  try {
+    const p = new URLSearchParams(window.location.search);
+    return (p.get('tgWebAppStartParam') || p.get('startapp') || '').trim();
+  } catch {
+    return '';
+  }
+};
+
+export const buildMiniAppUrl = (startParam?: string): string => {
+  if (!startParam) return `https://t.me/${BOT_USERNAME}`;
+  return `https://t.me/${BOT_USERNAME}?startapp=${encodeURIComponent(startParam)}`;
 };
 
 export const triggerHaptic = (style: 'light' | 'medium' | 'heavy' = 'medium') => {

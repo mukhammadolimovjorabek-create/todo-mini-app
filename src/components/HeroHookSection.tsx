@@ -8,6 +8,8 @@ interface HeroHookSectionProps {
   floatingCoin: { amount: number; key: number } | null;
   onOpenEnglish?: () => void;
   hideIeltsCard?: boolean;
+  onOpenShop?: () => void;
+  onBackToHub?: () => void;
 }
 
 const TYPEWRITER_PHRASES = [
@@ -25,6 +27,8 @@ export const HeroHookSection: React.FC<HeroHookSectionProps> = ({
   floatingCoin,
   onOpenEnglish,
   hideIeltsCard = false,
+  onOpenShop,
+  onBackToHub,
 }) => {
   const hour = new Date().getHours();
   const isNight = hour >= 18 || hour < 6;
@@ -144,6 +148,15 @@ export const HeroHookSection: React.FC<HeroHookSectionProps> = ({
         <div className="flex items-center justify-between relative z-10">
           <div>
             <div className="flex items-center space-x-1.5">
+              {onBackToHub && (
+                <button
+                  type="button"
+                  onClick={onBackToHub}
+                  className="text-[10px] font-black bg-white/15 hover:bg-white/25 text-white px-2 py-0.5 rounded-full mr-1 transition-all active:scale-95"
+                >
+                  ← Hub
+                </button>
+              )}
               <span className="text-xs font-bold text-indigo-200">{greeting},</span>
               <span className="text-xs">{isNight ? '🌙' : isMorning ? '🌅' : '☀️'}</span>
             </div>
@@ -157,10 +170,14 @@ export const HeroHookSection: React.FC<HeroHookSectionProps> = ({
 
           {/* Coins Counter */}
           <div className="relative">
-            <div className="flex items-center space-x-1.5 bg-white/10 border border-amber-300/40 px-3.5 py-1.5 rounded-full shadow-sm backdrop-blur-md">
+            <button
+              type="button"
+              onClick={onOpenShop}
+              className="flex items-center space-x-1.5 bg-white/10 hover:bg-white/20 border border-amber-300/40 px-3.5 py-1.5 rounded-full shadow-sm backdrop-blur-md cursor-pointer active:scale-95 transition-all"
+            >
               <span className="text-lg select-none">🪙</span>
               <span className="text-sm font-black text-[#c4f82a] tracking-tight">{coins}</span>
-            </div>
+            </button>
 
             {floatingCoin && (
               <div

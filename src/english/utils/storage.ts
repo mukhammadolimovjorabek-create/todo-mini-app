@@ -1,10 +1,16 @@
 import type { EnglishUserProfile, TestResultItem } from '../types';
 
-const PROFILE_KEY = 'english_profile_v1';
-const RULES_ACCEPTED_KEY = 'english_rules_accepted_v1';
+export const PROFILE_KEY = 'english_profile_v1';
+export const RULES_ACCEPTED_KEY = 'english_rules_accepted_v1';
 const LEGACY_TEST_RESULTS_KEY = 'english_test_results_v1';
-const TEST_RESULTS_KEY = 'english_test_results_v2';
-const SEEN_QUESTIONS_KEY = 'english_seen_questions_v1';
+export const TEST_RESULTS_KEY = 'english_test_results_v2';
+export const SEEN_QUESTIONS_KEY = 'english_seen_questions_v1';
+
+const emitEnglishSync = () => {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('studylab:sync'));
+  }
+};
 
 export const getEnglishProfile = (): EnglishUserProfile | null => {
   try {
@@ -17,6 +23,7 @@ export const getEnglishProfile = (): EnglishUserProfile | null => {
 export const saveEnglishProfile = (profile: EnglishUserProfile): EnglishUserProfile => {
   try {
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    emitEnglishSync();
   } catch {}
   return profile;
 };
@@ -31,6 +38,7 @@ export const isEnglishRulesAccepted = (): boolean => {
 export const acceptEnglishRules = () => {
   try {
     localStorage.setItem(RULES_ACCEPTED_KEY, 'true');
+    emitEnglishSync();
   } catch {}
 };
 
@@ -56,7 +64,23 @@ export const saveTestResult = (item: TestResultItem): void => {
     const existing = getTestResults();
     const updated = [item, ...existing];
     localStorage.setItem(TEST_RESULTS_KEY, JSON.stringify(updated.slice(0, 50)));
+    emitEnglishSync();
   } catch {}
+};
+
+/** Converts "DD.MM.YYYY" stored in TestResultItem.date to "YYYY-MM-DD". */
+export const getEnglishActivityIsoDates = (): Set<string> => {
+  const dates = new Set<string>();
+  for (const r of getTestResults()) {
+    if (!r.date) continue;
+    const parts = r.date.split('.');
+    if (parts.length === 3) {
+      dates.add(`${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`);
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(r.date)) {
+      dates.add(r.date);
+    }
+  }
+  return dates;
 };
 
 // ── Seen Questions Tracking (Anti-Repetition) ──
@@ -73,6 +97,7 @@ export const markQuestionSeen = (identifier: string): void => {
     const seen = new Set(getSeenQuestions());
     seen.add(identifier.trim().toLowerCase());
     localStorage.setItem(SEEN_QUESTIONS_KEY, JSON.stringify(Array.from(seen)));
+    emitEnglishSync();
   } catch {}
 };
 

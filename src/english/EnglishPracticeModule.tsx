@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, Sparkles, Settings, Award, Clock, Trophy } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ArrowLeft, ArrowRight, Sparkles, Settings, Award, Clock, Trophy, Calculator, BookOpen, Flame } from 'lucide-react';
 import type { ExamType, EnglishUserProfile, TestResultItem } from './types';
 import { getEnglishProfile, getTestResults } from './utils/storage';
 import { RegistrationModal } from './components/RegistrationModal';
@@ -7,7 +7,11 @@ import { SettingsSheet } from './components/SettingsSheet';
 import { IeltsDashboard } from './components/IeltsDashboard';
 import { MultilevelDashboard } from './components/MultilevelDashboard';
 import { GrammarPlacementView } from './components/GrammarPlacementView';
-import { triggerHaptic } from '../utils/telegram';
+import { DailyChallengeModal } from './components/DailyChallengeModal';
+import { CheatSheetModal } from './components/CheatSheetModal';
+import { OtmCalculatorView } from './components/OtmCalculatorView';
+import { getTelegramStartParam, triggerHaptic } from '../utils/telegram';
+import { loadMistakes } from '../utils/shop';
 import { SpeakingWaveform } from './components/AnimatedSectionIcons';
 import { UzFlagWave, UkFlagWave } from './components/UzFlagWave';
 import './tokens.css';
@@ -22,6 +26,8 @@ export interface EnglishPracticeModuleProps {
   telegramUser?: TelegramUserProps;
   apiBaseUrl?: string;
   initialExam?: ExamType | null;
+  initialAction?: string | null;
+  onClearInitialAction?: () => void;
   onExit?: () => void;
 }
 
@@ -36,6 +42,8 @@ interface TiltState {
 export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
   telegramUser,
   initialExam = null,
+  initialAction = null,
+  onClearInitialAction,
   onExit,
 }) => {
   const [ieltsTilt, setIeltsTilt] = useState<TiltState>({ rx: 0, ry: 0, gx: 50, gy: 50, active: false });
@@ -65,33 +73,84 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
   const [selectedExam, setSelectedExam] = useState<ExamType | null>(() => {
     try {
       const p = new URLSearchParams(window.location.search);
-      if (p.get('room')) return 'ielts';
+      const sp = getTelegramStartParam();
+      if (p.get('room') || sp.startsWith('room_')) return 'ielts';
+      if (initialAction === 'listening' || initialAction === 'ielts') return 'ielts';
+      if (initialAction === 'multilevel') return 'multilevel';
     } catch {}
     return initialExam;
   });
-  const [ieltsInitialView, setIeltsInitialView] = useState<'menu' | 'reading' | 'writing' | 'speaking' | 'ai_speaking' | 'partner_speaking'>(() => {
+  const [ieltsInitialView, setIeltsInitialView] = useState<'menu' | 'reading' | 'writing' | 'listening' | 'speaking' | 'ai_speaking' | 'partner_speaking'>(() => {
     try {
       const p = new URLSearchParams(window.location.search);
-      if (p.get('room')) return 'partner_speaking';
+      const sp = getTelegramStartParam();
+      if (p.get('room') || sp.startsWith('room_')) return 'partner_speaking';
+      if (initialAction === 'listening') return 'listening';
     } catch {}
     return 'menu';
   });
-  const [multilevelInitialView, setMultilevelInitialView] = useState<'menu' | 'speaking' | 'writing' | 'reading' | 'partner_speaking'>('menu');
+  const [multilevelInitialView, setMultilevelInitialView] = useState<'menu' | 'speaking' | 'writing' | 'reading' | 'listening' | 'partner_speaking'>('menu');
   const [multilevelInitialWritingTab, setMultilevelInitialWritingTab] = useState<'task1' | 'task2'>('task2');
   const [results, setResults] = useState<TestResultItem[]>(() => getTestResults());
-  const [showPlacementTest, setShowPlacementTest] = useState(false);
+  const [showPlacementTest, setShowPlacementTest] = useState(() => initialAction === 'placement');
+  const [showDailyModal, setShowDailyModal] = useState(() => Boolean(initialAction && initialAction.startsWith('quiz_')));
+  const [dailyQuizId, setDailyQuizId] = useState<string | null>(() =>
+    initialAction && initialAction.startsWith('quiz_') ? initialAction : null
+  );
+  const [showCheatModal, setShowCheatModal] = useState(false);
+  const [showOtmCalc, setShowOtmCalc] = useState(() => initialAction === 'otm');
+  const [mistakesCount, setMistakesCount] = useState<number>(() =>
+    loadMistakes().filter((m) => !m.reviewedCount).length
+  );
   const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
 
   // Active display name and gender
   const currentName = profile?.displayName || telegramUser?.first_name || 'Talaba';
   const currentGender = profile?.gender;
 
+  useEffect(() => {
+    if (!initialAction) return;
+    if (initialAction === 'otm') {
+      setShowOtmCalc(true);
+    } else if (initialAction === 'listening') {
+      setIeltsInitialView('listening');
+      setSelectedExam('ielts');
+    } else if (initialAction === 'ielts') {
+      setSelectedExam('ielts');
+    } else if (initialAction === 'multilevel') {
+      setSelectedExam('multilevel');
+    } else if (initialAction === 'placement') {
+      setShowPlacementTest(true);
+    } else if (initialAction.startsWith('quiz_')) {
+      setDailyQuizId(initialAction);
+      setShowDailyModal(true);
+    }
+  }, [initialAction]);
+
   const handleReturnFromExam = () => {
     setSelectedExam(null);
     setIeltsInitialView('menu');
     setMultilevelInitialView('menu');
     setResults(getTestResults()); // Refresh test results history
+    setMistakesCount(loadMistakes().filter((m) => !m.reviewedCount).length);
+    onClearInitialAction?.();
   };
+
+  if (showOtmCalc) {
+    return (
+      <OtmCalculatorView
+        onBack={() => {
+          setShowOtmCalc(false);
+          onClearInitialAction?.();
+        }}
+        onGoExam={(exam) => {
+          setShowOtmCalc(false);
+          onClearInitialAction?.();
+          setSelectedExam(exam);
+        }}
+      />
+    );
+  }
 
   if (showPlacementTest) {
     return (
@@ -167,6 +226,24 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
         />
       )}
 
+      <DailyChallengeModal
+        isOpen={showDailyModal}
+        quizId={dailyQuizId}
+        onClose={() => {
+          setShowDailyModal(false);
+          setDailyQuizId(null);
+          onClearInitialAction?.();
+        }}
+      />
+
+      <CheatSheetModal
+        isOpen={showCheatModal}
+        onClose={() => {
+          setShowCheatModal(false);
+          setMistakesCount(loadMistakes().filter((m) => !m.reviewedCount).length);
+        }}
+      />
+
       {/* ── Top Scoped Header ── */}
       <div className="px-5 pt-6 pb-4 bg-white/70 backdrop-blur-md border-b border-indigo-100 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center space-x-3">
@@ -228,6 +305,66 @@ export const EnglishPracticeModule: React.FC<EnglishPracticeModuleProps> = ({
               Qat'iy mezonlar asosida Writing insho tahlili, AI Examiner bilan Speaking va sherik bilan jonli muloqot.
             </p>
           </div>
+        </div>
+
+        {/* ── Kunlik Challenge, SOS Konspekt & OTM Quick Bar ── */}
+        <div className="grid grid-cols-3 gap-2.5 eng-cascade-1">
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic('medium');
+              setDailyQuizId(null);
+              setShowDailyModal(true);
+            }}
+            className="p-3 rounded-2xl bg-gradient-to-br from-[#181630] to-[#261f5e] text-white border border-indigo-400/30 shadow-sm text-left active:scale-95 transition-all"
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <Flame size={16} className="text-[#c4f82a]" />
+              <span className="text-[9px] font-black text-[#121124] bg-[#c4f82a] px-1.5 py-0.5 rounded-full">
+                +5 🪙
+              </span>
+            </div>
+            <p className="text-[11px] font-black leading-tight">Kun Savoli</p>
+            <p className="text-[9px] text-indigo-200/80 mt-0.5 truncate">60s AI reyting</p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic('medium');
+              setShowCheatModal(true);
+            }}
+            className="p-3 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 text-slate-900 shadow-xs text-left active:scale-95 transition-all"
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <BookOpen size={16} className="text-[#7052ff]" />
+              {mistakesCount > 0 && (
+                <span className="text-[9px] font-black text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-full">
+                  {mistakesCount}
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] font-black leading-tight">SOS Konspekt</p>
+            <p className="text-[9px] text-slate-500 mt-0.5 truncate">Xatolar banki</p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic('medium');
+              setShowOtmCalc(true);
+            }}
+            className="p-3 rounded-2xl bg-white border border-slate-200 hover:border-amber-300 text-slate-900 shadow-xs text-left active:scale-95 transition-all"
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <Calculator size={16} className="text-amber-500" />
+              <span className="text-[9px] font-black text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-full">
+                189
+              </span>
+            </div>
+            <p className="text-[11px] font-black leading-tight">OTM Ball</p>
+            <p className="text-[9px] text-slate-500 mt-0.5 truncate">DTM imtiyoz</p>
+          </button>
         </div>
 
         {/* ── Section Picker (IELTS va Multilevel dastlabki ekrani) ── */}

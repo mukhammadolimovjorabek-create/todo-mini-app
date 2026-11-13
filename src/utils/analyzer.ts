@@ -1,5 +1,5 @@
 import type { ChatMessage } from './aiService';
-import { loadTasks, getLast7Days, today } from './storage';
+import { loadTasks, getLast7Days, today, calculateCurrentStreak } from './storage';
 import type { Task } from '../types';
 import { API_BASE_URL } from '../config';
 import { getTelegramInitData } from './telegram';
@@ -26,11 +26,7 @@ export const buildTaskContext = (): string => {
   const weekTotal = week.reduce((a, b) => a + b.total, 0);
   const weekPct   = pct(weekDone, weekTotal);
 
-  // Streak
-  let streak = 0;
-  for (const d of [...week].reverse()) {
-    if (d.done > 0) streak++; else break;
-  }
+  const streak = calculateCurrentStreak();
 
   // Planned time today
   const totalPlannedMins = todayTasks.reduce((sum, t) => sum + (t.duration || 0), 0);
@@ -65,8 +61,7 @@ const offlineAnalyze = (userMsg: string, todayTasks: Task[]): string => {
   const pend      = todayTasks.filter((t) => !t.done);
   const completion = pct(done.length, todayTasks.length);
   const lower     = userMsg.toLowerCase();
-  const week      = getLast7Days();
-  const streak    = (() => { let s = 0; for (const d of [...week].reverse()) { if (d.done > 0) s++; else break; } return s; })();
+  const streak    = calculateCurrentStreak();
 
   // ── Specific task analysis
   const highPend  = pend.filter(t => t.priority === 'high');

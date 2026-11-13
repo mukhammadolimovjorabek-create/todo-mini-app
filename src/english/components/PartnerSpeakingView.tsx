@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Search, Users, RotateCcw, Clock, ShieldAlert, ChevronRight, Share2, Check, Sparkles } from 'lucide-react';
 import { getRandomPart1Topic, getRandomPart2Topic, getRandomPart3Topic, type Part1Topic, type Part2CueCard, type Part3Topic } from '../data/speakingBank';
-import { triggerHaptic, getTelegramWebApp, getTelegramUser, getTelegramInitData } from '../../utils/telegram';
+import { triggerHaptic, getTelegramWebApp, getTelegramUser, getTelegramInitData, getTelegramStartParam, buildMiniAppUrl } from '../../utils/telegram';
 import { API_BASE_URL, WS_BASE_URL } from '../../config';
 import {
   getDislikesCount,
@@ -54,7 +54,10 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
   const [dislikeReason, setDislikeReason] = useState<string>('');
 
   // Real room ID for Telegram direct pairing
-  const urlRoom = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('room') : null;
+  const rawStartParam = getTelegramStartParam();
+  const startAppRoom = rawStartParam.startsWith('room_') ? rawStartParam : null;
+  const queryRoom = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('room') : null;
+  const urlRoom = queryRoom || startAppRoom;
   const [roomId] = useState(() => urlRoom || ('room_' + Math.floor(100000 + Math.random() * 900000)));
   const [isDirectInvite, setIsDirectInvite] = useState(() => Boolean(urlRoom));
   const [selectedPart, setSelectedPart] = useState<RoomPart | null>(null);
@@ -175,7 +178,7 @@ export const PartnerSpeakingView: React.FC<Props> = ({ onBack, userName, userGen
     try {
       fetch(`${API_BASE_URL}/health`, { mode: 'no-cors' }).catch(() => {});
     } catch {}
-    const inviteUrl = `${window.location.origin}?room=${roomId}&module=english`;
+    const inviteUrl = buildMiniAppUrl(roomId);
     const shareText = `Salom! Men bilan IELTS Speaking mashq qilasizmi? Bosing va kiring: ${inviteUrl}`;
     
     const tg = getTelegramWebApp();

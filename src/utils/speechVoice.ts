@@ -1,13 +1,18 @@
 /**
  * Band 9.0 British Council IELTS Examiner Audio Service
- * Uses Edge Neural British examiner voice via backend /api/tts.
+ * Supports multi-chunk British & American voices, playback speed control,
+ * Render neural voice fallback, and sequential multi-speaker dialogue playback.
  * Strictly NEVER falls back to Russian or non-English voices.
  */
 
+import { API_BASE_URL } from '../config';
+
 let currentAudio: HTMLAudioElement | null = null;
-let currentSafetyTimer: any = null;
+let currentSafetyTimer: ReturnType<typeof setTimeout> | null = null;
+let dialogueCancelled = false;
 
 export function stopSpeaking(): void {
+  dialogueCancelled = true;
   if (currentSafetyTimer) {
     clearTimeout(currentSafetyTimer);
     currentSafetyTimer = null;
@@ -29,14 +34,28 @@ export function stopSpeaking(): void {
   }
 }
 
+export interface SpeakOptions {
+  rate?: number;
+  pitch?: number;
+  voice?: string;
+  lang?: string;
+  preferNeural?: boolean;
+  onEnd?: () => void;
+}
+
 export function speakEnglishText(
   text: string,
-  options?: { rate?: number; pitch?: number; onEnd?: () => void }
+  options?: SpeakOptions
 ): () => void {
   stopSpeaking();
+  dialogueCancelled = false;
 
   const onEnd = options?.onEnd;
+  const rate = options?.rate ?? 1;
+  const voice = options?.voice || 'en-GB-RyanNeural';
+  const lang = options?.lang || (voice.startsWith('en-US') ? 'en-US' : 'en-GB');
   let ended = false;
+
   const finish = () => {
     if (!ended) {
       ended = true;
@@ -49,74 +68,143 @@ export function speakEnglishText(
     }
   };
 
-  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-  // Format IELTS phonetically so speech engine says "Eye-elts" as a single word, not individual letters
+  const isLocal =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
   const processedText = text.replace(/\bIELTS\b/gi, 'Eye-elts');
+  const query = `text=${encodeURIComponent(processedText)}&lang=${encodeURIComponent(lang)}&voice=${encodeURIComponent(voice)}`;
+  const primaryBase = isLocal
+    ? 'http://localhost:8000'
+    : options?.preferNeural && API_BASE_URL
+    ? API_BASE_URL
+    : '';
+  const fallbackBase = primaryBase === API_BASE_URL ? '' : API_BASE_URL;
 
-  // On Vercel, /api/tts is handled by the serverless function. On local dev, it connects to local bot server.
-  const baseUrl = isLocal ? 'http://localhost:8000' : '';
-  const ttsUrl = `${baseUrl}/api/tts?text=${encodeURIComponent(processedText)}&lang=en-GB&voice=en-GB-RyanNeural`;
+  const playFromUrl = (url: string, onFail: () => void) => {
+    const audio = new Audio(url);
+    audio.playbackRate = rate;
+    currentAudio = audio;
 
-  const audio = new Audio(ttsUrl);
-  currentAudio = audio;
+    currentSafetyTimer = setTimeout(() => {
+      finish();
+    }, Math.max(4000, Math.round((text.length * 100) / Math.max(0.6, rate))));
 
-  // Safety timer in case audio stalls
-  currentSafetyTimer = setTimeout(() => {
-    finish();
-  }, Math.max(3000, text.length * 90));
-
-  audio.onended = () => {
-    if (currentSafetyTimer) {
-      clearTimeout(currentSafetyTimer);
-      currentSafetyTimer = null;
-    }
-    finish();
-  };
-
-  audio.onerror = () => {
-    if (currentSafetyTimer) {
-      clearTimeout(currentSafetyTimer);
-      currentSafetyTimer = null;
-    }
-    console.warn('Backend TTS failed, checking device native English voice...');
-    playStrictEnglishWebSpeech(text, finish);
-  };
-
-  const playPromise = audio.play();
-  if (playPromise !== undefined) {
-    playPromise.catch((err) => {
-      console.warn('Audio play interrupted or waiting for gesture:', err);
+    audio.onended = () => {
       if (currentSafetyTimer) {
         clearTimeout(currentSafetyTimer);
         currentSafetyTimer = null;
       }
-      playStrictEnglishWebSpeech(text, finish);
-    });
-  }
+      finish();
+    };
+
+    audio.onerror = () => {
+      if (currentSafetyTimer) {
+        clearTimeout(currentSafetyTimer);
+        currentSafetyTimer = null;
+      }
+      onFail();
+    };
+
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        if (currentSafetyTimer) {
+          clearTimeout(currentSafetyTimer);
+          currentSafetyTimer = null;
+        }
+        onFail();
+      });
+    }
+  };
+
+  const primaryUrl = `${primaryBase}/api/tts?${query}`;
+  playFromUrl(primaryUrl, () => {
+    if (ended || dialogueCancelled) return;
+    if (fallbackBase && fallbackBase !== primaryBase) {
+      playFromUrl(`${fallbackBase}/api/tts?${query}`, () => {
+        playStrictEnglishWebSpeech(text, rate, finish);
+      });
+    } else {
+      playStrictEnglishWebSpeech(text, rate, finish);
+    }
+  });
 
   return () => {
     stopSpeaking();
   };
 }
 
-function playStrictEnglishWebSpeech(text: string, onEnd: () => void): void {
+export interface DialogueTurn {
+  speaker: string;
+  voice?: string;
+  text: string;
+}
+
+/**
+ * Plays a multi-turn Listening script sequentially across speakers.
+ * Returns a cancellation function.
+ */
+export function speakDialogue(
+  turns: DialogueTurn[],
+  callbacks?: {
+    startIndex?: number;
+    rate?: number;
+    onTurnChange?: (index: number) => void;
+    onComplete?: () => void;
+  }
+): () => void {
+  stopSpeaking();
+  dialogueCancelled = false;
+
+  const startIdx = Math.max(0, callbacks?.startIndex ?? 0);
+  const rate = callbacks?.rate ?? 1;
+
+  const playIndex = (idx: number) => {
+    if (dialogueCancelled) return;
+    if (idx >= turns.length) {
+      callbacks?.onComplete?.();
+      return;
+    }
+    const turn = turns[idx];
+    callbacks?.onTurnChange?.(idx);
+    speakEnglishText(turn.text, {
+      voice: turn.voice || 'en-GB-RyanNeural',
+      rate,
+      preferNeural: true,
+      onEnd: () => {
+        if (dialogueCancelled) return;
+        setTimeout(() => {
+          if (!dialogueCancelled) playIndex(idx + 1);
+        }, 450);
+      },
+    });
+  };
+
+  playIndex(startIdx);
+  return () => {
+    stopSpeaking();
+  };
+}
+
+function playStrictEnglishWebSpeech(text: string, rate: number, onEnd: () => void): void {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     onEnd();
     return;
   }
 
   const voices = window.speechSynthesis.getVoices() || [];
-  // Strictly British or American English
   const enVoice = voices.find(
     (v) =>
-      (v.lang === 'en-GB' || v.lang.startsWith('en-GB')) ||
-      (v.lang === 'en-US' || v.lang.startsWith('en-US')) ||
+      v.lang === 'en-GB' ||
+      v.lang.startsWith('en-GB') ||
+      v.lang === 'en-US' ||
+      v.lang.startsWith('en-US') ||
       v.lang.toLowerCase().startsWith('en')
   );
 
   // CRITICAL: If no English voice is installed on device, NEVER speak in Russian!
   if (!enVoice) {
-    console.warn('No English voice available in OS, skipping speech to avoid Russian accent');
     onEnd();
     return;
   }
@@ -127,7 +215,7 @@ function playStrictEnglishWebSpeech(text: string, onEnd: () => void): void {
     const utterance = new SpeechSynthesisUtterance(processedText);
     utterance.voice = enVoice;
     utterance.lang = enVoice.lang;
-    utterance.rate = 0.95;
+    utterance.rate = rate;
     utterance.onend = onEnd;
     utterance.onerror = onEnd;
     window.speechSynthesis.speak(utterance);

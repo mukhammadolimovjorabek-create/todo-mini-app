@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Sparkles, CheckCircle2, RotateCcw, Award, AlertCircle, BarChart3, FileText, Clock, TrendingUp } from 'lucide-react';
 import { triggerHaptic } from '../../utils/telegram';
 import { saveTestResult } from '../utils/storage';
-import { evaluateIeltsWriting, type WritingAnalysisResult } from '../utils/ieltsWritingScoring';
+import type { WritingAnalysisResult } from '../utils/ieltsWritingScoring';
+import { evaluateIeltsWritingWithAI, type WritingAiExtras } from '../utils/writingAiClient';
+import { PostExamActions } from './PostExamActions';
 import {
   IELTS_TASK1_PROMPTS as SAMPLE_TASK1_PROMPTS,
   IELTS_TASK2_PROMPTS as SAMPLE_TASK2_PROMPTS,
@@ -28,6 +30,9 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
   const [task1Started, setTask1Started] = useState(false);
   const [task2Started, setTask2Started] = useState(false);
   const [task1Result, setTask1Result] = useState<WritingAnalysisResult | null>(null);
+  const [task1AiExtras, setTask1AiExtras] = useState<(WritingAiExtras & { resultId: string }) | null>(null);
+  const [task2AiExtras, setTask2AiExtras] = useState<(WritingAiExtras & { resultId: string }) | null>(null);
+  const [showRewrittenSample, setShowRewrittenSample] = useState(false);
   const [task2Result, setTask2Result] = useState<WritingAnalysisResult | null>(null);
   const [task1TimeLeft, setTask1TimeLeft] = useState(20 * 60);
   const [task2TimeLeft, setTask2TimeLeft] = useState(40 * 60);
@@ -81,9 +86,21 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
     setIsEvaluating(true);
     setIsTimerRunning(false);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const promptContext = activeTab === 'task1' ? currentTask1.prompt : currentTask2.prompt;
-      const evaluation = evaluateIeltsWriting(essayText, activeTab, promptContext);
+      const evaluation = await evaluateIeltsWritingWithAI(essayText, activeTab, promptContext);
+      const genId = `writing_${activeTab}_${Date.now()}`;
+      const extrasPayload: WritingAiExtras & { resultId: string } = {
+        resultId: genId,
+        isAiEvaluated: evaluation.isAiEvaluated,
+        isOffTopic: evaluation.isOffTopic,
+        weakSkillTag: evaluation.weakSkillTag,
+        sentenceCorrections: evaluation.sentenceCorrections,
+        rewrittenSample: evaluation.rewrittenSample,
+      };
+      if (activeTab === 'task1') setTask1AiExtras(extrasPayload);
+      else setTask2AiExtras(extrasPayload);
+      setShowRewrittenSample(false);
 
       setResult(evaluation);
       setIsEvaluating(false);
@@ -636,6 +653,82 @@ export const WritingEvaluationView: React.FC<Props> = ({ onBack, userName: _user
                     ))}
                   </div>
                 </div>
+
+                {(() => {
+                  const aiExtras = activeTab === 'task1' ? task1AiExtras : task2AiExtras;
+                  const weakCriterion = [
+                    { tag: 'task' as const, v: result.taskResponse },
+                    { tag: 'coherence' as const, v: result.coherenceCohesion },
+                    { tag: 'lexical' as const, v: result.lexicalResource },
+                    { tag: 'grammar' as const, v: result.grammaticalRange },
+                  ].sort((a, b) => a.v - b.v)[0].tag;
+
+                  return (
+                    <div className="space-y-3">
+                      {aiExtras?.isOffTopic && (
+                        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-3 text-xs font-bold text-rose-800">
+                          ⚠️ Diqqat: Matningiz savol shartidan chetga chiqqan (Off-topic). Mavzu bo'yicha aniq dalillar keltiring.
+                        </div>
+                      )}
+
+                      {aiExtras?.sentenceCorrections && aiExtras.sentenceCorrections.length > 0 && (
+                        <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-2.5">
+                          <h5 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                            ✍️ Aniq Gap Tuzatishlari (AI Examiner)
+                          </h5>
+                          {aiExtras.sentenceCorrections.map((fix, idx) => (
+                            <div key={idx} className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1 text-xs">
+                              <p className="text-rose-700 line-through decoration-rose-400">❌ {fix.original}</p>
+                              <p className="text-emerald-700 font-bold">✅ {fix.corrected}</p>
+                              {fix.reasonUz && <p className="text-[11px] text-slate-600">💡 {fix.reasonUz}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {aiExtras?.rewrittenSample && (
+                        <div className="bg-indigo-50/70 rounded-2xl p-4 border border-indigo-200 space-y-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowRewrittenSample((v) => !v)}
+                            className="w-full flex items-center justify-between text-xs font-black text-[#7052ff]"
+                          >
+                            <span>✨ Sizning g'oyangizning Band 8.0+ talqini</span>
+                            <span>{showRewrittenSample ? 'Yopish ▲' : "Ko'rish ▼"}</span>
+                          </button>
+                          {showRewrittenSample && (
+                            <p className="text-xs text-slate-800 leading-relaxed whitespace-pre-line bg-white p-3.5 rounded-xl border border-indigo-100">
+                              {aiExtras.rewrittenSample}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      <PostExamActions
+                        resultId={aiExtras?.resultId || `writing_${activeTab}_${result.overallBand}`}
+                        examType="ielts"
+                        moduleName={`IELTS Writing (${activeTab === 'task1' ? 'Task 1' : 'Task 2'})`}
+                        headlineScore={`Band ${result.overallBand.toFixed(1)}`}
+                        subtitle={aiExtras?.isAiEvaluated ? 'Haqiqiy AI Examiner tahlili' : `${result.wordCount} so'z`}
+                        criteria={[
+                          { label: 'Task Achievement/Response', scoreText: result.taskResponse.toFixed(1), ratio: result.taskResponse / 9 },
+                          { label: 'Coherence & Cohesion', scoreText: result.coherenceCohesion.toFixed(1), ratio: result.coherenceCohesion / 9 },
+                          { label: 'Lexical Resource', scoreText: result.lexicalResource.toFixed(1), ratio: result.lexicalResource / 9 },
+                          { label: 'Grammar Range', scoreText: result.grammaticalRange.toFixed(1), ratio: result.grammaticalRange / 9 },
+                        ]}
+                        weakSkill={aiExtras?.weakSkillTag || weakCriterion}
+                        mistakesToSave={(aiExtras?.sentenceCorrections || []).map((fix) => ({
+                          source: 'writing' as const,
+                          skillTag: weakCriterion,
+                          title: `IELTS Writing ${activeTab.toUpperCase()}`,
+                          userText: fix.original,
+                          correction: fix.corrected,
+                          explanation: fix.reasonUz,
+                        }))}
+                      />
+                    </div>
+                  );
+                })()}
 
                 {/* Reset Button */}
                 <button

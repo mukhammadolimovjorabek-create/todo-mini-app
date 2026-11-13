@@ -43,7 +43,8 @@ export type TestType =
   | 'speaking_full_mock'
   | 'writing_task1'
   | 'writing_task2'
-  | 'reading';
+  | 'reading'
+  | 'listening';
 
 export interface TestResultItem {
   id: string;

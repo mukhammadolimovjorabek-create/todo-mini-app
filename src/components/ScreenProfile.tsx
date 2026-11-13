@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   Zap, 
   Target, 
@@ -11,19 +11,22 @@ import {
 import type { TelegramUser } from '../types';
 import { 
   loadTasks, 
-  getLast7Days, 
+  calculateCurrentStreak, 
   getCustomProfile, 
   saveCustomProfile 
 } from '../utils/storage';
 import { triggerHaptic, getTelegramWebApp } from '../utils/telegram';
-import { ALL_BADGES, getUnlockedBadgeIds, getUserCoins } from '../utils/gamification';
+import { ALL_BADGES, getUnlockedBadgeIds, recalculateCoins } from '../utils/gamification';
+import { loadInventory, getFrameClasses, getFrameBadge } from '../utils/shop';
+import { getTestResults } from '../english/utils/storage';
 
 interface Props {
   user: TelegramUser;
   onProfileUpdate?: () => void;
+  onOpenShop?: () => void;
 }
 
-export const ScreenProfile: React.FC<Props> = ({ user, onProfileUpdate }) => {
+export const ScreenProfile: React.FC<Props> = ({ user, onProfileUpdate, onOpenShop }) => {
   const [profile, setProfile] = useState(() => getCustomProfile());
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState('');
@@ -34,13 +37,8 @@ export const ScreenProfile: React.FC<Props> = ({ user, onProfileUpdate }) => {
   const total = allTasks.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
 
-  // Streak
-  const days = getLast7Days().reverse();
-  let streak = 0;
-  for (const d of days) {
-    if (d.done > 0) streak++;
-    else break;
-  }
+  // Streak (To-Do + English + Streak Freeze)
+  const streak = calculateCurrentStreak();
 
   // Hozirgi ism va rasm
   const displayName = profile.displayName || user.first_name || 'Foydalanuvchi';
@@ -77,15 +75,26 @@ export const ScreenProfile: React.FC<Props> = ({ user, onProfileUpdate }) => {
   };
 
   // Tangalar va Nishonlar (Real vaqtda tizimga ulangan)
-  const coins = getUserCoins();
+  const [coins, setCoins] = useState(() => recalculateCoins());
+  const [inv, setInv] = useState(() => loadInventory());
+
+  useEffect(() => {
+    const syncHandler = () => {
+      setCoins(recalculateCoins());
+      setInv(loadInventory());
+    };
+    window.addEventListener('studylab:sync', syncHandler);
+    return () => window.removeEventListener('studylab:sync', syncHandler);
+  }, []);
   const unlockedIds = new Set(getUnlockedBadgeIds());
+  const englishResults = getTestResults();
   const badges = ALL_BADGES.map((b) => ({
     id: b.id,
     icon: b.icon,
     label: b.label,
     desc: b.desc,
     rewardCoins: b.rewardCoins,
-    earned: unlockedIds.has(b.id) || b.condition(allTasks, streak),
+    earned: unlockedIds.has(b.id) || b.condition(allTasks, streak, englishResults),
   }));
 
   return (
@@ -101,7 +110,7 @@ export const ScreenProfile: React.FC<Props> = ({ user, onProfileUpdate }) => {
           <div className="relative group">
             <div 
               onClick={() => fileInputRef.current?.click()}
-              className="w-20 h-20 rounded-3xl overflow-hidden border-3 border-[#c4f82a] shadow-xl bg-[#261769] cursor-pointer flex items-center justify-center relative active:scale-95 transition-all"
+              className={`w-20 h-20 rounded-3xl overflow-hidden shadow-xl bg-[#261769] cursor-pointer flex items-center justify-center relative active:scale-95 transition-all ${inv.activeFrame === 'default' ? 'border-3 border-[#c4f82a]' : getFrameClasses(inv.activeFrame)}`}
             >
               {avatarUrl ? (
                 <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
@@ -195,6 +204,13 @@ export const ScreenProfile: React.FC<Props> = ({ user, onProfileUpdate }) => {
             </div>
             <p className="text-lg font-black text-amber-600">{coins}</p>
             <p className="text-[9px] text-slate-400 font-bold">Tangalar</p>
+            <button
+              type="button"
+              onClick={onOpenShop}
+              className="text-[9px] font-black text-[#7052ff] hover:underline mt-0.5 cursor-pointer"
+            >
+              Do‘kon →
+            </button>
           </div>
 
           <div className="border-l border-slate-100">
@@ -217,6 +233,26 @@ export const ScreenProfile: React.FC<Props> = ({ user, onProfileUpdate }) => {
 
       {/* ── Badges Section ── */}
       <div className="px-5 mt-6">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={onOpenShop}
+          className="mb-5 rounded-3xl p-4 bg-gradient-to-r from-[#121124] to-[#231955] text-white flex items-center justify-between gap-3 shadow-md cursor-pointer active:scale-[0.99] transition-all"
+        >
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm">🛍️</span>
+              <h4 className="text-xs font-black tracking-tight">Coin Do‘koni &amp; Streak Freeze</h4>
+            </div>
+            <p className="text-[10px] text-indigo-200/85 mt-0.5">
+              🧊 Himoya: <strong>{inv.streakFreezes} ta</strong> · Ramka: <strong>{getFrameBadge(inv.activeFrame) || 'Oddiy'}</strong>
+            </p>
+          </div>
+          <span className="shrink-0 bg-[#c4f82a] text-[#0e0d1d] text-[11px] font-black px-3 py-1.5 rounded-full">
+            {coins} 🪙
+          </span>
+        </div>
+
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-black text-slate-900 text-xs uppercase tracking-wider">Yutuqlar va Nishonlar</h3>
           <span className="text-[11px] font-bold text-[#7052ff]">

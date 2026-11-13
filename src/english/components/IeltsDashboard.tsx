@@ -1,10 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Flame, Users, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Flame, Users, Sparkles, Headphones, Mic, Calculator } from 'lucide-react';
 import { AISpeakingView } from './AISpeakingView';
 import { PartnerSpeakingView } from './PartnerSpeakingView';
 import { WritingEvaluationView } from './WritingEvaluationView';
 import { IeltsReadingView } from './IeltsReadingView';
 import { GrammarPlacementView } from './GrammarPlacementView';
+import { ListeningPracticeView } from './ListeningPracticeView';
+import { SpeakingShadowingView } from './SpeakingShadowingView';
+import { HandsFreeSpeakingView } from './HandsFreeSpeakingView';
+import { OtmCalculatorView } from './OtmCalculatorView';
 import { triggerHaptic } from '../../utils/telegram';
 import { getTestResults } from '../utils/storage';
 import {
@@ -21,7 +25,7 @@ interface Props {
   initialView?: ActiveView;
 }
 
-type ActiveView = 'menu' | 'reading' | 'writing' | 'speaking' | 'ai_speaking' | 'partner_speaking' | 'placement';
+type ActiveView = 'menu' | 'reading' | 'writing' | 'listening' | 'speaking' | 'ai_speaking' | 'partner_speaking' | 'shadowing' | 'handsfree' | 'placement' | 'otm';
 
 export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, initialView = 'menu' }) => {
   const [activeView, setActiveView] = useState<ActiveView>(initialView);
@@ -29,7 +33,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
   const [animatedBand, setAnimatedBand] = useState(0);
 
   // Compute last scores & active days from test history (refreshes whenever activeView changes back to 'menu')
-  const { readingScore, writingScore, speakingScore, activeDaysCount } = useMemo(() => {
+  const { readingScore, writingScore, listeningScore, speakingScore, activeDaysCount } = useMemo(() => {
     const results = getTestResults();
     const isIeltsValid = (r: { id: string; title: string; overallBand: number }) =>
       !r.id.startsWith('ml_') &&
@@ -39,6 +43,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
       r.overallBand <= 9.0;
 
     const lastReading = results.find((r) => r.testType === 'reading' && isIeltsValid(r));
+    const lastListening = results.find((r) => r.testType === 'listening' && isIeltsValid(r));
     const lastWriting = results.find(
       (r) => (r.testType === 'writing_task1' || r.testType === 'writing_task2') && isIeltsValid(r)
     );
@@ -50,6 +55,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
     return {
       readingScore: lastReading ? lastReading.overallBand.toFixed(1) : null,
       writingScore: lastWriting ? lastWriting.overallBand.toFixed(1) : null,
+      listeningScore: lastListening ? lastListening.overallBand.toFixed(1) : null,
       speakingScore: lastSpeaking ? lastSpeaking.overallBand.toFixed(1) : null,
       activeDaysCount: Math.max(1, uniqueDates.size),
     };
@@ -61,7 +67,13 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
     setAnimatedBand(0);
     let frame: number;
     const duration = 1100;
-    const targetBand = 7.5;
+    const scores = [readingScore, writingScore, listeningScore, speakingScore]
+      .filter((s): s is string => Boolean(s))
+      .map(Number);
+    const targetBand =
+      scores.length > 0
+        ? Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1))
+        : 0.0;
     const start = performance.now();
     const animate = (now: number) => {
       const p = Math.min(1, (now - start) / duration);
@@ -94,6 +106,22 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
   }
 
   // Arc math for semi-circle gauge (radius = 38, circumference half = PI * 38 ≈ 119.38)
+  if (activeView === 'listening') {
+    return <ListeningPracticeView onBack={() => setActiveView('menu')} examType="ielts" />;
+  }
+
+  if (activeView === 'shadowing') {
+    return <SpeakingShadowingView onBack={() => setActiveView('menu')} examType="ielts" />;
+  }
+
+  if (activeView === 'handsfree') {
+    return <HandsFreeSpeakingView onBack={() => setActiveView('menu')} examType="ielts" />;
+  }
+
+  if (activeView === 'otm') {
+    return <OtmCalculatorView onBack={() => setActiveView('menu')} />;
+  }
+
   const arcLength = 119.38;
   const arcProgress = Math.min(1, animatedBand / 9.0);
   const strokeDashoffset = arcLength * (1 - arcProgress);
@@ -371,6 +399,65 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
           </div>
         </div>
 
+        {/* Listening & OTM Cards */}
+        <div className="grid grid-cols-2 gap-3.5 eng-cascade-3">
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              triggerHaptic('medium');
+              setActiveView('listening');
+            }}
+            className="bg-[#181630] border border-sky-500/30 hover:border-sky-400/70 rounded-[2rem] p-4 space-y-2.5 cursor-pointer active:scale-[0.98] transition-all group relative overflow-hidden"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-sky-500/15 border border-sky-400/30 flex items-center justify-center text-sky-400">
+                <Headphones size={20} />
+              </div>
+              {listeningScore && (
+                <span className="text-[10px] font-black text-sky-300 bg-sky-500/15 px-2 py-0.5 rounded-full">
+                  Band {listeningScore}
+                </span>
+              )}
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-white group-hover:text-sky-300 transition-colors">
+                Listening
+              </h4>
+              <p className="text-[10px] text-slate-400 leading-snug mt-0.5">
+                3 ta dialog track · 0.85x–1.15x tezlik
+              </p>
+            </div>
+          </div>
+
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              triggerHaptic('medium');
+              setActiveView('otm');
+            }}
+            className="bg-[#181630] border border-amber-500/30 hover:border-amber-400/70 rounded-[2rem] p-4 space-y-2.5 cursor-pointer active:scale-[0.98] transition-all group relative overflow-hidden"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center text-amber-400">
+                <Calculator size={20} />
+              </div>
+              <span className="text-[9px] font-black text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-full">
+                189 BALL
+              </span>
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-white group-hover:text-amber-300 transition-colors">
+                OTM Kalkulyator
+              </h4>
+              <p className="text-[10px] text-slate-400 leading-snug mt-0.5">
+                IELTS &amp; B2/C1 DTM imtiyoz hisobi
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Footer disclaimer */}
         <p className="text-[10px] text-slate-400/80 text-center pt-2">
           AI baholari taxminiy, rasmiy IELTS natijasi emas.
@@ -380,7 +467,7 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
         {/* Speaking Mode Modal */}
         {showSpeakingModal && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0a0818]/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
-            <div className="bg-[#181630] border border-white/10 w-full max-w-sm rounded-[2rem] p-6 space-y-5 shadow-2xl relative animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
+            <div className="bg-[#181630] border border-white/10 w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-[2rem] p-6 space-y-4 shadow-2xl relative animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
               
               <button 
                 onClick={() => setShowSpeakingModal(false)}
@@ -412,6 +499,56 @@ export const IeltsDashboard: React.FC<Props> = ({ onBack, userName, userGender, 
                     <p className="text-[10px] text-slate-400 font-medium mt-0.5">Xatosiz, aqlli sun'iy intellekt (9.0 daraja)</p>
                   </div>
                   <div className="ml-auto w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50 group-hover:bg-[#c4f82a] group-hover:text-black transition-all">
+                    <ArrowRight size={12} />
+                  </div>
+                </button>
+
+                {/* Shadowing Trainer */}
+                <button
+                  onClick={() => {
+                    triggerHaptic('medium');
+                    setShowSpeakingModal(false);
+                    setActiveView('shadowing');
+                  }}
+                  className="w-full text-left p-4 rounded-2xl border border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/15 active:scale-[0.98] transition-all flex items-center gap-4 group"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                    <Sparkles size={22} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-white group-hover:text-amber-300 transition-colors">
+                      Shadowing (Talaffuz Mashqi)
+                    </h4>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                      Band 9.0 namunalarni qaytarib urg‘u va talaffuzni sozlang
+                    </p>
+                  </div>
+                  <div className="ml-auto w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50 group-hover:bg-amber-400 group-hover:text-black transition-all">
+                    <ArrowRight size={12} />
+                  </div>
+                </button>
+
+                {/* Yo'l Rejimi (Audio-First) */}
+                <button
+                  onClick={() => {
+                    triggerHaptic('medium');
+                    setShowSpeakingModal(false);
+                    setActiveView('handsfree');
+                  }}
+                  className="w-full text-left p-4 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/15 active:scale-[0.98] transition-all flex items-center gap-4 group"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                    <Mic size={22} />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-white group-hover:text-emerald-300 transition-colors">
+                      Yo‘l Rejimi (Hands-Free)
+                    </h4>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                      Ekranga qaramasdan audio-savol va avtomatik javob yozish
+                    </p>
+                  </div>
+                  <div className="ml-auto w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50 group-hover:bg-emerald-400 group-hover:text-black transition-all">
                     <ArrowRight size={12} />
                   </div>
                 </button>

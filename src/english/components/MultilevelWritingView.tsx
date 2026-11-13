@@ -2,6 +2,9 @@ import React, { useState, useRef } from 'react';
 import { ArrowLeft, Sparkles, CheckCircle2, AlertCircle, Clock, Eye, EyeOff } from 'lucide-react';
 import { triggerHaptic } from '../../utils/telegram';
 import { saveTestResult } from '../utils/storage';
+import { evaluateMultilevelWritingWithAI } from '../utils/writingAiClient';
+import type { MultilevelWritingEvaluation } from '../utils/multilevelWritingScoring';
+import { PostExamActions } from './PostExamActions';
 import type { TestResultItem } from '../types';
 import {
   multilevelWritingBank,
@@ -71,7 +74,9 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
   const [essayText, setEssayText] = useState('');
   const [showModelAnswer, setShowModelAnswer] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
-  const [result, setResult] = useState<WritingBandBreakdown | null>(null);
+  const [result, setResult] = useState<MultilevelWritingEvaluation | null>(null);
+  const [mlResultId, setMlResultId] = useState<string>('');
+  const [showRewrittenSample, setShowRewrittenSample] = useState<boolean>(false);
   const resultsSectionRef = useRef<HTMLDivElement | null>(null);
 
   // Exam Start, Exit Confirmation, and Pending Tab Switch
@@ -134,7 +139,7 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
     setIsTimerRunning(false);
     triggerHaptic('heavy');
 
-    setTimeout(() => {
+    setTimeout(async () => {
       if (wordCount === 0) {
         const emptyEval: WritingBandBreakdown = {
           totalScore: 0,
@@ -349,9 +354,19 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
         recommendedVocabulary,
       };
 
-      setResult(evaluation);
+      const promptCtx = activeTab === 'task1'
+        ? `${currentTask1?.scenario || ''} ${subTask1Mode === 'task1_1' ? currentTask1?.task1_1.prompt || '' : currentTask1?.task1_2.prompt || ''}`
+        : (currentTask2?.prompt || '');
+      const aiRes = await evaluateMultilevelWritingWithAI(essayText, activeTab, subTask1Mode, promptCtx);
+      const finalEval: MultilevelWritingEvaluation = aiRes.isAiEvaluated
+        ? aiRes
+        : { ...evaluation, isAiEvaluated: false };
+      Object.assign(evaluation, finalEval);
+      setMlResultId(`ml_writing_${Date.now()}`);
+      setShowRewrittenSample(false);
+      setResult(finalEval);
       setIsEvaluating(false);
-      setTimeout(() => {
+      setTimeout(async () => {
         resultsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
 
@@ -936,6 +951,81 @@ export const MultilevelWritingView: React.FC<Props> = ({ onBack, userName: _user
                 </div>
               </div>
             )}
+
+            {(() => {
+              const weakCriterion = [
+                { k: 'task' as const, r: result.taskResponse / 20 },
+                { k: 'coherence' as const, r: result.coherenceCohesion / 20 },
+                { k: 'lexical' as const, r: result.lexicalResource / 20 },
+                { k: 'grammar' as const, r: result.grammaticalRange / 15 },
+              ].sort((a, b) => a.r - b.r)[0].k;
+
+              return (
+                <div className="space-y-3">
+                  {result.isOffTopic && (
+                    <div className="bg-rose-50 border border-rose-200 rounded-2xl p-3 text-xs font-bold text-rose-800">
+                      ⚠️ Diqqat: Matn berilgan vaziyat/savol shartidan chetga chiqqan (Off-topic).
+                    </div>
+                  )}
+
+                  {result.sentenceCorrections && result.sentenceCorrections.length > 0 && (
+                    <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-2.5">
+                      <h5 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                        ✍️ Aniq Gap Tuzatishlari (AI Examiner)
+                      </h5>
+                      {result.sentenceCorrections.map((fix, idx) => (
+                        <div key={idx} className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-1 text-xs">
+                          <p className="text-rose-700 line-through decoration-rose-400">❌ {fix.original}</p>
+                          <p className="text-emerald-700 font-bold">✅ {fix.corrected}</p>
+                          {fix.reasonUz && <p className="text-[11px] text-slate-600">💡 {fix.reasonUz}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {result.rewrittenSample && (
+                    <div className="bg-teal-50/70 rounded-2xl p-4 border border-teal-200 space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowRewrittenSample((v) => !v)}
+                        className="w-full flex items-center justify-between text-xs font-black text-teal-800"
+                      >
+                        <span>✨ Sizning g'oyangizning CEFR C1 (68–75 ball) talqini</span>
+                        <span>{showRewrittenSample ? 'Yopish ▲' : "Ko'rish ▼"}</span>
+                      </button>
+                      {showRewrittenSample && (
+                        <p className="text-xs text-slate-800 leading-relaxed whitespace-pre-line bg-white p-3.5 rounded-xl border border-teal-100">
+                          {result.rewrittenSample}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <PostExamActions
+                    resultId={mlResultId || `ml_writing_${result.totalScore}`}
+                    examType="multilevel"
+                    moduleName={`Multilevel Writing (${activeTab === 'task1' ? 'Task 1' : 'Task 2'})`}
+                    headlineScore={`${result.totalScore} / 75`}
+                    subtitle={result.cefrTitle}
+                    criteria={[
+                      { label: 'Task Response (20)', scoreText: `${result.taskResponse}/20`, ratio: result.taskResponse / 20 },
+                      { label: 'Coherence (20)', scoreText: `${result.coherenceCohesion}/20`, ratio: result.coherenceCohesion / 20 },
+                      { label: 'Lexical (20)', scoreText: `${result.lexicalResource}/20`, ratio: result.lexicalResource / 20 },
+                      { label: 'Grammar (15)', scoreText: `${result.grammaticalRange}/15`, ratio: result.grammaticalRange / 15 },
+                    ]}
+                    weakSkill={result.weakSkillTag || weakCriterion}
+                    mistakesToSave={(result.sentenceCorrections || []).map((fix) => ({
+                      source: 'writing' as const,
+                      skillTag: weakCriterion,
+                      title: `Multilevel Writing ${activeTab.toUpperCase()}`,
+                      userText: fix.original,
+                      correction: fix.corrected,
+                      explanation: fix.reasonUz,
+                    }))}
+                  />
+                </div>
+              );
+            })()}
 
             {/* Reset Button */}
             <button

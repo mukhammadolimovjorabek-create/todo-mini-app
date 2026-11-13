@@ -1,4 +1,7 @@
-// Free Voice Speech-To-Text & Free AI Integration
+import { API_BASE_URL } from '../config';
+import { getTelegramInitData } from './telegram';
+
+// Free Voice Speech-To-Text & Real Server AI Integration
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -107,7 +110,32 @@ export class SpeechRecognitionService {
   }
 }
 
-// Qayta moslashuvchanlik uchun queryAI funksiyasi
-export const queryAI = async (prompt: string, _history: ChatMessage[] = [], _groqKey?: string): Promise<string> => {
-  return `Javob: ${prompt}`;
+// Backend AI murabbiy bilan suhbat (/api/ai_analyze)
+export const queryAI = async (
+  prompt: string,
+  history: ChatMessage[] = [],
+  systemPrompt = "Sen Study Lab ilovasining foydali o'zbekcha AI murabbiyisan. Aniq, qisqa va amaliy javob ber."
+): Promise<string> => {
+  try {
+    const initData = getTelegramInitData();
+    const res = await fetch(`${API_BASE_URL}/api/ai_analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(initData ? { 'X-Telegram-Init-Data': initData } : {}),
+      },
+      body: JSON.stringify({
+        systemPrompt,
+        userMessage: prompt,
+        history,
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.reply) return String(data.reply);
+    }
+  } catch (err) {
+    console.warn('queryAI server error:', err);
+  }
+  return "Server bilan bog'lanishda uzilish yuz berdi. Birozdan so'ng qayta urinib ko'ring.";
 };

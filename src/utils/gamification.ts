@@ -1,5 +1,8 @@
-import { loadTasks, getLast7Days, today } from './storage';
+import { loadTasks, today, calculateCurrentStreak } from './storage';
+import { getTestResults } from '../english/utils/storage';
+import { loadInventory } from './shop';
 import type { Task } from '../types';
+import type { TestResultItem } from '../english/types';
 
 export interface BadgeItem {
   id: string;
@@ -7,10 +10,10 @@ export interface BadgeItem {
   label: string;
   desc: string;
   rewardCoins: number;
-  condition: (tasks: Task[], streak: number) => boolean;
+  condition: (tasks: Task[], streak: number, englishResults: TestResultItem[]) => boolean;
 }
 
-// ── Nishonlar (Kichik, qadrli va muvozanatli mukofotlar: 1 - 5 tanga) ──
+// ── Nishonlar (To-Do + Study Lab yagona nishon tizimi) ──
 export const ALL_BADGES: BadgeItem[] = [
   {
     id: 'first_create',
@@ -27,6 +30,25 @@ export const ALL_BADGES: BadgeItem[] = [
     desc: 'Birinchi vazifani yakunlash',
     rewardCoins: 2,
     condition: (tasks) => tasks.filter((t) => t.done).length >= 1,
+  },
+  {
+    id: 'first_english',
+    icon: '🎓',
+    label: 'Study Lab Start',
+    desc: 'Birinchi IELTS/Multilevel sinovini yakunlash',
+    rewardCoins: 3,
+    condition: (_, __, englishResults) => englishResults.length >= 1,
+  },
+  {
+    id: 'high_band_club',
+    icon: '⭐',
+    label: 'Yuqori Natija (6.5+ / B2)',
+    desc: 'IELTS 6.5+ yoki Multilevel 51+ ball olish',
+    rewardCoins: 5,
+    condition: (_, __, englishResults) =>
+      englishResults.some((r) =>
+        r.title.includes('Multilevel') || r.id.startsWith('ml_') ? r.overallBand >= 51 : r.overallBand >= 6.5
+      ),
   },
   {
     id: 'five_in_day',
@@ -54,9 +76,17 @@ export const ALL_BADGES: BadgeItem[] = [
     id: 'three_streak',
     icon: '🌟',
     label: '3 kun streak',
-    desc: '3 kun uzluksiz maqsadli reja',
+    desc: '3 kun uzluksiz maqsadli reja yoki sinov',
     rewardCoins: 3,
     condition: (_, streak) => streak >= 3,
+  },
+  {
+    id: 'seven_streak',
+    icon: '🛡️',
+    label: '7 kun intizom',
+    desc: 'Bir hafta uzluksiz faollik seriyasi',
+    rewardCoins: 5,
+    condition: (_, streak) => streak >= 7,
   },
   {
     id: 'ten_done',
@@ -87,61 +117,39 @@ export const getTaskCoins = (priority?: string): number => {
   return 1;
 };
 
-// ── Tangalarni qayta to'liq hisoblash (Synchronized Engine) ──
-// Agar barcha vazifalar o'chirilsa yoki bajarilmagan bo'lsa — tanga qat'iy 0 bo'ladi!
+export const COINS_PER_ENGLISH_TEST = 4;
+export const COINS_PER_DAILY_CHALLENGE = 5;
+
+// ── Tangalarni qayta to'liq hisoblash (Unified Task + Study Lab + Shop Engine) ──
 export const recalculateCoins = (): number => {
   const tasks = loadTasks();
   const completedTasks = tasks.filter((t) => t.done);
+  const englishResults = getTestResults();
+  const inv = loadInventory();
+  const streak = calculateCurrentStreak();
 
-  if (completedTasks.length === 0) {
-    saveUserCoins(0);
-    return 0;
-  }
-
-  let total = 0;
+  let totalEarned = 0;
   completedTasks.forEach((t) => {
-    total += getTaskCoins(t.priority);
+    totalEarned += getTaskCoins(t.priority);
   });
 
-  // Real ochilgan nishonlar bonusi
-  const days = getLast7Days().reverse();
-  let streak = 0;
-  for (const d of days) {
-    if (d.done > 0) streak++;
-    else break;
-  }
+  totalEarned += englishResults.length * COINS_PER_ENGLISH_TEST;
+  totalEarned += inv.dailyBonusCoins || 0;
+  totalEarned += (inv.dailyChallengeDoneDates?.length || 0) * COINS_PER_DAILY_CHALLENGE;
 
   ALL_BADGES.forEach((b) => {
-    if (b.condition(tasks, streak)) {
-      total += b.rewardCoins;
+    if (b.condition(tasks, streak, englishResults)) {
+      totalEarned += b.rewardCoins;
     }
   });
 
-  saveUserCoins(total);
-  return total;
+  const balance = Math.max(0, totalEarned - (inv.coinsSpent || 0));
+  saveUserCoins(balance);
+  return balance;
 };
 
 // ── Tangalarni olish ──
 export const getUserCoins = (): number => {
-  const tasks = loadTasks();
-  const completedTasks = tasks.filter((t) => t.done);
-
-  // Qat'iy qoida: agar bitta ham bajarilgan vazifa bo'lmasa, tangalar 0 bo'ladi!
-  if (completedTasks.length === 0) {
-    saveUserCoins(0);
-    return 0;
-  }
-
-  try {
-    const raw = localStorage.getItem(COINS_KEY);
-    if (raw !== null) {
-      const val = parseInt(raw, 10);
-      if (!isNaN(val) && val >= 0) {
-        return val;
-      }
-    }
-  } catch {}
-
   return recalculateCoins();
 };
 
@@ -193,12 +201,8 @@ export interface CheckBadgesResult {
 
 export const checkAndUnlockBadges = (): CheckBadgesResult => {
   const tasks = loadTasks();
-  const days = getLast7Days().reverse();
-  let streak = 0;
-  for (const d of days) {
-    if (d.done > 0) streak++;
-    else break;
-  }
+  const englishResults = getTestResults();
+  const streak = calculateCurrentStreak();
 
   const currentlyUnlocked = new Set(getUnlockedBadgeIds());
   const seenAlerts = new Set(getSeenAlertIds());
@@ -206,7 +210,7 @@ export const checkAndUnlockBadges = (): CheckBadgesResult => {
   let coinsAwarded = 0;
 
   ALL_BADGES.forEach((badge) => {
-    if (badge.condition(tasks, streak)) {
+    if (badge.condition(tasks, streak, englishResults)) {
       if (!currentlyUnlocked.has(badge.id)) {
         currentlyUnlocked.add(badge.id);
         if (!seenAlerts.has(badge.id)) {
@@ -221,9 +225,7 @@ export const checkAndUnlockBadges = (): CheckBadgesResult => {
     localStorage.setItem(UNLOCKED_BADGES_KEY, JSON.stringify(Array.from(currentlyUnlocked)));
   } catch {}
 
-  if (coinsAwarded > 0) {
-    addCoins(coinsAwarded);
-  }
+  recalculateCoins();
 
   return { newBadges, coinsAwarded };
 };

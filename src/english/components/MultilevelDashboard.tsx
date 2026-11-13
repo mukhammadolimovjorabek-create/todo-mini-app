@@ -1,10 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Award, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Award, Users, Headphones, Sparkles, Mic, Calculator } from 'lucide-react';
 import { MultilevelSpeakingView } from './MultilevelSpeakingView';
 import { MultilevelWritingView } from './MultilevelWritingView';
 import { PartnerSpeakingView } from './PartnerSpeakingView';
 import { IeltsReadingView } from './IeltsReadingView';
 import { GrammarPlacementView } from './GrammarPlacementView';
+import { ListeningPracticeView } from './ListeningPracticeView';
+import { SpeakingShadowingView } from './SpeakingShadowingView';
+import { HandsFreeSpeakingView } from './HandsFreeSpeakingView';
+import { OtmCalculatorView } from './OtmCalculatorView';
 import { triggerHaptic } from '../../utils/telegram';
 import { getTestResults } from '../utils/storage';
 import {
@@ -22,7 +26,7 @@ interface Props {
   initialWritingTab?: 'task1' | 'task2';
 }
 
-type ActiveView = 'menu' | 'speaking' | 'writing' | 'reading' | 'partner_speaking' | 'placement';
+type ActiveView = 'menu' | 'speaking' | 'writing' | 'reading' | 'listening' | 'partner_speaking' | 'shadowing' | 'handsfree' | 'placement' | 'otm';
 
 export const MultilevelDashboard: React.FC<Props> = ({
   onBack,
@@ -36,18 +40,20 @@ export const MultilevelDashboard: React.FC<Props> = ({
   const [showSpeakingModal, setShowSpeakingModal] = useState(false);
   const [animatedPoints, setAnimatedPoints] = useState(0);
 
-  const { speakingScore, writingScore, readingScore, targetOrAvgPoints, hasRealScore } = useMemo(() => {
+  const { speakingScore, writingScore, readingScore, listeningScore, targetOrAvgPoints, hasRealScore } = useMemo(() => {
     const results = getTestResults();
     const lastSpeaking = results.find(
       (r) => (r.id.startsWith('ml_speaking_') || r.id.startsWith('ml_test_')) && r.overallBand > 0
     );
     const lastWriting = results.find((r) => r.id.startsWith('ml_writing_') && r.overallBand > 0);
     const lastReading = results.find((r) => r.id.startsWith('ml_reading_') && r.overallBand > 0);
+    const lastListening = results.find((r) => r.id.startsWith('ml_listening_') && r.overallBand > 0);
 
     const validScores = [
       lastSpeaking?.overallBand,
       lastWriting?.overallBand,
       lastReading?.overallBand,
+      lastListening?.overallBand,
     ].filter((v): v is number => typeof v === 'number' && v > 0);
 
     const avg =
@@ -59,6 +65,7 @@ export const MultilevelDashboard: React.FC<Props> = ({
       speakingScore: lastSpeaking ? `${lastSpeaking.overallBand}/75` : null,
       writingScore: lastWriting ? `${lastWriting.overallBand}/75` : null,
       readingScore: lastReading ? `${Math.round(lastReading.overallBand)}/75` : null,
+      listeningScore: lastListening ? `${lastListening.overallBand}/75` : null,
       targetOrAvgPoints: avg,
       hasRealScore: validScores.length > 0,
     };
@@ -105,6 +112,22 @@ export const MultilevelDashboard: React.FC<Props> = ({
 
   if (activeView === 'placement') {
     return <GrammarPlacementView onBack={() => setActiveView('menu')} />;
+  }
+
+  if (activeView === 'listening') {
+    return <ListeningPracticeView onBack={() => setActiveView('menu')} examType="multilevel" />;
+  }
+
+  if (activeView === 'shadowing') {
+    return <SpeakingShadowingView onBack={() => setActiveView('menu')} examType="multilevel" />;
+  }
+
+  if (activeView === 'handsfree') {
+    return <HandsFreeSpeakingView onBack={() => setActiveView('menu')} examType="multilevel" />;
+  }
+
+  if (activeView === 'otm') {
+    return <OtmCalculatorView onBack={() => setActiveView('menu')} />;
   }
 
   if (activeView === 'partner_speaking') {
@@ -454,13 +477,72 @@ export const MultilevelDashboard: React.FC<Props> = ({
             </div>
           </div>
 
+          {/* Listening & OTM Kalkulyator */}
+          <div className="grid grid-cols-2 gap-3.5 pt-1 eng-cascade-4">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                triggerHaptic('medium');
+                setActiveView('listening');
+              }}
+              className="p-4 rounded-[2rem] bg-[#181630] border border-sky-500/30 hover:border-sky-400/70 transition-all cursor-pointer group active:scale-[0.98] space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-2xl bg-sky-500/15 border border-sky-400/30 flex items-center justify-center text-sky-400">
+                  <Headphones size={20} />
+                </div>
+                {listeningScore && (
+                  <span className="text-[10px] font-black text-sky-300 bg-sky-500/15 px-2 py-0.5 rounded-full">
+                    {listeningScore}
+                  </span>
+                )}
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-white group-hover:text-sky-300 transition-colors">
+                  Listening
+                </h4>
+                <p className="text-[10px] text-slate-400 leading-snug mt-0.5">
+                  3 ta track · B1–C1 dialoglar
+                </p>
+              </div>
+            </div>
+
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                triggerHaptic('medium');
+                setActiveView('otm');
+              }}
+              className="p-4 rounded-[2rem] bg-[#181630] border border-amber-500/30 hover:border-amber-400/70 transition-all cursor-pointer group active:scale-[0.98] space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center text-amber-400">
+                  <Calculator size={20} />
+                </div>
+                <span className="text-[9px] font-black text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-full">
+                  DTM
+                </span>
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-white group-hover:text-amber-300 transition-colors">
+                  OTM Kalkulyator
+                </h4>
+                <p className="text-[10px] text-slate-400 leading-snug mt-0.5">
+                  B2/C1 imtiyoz &amp; 189 ball hisobi
+                </p>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
       {/* Speaking Mode Modal (Sherik qidirish vs AI Examiner) */}
       {showSpeakingModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[#0a0818]/90 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="bg-[#181630] border border-emerald-500/30 w-full max-w-sm rounded-[2rem] p-6 space-y-5 shadow-2xl relative animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
+          <div className="bg-[#181630] border border-emerald-500/30 w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-[2rem] p-6 space-y-4 shadow-2xl relative animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
             <button
               onClick={() => setShowSpeakingModal(false)}
               className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 transition-colors"
@@ -520,6 +602,56 @@ export const MultilevelDashboard: React.FC<Props> = ({
                   </p>
                 </div>
                 <div className="ml-auto w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50 group-hover:bg-indigo-500 group-hover:text-white transition-all">
+                  <ArrowRight size={12} />
+                </div>
+              </button>
+
+              {/* 3. Shadowing Trainer */}
+              <button
+                onClick={() => {
+                  triggerHaptic('medium');
+                  setShowSpeakingModal(false);
+                  setActiveView('shadowing');
+                }}
+                className="w-full text-left p-4 rounded-2xl border border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/15 active:scale-[0.98] transition-all flex items-center gap-4 group"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                  <Sparkles size={22} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-white group-hover:text-amber-300 transition-colors">
+                    Shadowing (Talaffuz Mashqi)
+                  </h4>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                    C1 namunalarni qaytarib urg‘u va talaffuzni charxlang
+                  </p>
+                </div>
+                <div className="ml-auto w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50 group-hover:bg-amber-400 group-hover:text-black transition-all">
+                  <ArrowRight size={12} />
+                </div>
+              </button>
+
+              {/* 4. Yo'l Rejimi (Audio-First) */}
+              <button
+                onClick={() => {
+                  triggerHaptic('medium');
+                  setShowSpeakingModal(false);
+                  setActiveView('handsfree');
+                }}
+                className="w-full text-left p-4 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/15 active:scale-[0.98] transition-all flex items-center gap-4 group"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                  <Mic size={22} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-white group-hover:text-emerald-300 transition-colors">
+                    Yo‘l Rejimi (Hands-Free)
+                  </h4>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                    Ekranga qaramasdan audio-savol va avtomatik javob yozish
+                  </p>
+                </div>
+                <div className="ml-auto w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50 group-hover:bg-emerald-400 group-hover:text-black transition-all">
                   <ArrowRight size={12} />
                 </div>
               </button>

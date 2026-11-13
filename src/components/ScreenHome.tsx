@@ -5,7 +5,7 @@ import {
   getActiveTasks, addTask, toggleTask, deleteTask,
   getCategoryColor, getCategoryLabel,
   getPriorityColor, getPriorityLabel,
-  updateStats, getLast7Days,
+  updateStats, calculateCurrentStreak,
 } from '../utils/storage';
 import { triggerHaptic } from '../utils/telegram';
 import {
@@ -34,9 +34,10 @@ interface ScreenHomeProps {
   onTasksChange?: () => void;
   onOpenEnglish?: (exam?: 'ielts' | 'multilevel' | null) => void;
   onBackToHub?: () => void;
+  onOpenShop?: () => void;
 }
 
-export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange, onOpenEnglish, onBackToHub: _onBackToHub }) => {
+export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange, onOpenEnglish, onBackToHub, onOpenShop }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activeScopeTab, setActiveScopeTab] = useState<'daily' | 'weekly'>('daily');
   const [newScope, setNewScope] = useState<TaskScope>('daily');
@@ -90,6 +91,9 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
   const reload = useCallback(() => {
     setTasks(getActiveTasks());
     setCoins(recalculateCoins());
+    const syncHandler = () => setCoins(recalculateCoins());
+    window.addEventListener('studylab:sync', syncHandler);
+    return () => window.removeEventListener('studylab:sync', syncHandler);
   }, []);
 
   useEffect(() => {
@@ -192,13 +196,8 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
     return () => clearTimeout(timer);
   }, [pct, displayPct]);
 
-  // Streak hisoblash (seriya uchun)
-  const weekDays = getLast7Days().reverse();
-  let currentStreak = 0;
-  for (const d of weekDays) {
-    if (d.done > 0) currentStreak++;
-    else break;
-  }
+  // Streak hisoblash (unified To-Do + English + Streak Freeze)
+  const currentStreak = calculateCurrentStreak();
 
   // SVG Circular ring hisobi
   const ringRadius = 26;
@@ -286,6 +285,8 @@ export const ScreenHome: React.FC<ScreenHomeProps> = ({ userName, onTasksChange,
           coins={coins}
           floatingCoin={floatingCoin}
           onOpenEnglish={() => onOpenEnglish?.(null)}
+          onOpenShop={onOpenShop}
+          onBackToHub={onBackToHub}
           hideIeltsCard={true}
         />
 

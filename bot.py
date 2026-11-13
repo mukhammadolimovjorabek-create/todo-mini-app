@@ -11,7 +11,7 @@ import re
 import asyncpg
 from datetime import datetime
 from dotenv import load_dotenv
-from aiohttp import web, ClientSession
+from aiohttp import web, ClientSession, FormData
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart, Command, ChatMemberUpdatedFilter, KICKED, MEMBER
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramRetryAfter
@@ -22,13 +22,21 @@ from aiogram.types import (
     ReplyKeyboardMarkup,
     KeyboardButton,
     FSInputFile,
-    ChatMemberUpdated
+    ChatMemberUpdated,
+    InlineQuery,
+    InlineQueryResultArticle,
+    InputTextMessageContent
 )
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 # Configuration
 BASE_DIR = os.path.dirname(__file__)
 USERS_FILE = os.path.join(BASE_DIR, "users.json")
+DAILY_CHALLENGE_FILE = os.path.join(BASE_DIR, "daily_challenges.json")
+DUO_PAIRS_FILE = os.path.join(BASE_DIR, "duo_pairs.json")
+BOT_CHANNELS_FILE = os.path.join(BASE_DIR, "bot_channels.json")
+DEFAULT_BOT_USERNAME = (os.getenv("BOT_USERNAME") or "aitasklistbot").strip().lstrip("@")
+_CACHED_BOT_USERNAME = None
 BANNER_PATH = os.path.join(BASE_DIR, "welcome_banner.jpg")
 
 # Load environment variables
@@ -220,6 +228,35 @@ async def init_db():
                 );
                 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
                 ALTER TABLE user_sync ENABLE ROW LEVEL SECURITY;
+                CREATE TABLE IF NOT EXISTS daily_challenges (
+                    challenge_date TEXT NOT NULL,
+                    user_id BIGINT NOT NULL,
+                    first_name TEXT DEFAULT '',
+                    exam_type TEXT DEFAULT 'ielts',
+                    score DOUBLE PRECISION DEFAULT 0,
+                    transcript TEXT DEFAULT '',
+                    feedback_uz TEXT DEFAULT '',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (challenge_date, user_id)
+                );
+                CREATE TABLE IF NOT EXISTS duo_pairs (
+                    user_id BIGINT PRIMARY KEY,
+                    partner_id BIGINT NOT NULL,
+                    partner_name TEXT DEFAULT '',
+                    my_name TEXT DEFAULT '',
+                    mutual_streak INT DEFAULT 0,
+                    last_nudge_at TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+                CREATE TABLE IF NOT EXISTS bot_channels (
+                    chat_id TEXT PRIMARY KEY,
+                    title TEXT DEFAULT '',
+                    added_by BIGINT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+                ALTER TABLE daily_challenges ENABLE ROW LEVEL SECURITY;
+                ALTER TABLE duo_pairs ENABLE ROW LEVEL SECURITY;
+                ALTER TABLE bot_channels ENABLE ROW LEVEL SECURITY;
             """)
         logging.info("Connected to PostgreSQL Database (RLS enabled).")
     else:
@@ -403,7 +440,19 @@ async def cmd_start(message: types.Message):
         except Exception as e:
             logging.error(f"Referrer tekshirishda xatolik: {e}")
 
-    app_url = f"{WEB_APP_URL}?ref={referrer_id}" if referrer_id else WEB_APP_URL
+    startapp_arg = ""
+    if len(parts) > 1 and not referrer_id:
+        cand = parts[1].strip()[:64]
+        if re.match(r"^[A-Za-z0-9_-]{1,64}$", cand):
+            startapp_arg = cand
+
+    if referrer_id:
+        app_url = f"{WEB_APP_URL}?ref={referrer_id}"
+    elif startapp_arg:
+        sep = "&" if "?" in WEB_APP_URL else "?"
+        app_url = f"{WEB_APP_URL}{sep}startapp={urllib.parse.quote(startapp_arg)}"
+    else:
+        app_url = WEB_APP_URL
 
     inline_kb = InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text="🚀 Ilovani ochish (Mini App)", web_app=WebAppInfo(url=app_url))]]
@@ -731,6 +780,226 @@ async def handle_decline_ref(callback: types.CallbackQuery):
     await callback.message.edit_text("❌ Do'stlik taklifi rad etildi.", parse_mode="HTML", reply_markup=kb)
     await callback.answer("Rad etildi.")
 
+async def _resolve_bot_username() -> str:
+    global _CACHED_BOT_USERNAME
+    if _CACHED_BOT_USERNAME:
+        return _CACHED_BOT_USERNAME
+    try:
+        me = await bot.get_me()
+        if me and me.username:
+            _CACHED_BOT_USERNAME = me.username.lstrip("@")
+            return _CACHED_BOT_USERNAME
+    except Exception:
+        pass
+    return DEFAULT_BOT_USERNAME
+
+INLINE_QUIZZES = [
+    {
+        "id": "ielts1",
+        "title": "IELTS Band 8.0 Collocation: Mitigate vs Exacerbate",
+        "desc": "Task 2 Writing va Speaking Part 3 uchun yuqori darajali so'z testi",
+        "text": (
+            "🎯 <b>Study Lab — IELTS Band 8.0 Mini-Quiz</b>\n\n"
+            "❓ Quyidagi Task 2 gapini to'ldiring:\n"
+            "<i>\"Governments should introduce strict subsidies to _____ the economic burden on rural families.\"</i>\n\n"
+            "A) exacerbate   B) alleviate   C) deteriorate   D) escalate\n\n"
+            "👇 To'g'ri javob va AI tahlilini ilovada tekshiring:"
+        ),
+        "btn": "⚡ Mini App'da yechish",
+        "startapp": "quiz_ielts1",
+    },
+    {
+        "id": "ml1",
+        "title": "Multilevel (CEFR C1) Speaking & Grammar Trap",
+        "desc": "UzBMB 75 ballik imtihon uchun Inversiya va C1 konstruksiya",
+        "text": (
+            "🏛 <b>Study Lab — Milliy Sertifikat (Multilevel) Quiz</b>\n\n"
+            "❓ To'g'ri C1 inversiya variantini toping:\n"
+            "<i>\"Not only _____ renewable energy, but it also creates thousands of green jobs.\"</i>\n\n"
+            "A) solar power reduces emissions\n"
+            "B) does solar power reduce emissions\n"
+            "C) solar power does reduce emissions\n"
+            "D) reduces solar power emissions\n\n"
+            "👇 Javobingizni tekshirish va 75 ballik tahlil olish:"
+        ),
+        "btn": "🏛 Quizni yechish (Study Lab)",
+        "startapp": "quiz_ml1",
+    },
+    {
+        "id": "ielts2",
+        "title": "IELTS Reading: True / False / Not Given Tuzog'i",
+        "desc": "Eng ko'p xato qilinadigan NOT GIVEN vs FALSE farqi",
+        "text": (
+            "📖 <b>Study Lab — IELTS Reading T/F/NG Tuzog'i</b>\n\n"
+            "Matn: <i>\"The museum opened its digital archive in 2019, making 40% of its manuscripts accessible online.\"</i>\n"
+            "Savol: <b>All of the museum's manuscripts are now available on the internet.</b>\n\n"
+            "👉 Javob <b>FALSE</b> mi yoki <b>NOT GIVEN</b>?\n"
+            "👇 Batafsil tahlil va kunlik Reading mashqi:"
+        ),
+        "btn": "📖 Javob va tahlilni ko'rish",
+        "startapp": "quiz_ielts2",
+    },
+    {
+        "id": "daily",
+        "title": "🔥 Bugungi Kun Savoli (Daily Voice Challenge)",
+        "desc": "60 soniyada javob bering va Top-3 reytingga kiring!",
+        "text": (
+            "🎙 <b>Study Lab — Bugungi Kun Savoli (Kunlik Challenge)</b>\n\n"
+            "Bugungi 1 daqiqalik IELTS / Multilevel Speaking savoliga ovozli javob bering va AI bahosini Top-3 reyting bilan solishtiring!\n\n"
+            "🪙 Ishtirok uchun <b>+5 Coin</b> beriladi."
+        ),
+        "btn": "🎙 Challenge'ga qo'shilish",
+        "startapp": "quiz_daily",
+    },
+]
+
+def _read_json_file_sync(path: str, default):
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return default
+
+def _write_json_file_sync(path: str, payload) -> None:
+    try:
+        tmp = f"{path}.tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, path)
+    except Exception as e:
+        logging.warning(f"JSON write error ({path}): {e}")
+
+@dp.inline_query()
+async def handle_inline_quiz_query(inline_query: InlineQuery):
+    q = (inline_query.query or "").strip().lower()
+    bot_uname = await _resolve_bot_username()
+    matched = [
+        item for item in INLINE_QUIZZES
+        if not q or q in item["title"].lower() or q in item["desc"].lower() or q in item["id"].lower()
+    ]
+    if not matched:
+        matched = INLINE_QUIZZES
+
+    results = []
+    for item in matched[:10]:
+        deep_link = f"https://t.me/{bot_uname}?startapp={item['startapp']}"
+        kb = InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text=item["btn"], url=deep_link)]]
+        )
+        results.append(
+            InlineQueryResultArticle(
+                id=f"sl_{item['id']}",
+                title=item["title"],
+                description=item["desc"],
+                input_message_content=InputTextMessageContent(
+                    message_text=item["text"],
+                    parse_mode="HTML",
+                ),
+                reply_markup=kb,
+            )
+        )
+    try:
+        await inline_query.answer(results, cache_time=60, is_personal=False)
+    except Exception as e:
+        logging.warning(f"Inline query answer error: {e}")
+
+@dp.message(F.chat.id == ADMIN_ID, Command("set_channel"))
+async def cmd_set_channel(message: types.Message):
+    parts = (message.text or "").split(maxsplit=1)
+    if len(parts) < 2:
+        await message.answer(
+            "📢 Format: <code>/set_channel @kanal_nomi</code> yoki <code>/set_channel -1001234567890</code>\n"
+            "Bot kanalda admin bo'lishi shart.",
+            parse_mode="HTML",
+        )
+        return
+    chan_ref = parts[1].strip()
+    try:
+        chat = await bot.get_chat(chan_ref)
+    except Exception as e:
+        await message.answer(f"❌ Kanal topilmadi yoki ruxsat yo'q: <code>{esc(e)}</code>", parse_mode="HTML")
+        return
+
+    chat_id_str = str(chat.id)
+    title = chat.title or chan_ref
+    if db_pool:
+        async with db_pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO bot_channels (chat_id, title, added_by)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (chat_id) DO UPDATE SET title = $2, added_by = $3
+                """,
+                chat_id_str,
+                title,
+                message.from_user.id,
+            )
+    else:
+        channels = _read_json_file_sync(BOT_CHANNELS_FILE, {})
+        channels[chat_id_str] = {"chat_id": chat_id_str, "title": title, "added_by": message.from_user.id}
+        _write_json_file_sync(BOT_CHANNELS_FILE, channels)
+
+    await message.answer(
+        f"✅ Kanal ulandi: <b>{esc(title)}</b> (<code>{esc(chat_id_str)}</code>)\n"
+        "Endi <code>/channel_post</code> buyrug'i bilan interaktiv Kun Savoli widgetini yuboring.",
+        parse_mode="HTML",
+    )
+
+@dp.message(F.chat.id == ADMIN_ID, Command("channel_post"))
+async def cmd_channel_post(message: types.Message):
+    parts = (message.text or "").split(maxsplit=1)
+    custom_topic = parts[1].strip() if len(parts) > 1 else ""
+    bot_uname = await _resolve_bot_username()
+
+    channels_list = []
+    if db_pool:
+        async with db_pool.acquire() as conn:
+            rows = await conn.fetch("SELECT chat_id, title FROM bot_channels")
+            channels_list = [(r["chat_id"], r["title"]) for r in rows]
+    else:
+        channels_map = _read_json_file_sync(BOT_CHANNELS_FILE, {})
+        channels_list = [(cid, info.get("title", cid)) for cid, info in channels_map.items()]
+
+    if not channels_list:
+        await message.answer(
+            "ℹ️ Hali ulangan kanal yo'q. Avval <code>/set_channel @kanalingiz</code> yozing.",
+            parse_mode="HTML",
+        )
+        return
+
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    prompt_line = esc(custom_topic) if custom_topic else "Describe a skill you learned outside school that significantly helped you."
+    post_text = (
+        f"🔥 <b>STUDY LAB — KUN SAVOLI ({today_str})</b>\n\n"
+        f"🎙 <b>Savol:</b> <i>\"{prompt_line}\"</i>\n\n"
+        "⏱ 60 soniyada ingliz tilida ovozli javob bering, AI darhol Band / 75 ball qo'yadi va eng yaxshi 3 ta javob ro'yxatiga kiritadi!\n"
+        "🏛 Bundan tashqari: <b>O'zbekiston OTM Imtiyoz Kalkulyatori</b> ham ilova ichida."
+    )
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🎙 Javob berish (+5 Coin)", url=f"https://t.me/{bot_uname}?startapp=quiz_daily")],
+            [
+                InlineKeyboardButton(text="🏛 OTM Ball Kalkulyator", url=f"https://t.me/{bot_uname}?startapp=otm"),
+                InlineKeyboardButton(text="🎧 Listening", url=f"https://t.me/{bot_uname}?startapp=listening"),
+            ],
+        ]
+    )
+
+    sent_ok = 0
+    failed = 0
+    for cid, _ in channels_list:
+        try:
+            target_id = int(cid) if cid.lstrip("-").isdigit() else cid
+            await bot.send_message(chat_id=target_id, text=post_text, parse_mode="HTML", reply_markup=kb)
+            sent_ok += 1
+        except Exception as e:
+            logging.warning(f"Channel post failed for {cid}: {e}")
+            failed += 1
+
+    await message.answer(f"📢 Kanal widgeti yuborildi! ✅ Muvaffaqiyatli: {sent_ok}, ❌ Xato: {failed}")
+
 # ----------------- MAIN RUNNER -----------------
 
 async def api_unfriend(request):
@@ -915,7 +1184,762 @@ async def api_ai_analyze(request):
             return resp
 
 
+import base64
 import uuid
+
+transcribe_rate_limits = {}
+evaluate_speaking_rate_limits = {}
+
+writing_rate_limits = {}
+daily_rate_limits = {}
+cheatsheet_rate_limits = {}
+
+DAILY_PROMPTS = [
+    {
+        "id": "dc1",
+        "topic": "Technology & Daily Life",
+        "question": "Describe a mobile app or digital tool that significantly improved your study or daily productivity. Explain how you use it and why you recommend it.",
+        "uzHint": "Qaysi ilova yoki raqamli vosita sizga o'qishda/ishda eng ko'p foyda berganini aniq misollar bilan tushuntiring.",
+        "targetSeconds": 60,
+    },
+    {
+        "id": "dc2",
+        "topic": "Education & Future Skills",
+        "question": "Some people think learning a foreign language is best done in a classroom, while others prefer real-life practice and AI tools. What is your view?",
+        "uzHint": "An'anaviy darslar va mustaqil AI/amaliyot usullarini taqqoslab, shaxsiy fikringizni bildiring.",
+        "targetSeconds": 60,
+    },
+    {
+        "id": "dc3",
+        "topic": "Hometown & Urban Changes",
+        "question": "How has your hometown or city changed over the past five years, and has this change mostly improved people's lives?",
+        "uzHint": "Shahringiz/tumaningizdagi so'nggi 5 yildagi ijobiy o'zgarishlar va muammolarni ingliz tilida tasvirlang.",
+        "targetSeconds": 60,
+    },
+    {
+        "id": "dc4",
+        "topic": "Success & Motivation",
+        "question": "Describe a difficult goal you set for yourself and managed to achieve. What obstacles did you overcome?",
+        "uzHint": "Qiyin maqsadingizga erishish yo'lidagi to'siqlar va olgan sabog'ingizni aytib bering.",
+        "targetSeconds": 60,
+    },
+    {
+        "id": "dc5",
+        "topic": "Environment & Uzbekistan",
+        "question": "What practical steps can young people in Uzbekistan take to protect the local environment and reduce water waste?",
+        "uzHint": "Yoshlar atrof-muhit va suvni asrash uchun kundalik hayotda nima qilishi mumkinligini asoslang.",
+        "targetSeconds": 60,
+    },
+    {
+        "id": "dc6",
+        "topic": "Work & Career Balance",
+        "question": "Would you prefer a stable job with predictable hours or a high-growth startup career with more risk? Explain your reasoning.",
+        "uzHint": "Barqaror ish yoki startap karyerasi o'rtasidagi tanlovingizni ikki sabab bilan asoslang.",
+        "targetSeconds": 60,
+    },
+    {
+        "id": "dc7",
+        "topic": "Reading & Culture",
+        "question": "Do you think printed books will eventually disappear because of smartphones and audiobooks? Why or why not?",
+        "uzHint": "Bosma kitoblar kelajagi haqida o'z pozitsiyangizni misollar bilan yoriting.",
+        "targetSeconds": 60,
+    },
+]
+
+def _get_today_challenge_prompt():
+    today_dt = datetime.now()
+    day_idx = today_dt.timetuple().tm_yday % len(DAILY_PROMPTS)
+    return today_dt.strftime("%Y-%m-%d"), DAILY_PROMPTS[day_idx]
+
+def _parse_json_lenient(raw_text: str):
+    cleaned = str(raw_text or "").strip()
+    fence = re.search(r"```(?:json)?\s*([\s\S]*?)```", cleaned, re.IGNORECASE)
+    cand = fence.group(1).strip() if fence else cleaned
+    l_idx = cand.find("{")
+    r_idx = cand.rfind("}")
+    if l_idx != -1 and r_idx > l_idx:
+        return json.loads(cand[l_idx:r_idx + 1])
+    return json.loads(cand)
+
+def _build_writing_system_prompt(exam_type: str, task_type: str) -> str:
+    if exam_type == "multilevel":
+        return (
+            f"You are a strict, certified UzBMB (Bilim va malakalarni baholash agentligi) CEFR Multilevel Writing Examiner.\n"
+            f"Evaluate the candidate's response for Multilevel Writing ({task_type}) using the official 75-point rubric.\n"
+            "Rules:\n"
+            "1. Penalize grammar mistakes, weak coherence, wrong register, underlength (Task 1.1 <50w, Task 1.2 <120w, Task 2 <180w) and off-topic text.\n"
+            "2. All explanations ('strengths', 'improvements', 'sentenceCorrections[].reasonUz') must be in natural Uzbek quoting exact phrases.\n"
+            "3. Provide 'rewrittenSample' at CEFR C1 (68-75 ball) level preserving candidate's ideas.\n"
+            "Return ONLY valid JSON with keys: taskResponse (0-20), coherenceCohesion (0-20), lexicalResource (0-20), grammaticalRange (0-15), "
+            "totalScore (0-75), cefrLevel ('C1'|'B2'|'B1'|'A2'), isOffTopic (bool), weakSkillTag ('task'|'coherence'|'lexical'|'grammar'), "
+            "strengths (list[str]), improvements (list[str]), sentenceCorrections ([{original, corrected, reasonUz}]), "
+            "rewrittenSample (str), detectedAcademicWords (list[str]), recommendedVocabulary ([{word, meaning, example}])."
+        )
+    return (
+        f"You are a strict, certified Cambridge / British Council IELTS Writing Examiner.\n"
+        f"Evaluate IELTS Writing ({task_type}) using Official IELTS Band Descriptors (0.0-9.0 in 0.5 steps).\n"
+        "Rules:\n"
+        "1. Never inflate scores. Penalize real grammar slips, informal academic tone, short essays (Task 1 <150w, Task 2 <250w), and off-topic text.\n"
+        "2. Feedback ('strengths', 'improvements', 'sentenceCorrections[].reasonUz') MUST be in natural Uzbek quoting candidate sentences.\n"
+        "3. Provide a full Band 8.0+ upgrade in 'rewrittenSample' keeping candidate arguments.\n"
+        "Return ONLY valid JSON with keys: taskResponse (0-9), coherenceCohesion (0-9), lexicalResource (0-9), grammaticalRange (0-9), "
+        "overallBand (0-9 in 0.5), isOffTopic (bool), weakSkillTag ('task'|'coherence'|'lexical'|'grammar'), "
+        "strengths (list[str]), improvements (list[str]), sentenceCorrections ([{original, corrected, reasonUz}]), "
+        "rewrittenSample (str), detectedAcademicWords (list[str]), recommendedVocabulary ([{word, meaning, example}])."
+    )
+
+async def api_evaluate_writing(request):
+    if request.method == "OPTIONS":
+        return web.Response()
+
+    auth_user = extract_auth_user(request)
+    rate_key = str(auth_user.get("id")) if auth_user else f"ip:{get_client_ip(request)}"
+    if not check_rate_limit(writing_rate_limits, rate_key, limit=15, window=60):
+        return web.json_response({"error": "Juda ko'p so'rov, biroz kuting"}, status=429)
+
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+
+    exam_type = "multilevel" if body.get("examType") == "multilevel" else "ielts"
+    task_type = str(body.get("taskType") or "task2")[:30]
+    prompt = str(body.get("prompt") or "")[:1500]
+    essay_text = str(body.get("essayText") or "").strip()[:8000]
+    if not essay_text:
+        return web.json_response({"error": "Essay text required"}, status=400)
+
+    word_count = len([w for w in essay_text.split() if w])
+    system_prompt = _build_writing_system_prompt(exam_type, task_type)
+    user_payload = f"EXAM: {exam_type.upper()} ({task_type})\nWORD COUNT: {word_count}\nTASK PROMPT:\n{prompt}\n\nCANDIDATE WRITING:\n{essay_text}"
+
+    gemini_key = (os.getenv("ENGLISH_GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("VITE_GEMINI_API_KEY") or "").strip()
+    groq_key = (os.getenv("GROQ_API_KEY") or os.getenv("ENGLISH_GROQ_API_KEY") or os.getenv("VITE_GROQ_API_KEY") or "").strip()
+    if not gemini_key and not groq_key:
+        return web.json_response({"error": "AI writing service not configured"}, status=503)
+
+    evaluation = None
+    async with ClientSession() as session:
+        if gemini_key:
+            for model in ("gemini-2.5-flash", "gemini-2.0-flash"):
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+                    async with session.post(
+                        url,
+                        headers={"x-goog-api-key": gemini_key},
+                        json={
+                            "systemInstruction": {"parts": [{"text": system_prompt}]},
+                            "contents": [{"role": "user", "parts": [{"text": user_payload}]}],
+                            "generationConfig": {"temperature": 0.25, "responseMimeType": "application/json"},
+                        },
+                        timeout=35,
+                    ) as r:
+                        if r.status == 200:
+                            data = await r.json()
+                            parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+                            txt = "".join(p.get("text", "") for p in parts)
+                            if txt:
+                                evaluation = _parse_json_lenient(txt)
+                                break
+                except Exception as e:
+                    logging.warning(f"Gemini writing error ({model}): {e}")
+
+        if not evaluation and groq_key:
+            try:
+                async with session.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {groq_key}"},
+                    json={
+                        "model": "llama-3.3-70b-versatile",
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_payload},
+                        ],
+                        "temperature": 0.25,
+                        "response_format": {"type": "json_object"},
+                    },
+                    timeout=35,
+                ) as r:
+                    if r.status == 200:
+                        data = await r.json()
+                        txt = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                        if txt:
+                            evaluation = _parse_json_lenient(txt)
+            except Exception as e:
+                logging.warning(f"Groq writing error: {e}")
+
+    if not evaluation:
+        return web.json_response({"error": "AI writing evaluation failed"}, status=502)
+
+    return web.json_response({"evaluation": evaluation})
+
+async def api_daily_challenge(request):
+    if request.method == "OPTIONS":
+        return web.Response()
+
+    today_str, prompt_obj = _get_today_challenge_prompt()
+    auth_user = extract_auth_user(request)
+
+    if request.method == "GET":
+        top_entries = []
+        my_entry = None
+        if db_pool:
+            try:
+                async with db_pool.acquire() as conn:
+                    rows = await conn.fetch(
+                        """
+                        SELECT user_id, first_name, exam_type, score, transcript, feedback_uz, created_at
+                        FROM daily_challenges
+                        WHERE challenge_date = $1
+                        ORDER BY score DESC, created_at ASC
+                        LIMIT 15
+                        """,
+                        today_str,
+                    )
+                    for r in rows:
+                        entry = {
+                            "userId": str(r["user_id"]),
+                            "firstName": r["first_name"] or "Foydalanuvchi",
+                            "examType": r["exam_type"] or "ielts",
+                            "score": float(r["score"] or 0),
+                            "transcript": r["transcript"] or "",
+                            "feedbackUz": r["feedback_uz"] or "",
+                        }
+                        top_entries.append(entry)
+                        if auth_user and str(auth_user.get("id")) == entry["userId"]:
+                            my_entry = entry
+            except Exception as e:
+                logging.warning(f"Daily challenge GET db error: {e}")
+        else:
+            store = _read_json_file_sync(DAILY_CHALLENGE_FILE, {})
+            day_rows = list((store.get(today_str) or {}).values())
+            day_rows.sort(key=lambda x: (-float(x.get("score", 0)), x.get("created_at", "")))
+            top_entries = day_rows[:15]
+            if auth_user:
+                my_entry = (store.get(today_str) or {}).get(str(auth_user.get("id")))
+
+        return web.json_response({
+            "date": today_str,
+            "prompt": prompt_obj,
+            "leaderboard": top_entries,
+            "myEntry": my_entry,
+        })
+
+    if not auth_user:
+        return unauthorized_response()
+    uid = int(auth_user["id"])
+    if not check_rate_limit(daily_rate_limits, f"dc:{uid}", limit=10, window=60):
+        return web.json_response({"error": "Too many requests"}, status=429)
+
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+
+    exam_type = "multilevel" if body.get("examType") == "multilevel" else "ielts"
+    raw_score = float(body.get("score") or 0)
+    clamped_score = max(0.0, min(75.0 if exam_type == "multilevel" else 9.0, raw_score))
+    transcript = str(body.get("transcript") or "")[:1200]
+    feedback_uz = str(body.get("feedbackUz") or "")[:400]
+    first_name = str(auth_user.get("first_name") or "Foydalanuvchi")[:64]
+
+    if db_pool:
+        try:
+            async with db_pool.acquire() as conn:
+                await conn.execute(
+                    """
+                    INSERT INTO daily_challenges (challenge_date, user_id, first_name, exam_type, score, transcript, feedback_uz)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
+                    ON CONFLICT (challenge_date, user_id)
+                    DO UPDATE SET
+                        first_name = EXCLUDED.first_name,
+                        exam_type = EXCLUDED.exam_type,
+                        score = GREATEST(daily_challenges.score, EXCLUDED.score),
+                        transcript = EXCLUDED.transcript,
+                        feedback_uz = EXCLUDED.feedback_uz
+                    """,
+                    today_str,
+                    uid,
+                    first_name,
+                    exam_type,
+                    clamped_score,
+                    transcript,
+                    feedback_uz,
+                )
+        except Exception as e:
+            logging.warning(f"Daily challenge POST db error: {e}")
+    else:
+        store = _read_json_file_sync(DAILY_CHALLENGE_FILE, {})
+        day_map = store.setdefault(today_str, {})
+        existing = day_map.get(str(uid))
+        best_score = max(float(existing.get("score", 0)) if existing else 0.0, clamped_score)
+        day_map[str(uid)] = {
+            "userId": str(uid),
+            "firstName": first_name,
+            "examType": exam_type,
+            "score": best_score,
+            "transcript": transcript,
+            "feedbackUz": feedback_uz,
+            "created_at": datetime.now().isoformat(),
+        }
+        _write_json_file_sync(DAILY_CHALLENGE_FILE, store)
+
+    return web.json_response({"success": True, "date": today_str, "score": clamped_score})
+
+async def api_duo(request):
+    if request.method == "OPTIONS":
+        return web.Response()
+
+    auth_user = extract_auth_user(request)
+    if not auth_user:
+        return unauthorized_response()
+    uid = int(auth_user["id"])
+    my_name = str(auth_user.get("first_name") or "Foydalanuvchi")[:64]
+
+    if request.method == "GET":
+        duo_info = None
+        if db_pool:
+            try:
+                async with db_pool.acquire() as conn:
+                    row = await conn.fetchrow(
+                        """
+                        SELECT d.partner_id, d.partner_name, d.mutual_streak, d.last_nudge_at, u.first_name, u.last_active
+                        FROM duo_pairs d
+                        LEFT JOIN users u ON u.user_id = d.partner_id
+                        WHERE d.user_id = $1
+                        """,
+                        uid,
+                    )
+                    if row:
+                        p_last = row["last_active"].strftime("%Y-%m-%d") if row["last_active"] else ""
+                        today_s = datetime.now().strftime("%Y-%m-%d")
+                        nudge_dt = row["last_nudge_at"]
+                        can_nudge = True if not nudge_dt else ((datetime.now() - nudge_dt.replace(tzinfo=None)).total_seconds() >= 14400)
+                        duo_info = {
+                            "partnerId": str(row["partner_id"]),
+                            "partnerName": row["first_name"] or row["partner_name"] or "Sherik",
+                            "mutualStreak": row["mutual_streak"] or 1,
+                            "partnerActiveToday": p_last == today_s,
+                            "canNudge": can_nudge,
+                        }
+            except Exception as e:
+                logging.warning(f"Duo GET db error: {e}")
+        else:
+            pairs = _read_json_file_sync(DUO_PAIRS_FILE, {})
+            rec = pairs.get(str(uid))
+            if rec:
+                last_ts = float(rec.get("last_nudge_ts") or 0)
+                duo_info = {
+                    "partnerId": str(rec.get("partner_id")),
+                    "partnerName": rec.get("partner_name") or "Sherik",
+                    "mutualStreak": rec.get("mutual_streak", 1),
+                    "partnerActiveToday": False,
+                    "canNudge": (time.time() - last_ts) >= 14400,
+                }
+        return web.json_response({"duo": duo_info})
+
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+
+    action = str(body.get("action") or "")
+    bot_uname = await _resolve_bot_username()
+
+    if action == "pair":
+        raw_partner = str(body.get("partnerId") or "").strip()
+        if not raw_partner.isdigit():
+            return web.json_response({"error": "Invalid partnerId"}, status=400)
+        partner_id = int(raw_partner)
+        if partner_id == uid:
+            return web.json_response({"error": "O'zingiz bilan juftlik tuza olmaysiz"}, status=400)
+
+        partner_name = str(body.get("partnerName") or "Sherik")[:64]
+        if db_pool:
+            async with db_pool.acquire() as conn:
+                p_row = await conn.fetchrow("SELECT first_name FROM users WHERE user_id = $1", partner_id)
+                if p_row and p_row["first_name"]:
+                    partner_name = p_row["first_name"]
+                await conn.execute(
+                    """
+                    INSERT INTO duo_pairs (user_id, partner_id, partner_name, my_name, mutual_streak, updated_at)
+                    VALUES ($1, $2, $3, $4, 1, CURRENT_TIMESTAMP)
+                    ON CONFLICT (user_id) DO UPDATE SET partner_id=$2, partner_name=$3, my_name=$4, mutual_streak=1, updated_at=CURRENT_TIMESTAMP
+                    """,
+                    uid, partner_id, partner_name, my_name,
+                )
+                await conn.execute(
+                    """
+                    INSERT INTO duo_pairs (user_id, partner_id, partner_name, my_name, mutual_streak, updated_at)
+                    VALUES ($1, $2, $3, $4, 1, CURRENT_TIMESTAMP)
+                    ON CONFLICT (user_id) DO UPDATE SET partner_id=$2, partner_name=$3, my_name=$4, mutual_streak=1, updated_at=CURRENT_TIMESTAMP
+                    """,
+                    partner_id, uid, my_name, partner_name,
+                )
+        else:
+            pairs = _read_json_file_sync(DUO_PAIRS_FILE, {})
+            pairs[str(uid)] = {"partner_id": partner_id, "partner_name": partner_name, "mutual_streak": 1, "last_nudge_ts": 0}
+            pairs[str(partner_id)] = {"partner_id": uid, "partner_name": my_name, "mutual_streak": 1, "last_nudge_ts": 0}
+            _write_json_file_sync(DUO_PAIRS_FILE, pairs)
+
+        try:
+            kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🔥 Duoni ko'rish", url=f"https://t.me/{bot_uname}?startapp=duo_{uid}")]])
+            await bot.send_message(
+                chat_id=partner_id,
+                text=f"🤝 <b>Yangi Accountability Duo!</b>\n\n<b>{esc(my_name)}</b> siz bilan birgalikda kunlik streak va IELTS/Multilevel maqsadlari uchun juftlik tuzdi!",
+                parse_mode="HTML",
+                reply_markup=kb,
+            )
+        except Exception:
+            pass
+
+        return web.json_response({"success": True, "partnerId": str(partner_id), "partnerName": partner_name, "mutualStreak": 1})
+
+    if action == "nudge":
+        partner_id = None
+        if db_pool:
+            async with db_pool.acquire() as conn:
+                row = await conn.fetchrow("SELECT partner_id, last_nudge_at FROM duo_pairs WHERE user_id = $1", uid)
+                if not row:
+                    return web.json_response({"error": "Duo sherik topilmadi"}, status=404)
+                nudge_dt = row["last_nudge_at"]
+                if nudge_dt and (datetime.now() - nudge_dt.replace(tzinfo=None)).total_seconds() < 14400:
+                    return web.json_response({"error": "4 soatda bir marta eslatma yuborish mumkin"}, status=429)
+                partner_id = int(row["partner_id"])
+                await conn.execute("UPDATE duo_pairs SET last_nudge_at = CURRENT_TIMESTAMP WHERE user_id = $1", uid)
+        else:
+            pairs = _read_json_file_sync(DUO_PAIRS_FILE, {})
+            rec = pairs.get(str(uid))
+            if not rec:
+                return web.json_response({"error": "Duo sherik topilmadi"}, status=404)
+            if time.time() - float(rec.get("last_nudge_ts") or 0) < 14400:
+                return web.json_response({"error": "4 soatda bir marta eslatma yuborish mumkin"}, status=429)
+            partner_id = int(rec["partner_id"])
+            rec["last_nudge_ts"] = time.time()
+            _write_json_file_sync(DUO_PAIRS_FILE, pairs)
+
+        try:
+            kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🚀 Mashqni boshlash", url=f"https://t.me/{bot_uname}?startapp=english")]])
+            await bot.send_message(
+                chat_id=partner_id,
+                text=f"⚡ <b>{esc(my_name)} sizga turtki yubordi!</b>\n\nBugungi 1 ta vazifa yoki Speaking testini bajarib, umumiy Duo Streak'ni saqlab qoling! 🔥",
+                parse_mode="HTML",
+                reply_markup=kb,
+            )
+        except Exception as e:
+            return web.json_response({"success": False, "error": f"Xabar yuborib bo'lmadi: {e}"}, status=502)
+
+        return web.json_response({"success": True})
+
+    if action == "unpair":
+        if db_pool:
+            async with db_pool.acquire() as conn:
+                await conn.execute("DELETE FROM duo_pairs WHERE user_id = $1 OR partner_id = $1", uid)
+        else:
+            pairs = _read_json_file_sync(DUO_PAIRS_FILE, {})
+            rec = pairs.pop(str(uid), None)
+            if rec:
+                pairs.pop(str(rec.get("partner_id")), None)
+            _write_json_file_sync(DUO_PAIRS_FILE, pairs)
+        return web.json_response({"success": True})
+
+    return web.json_response({"error": "Unsupported action"}, status=400)
+
+async def api_send_cheatsheet(request):
+    if request.method == "OPTIONS":
+        return web.Response()
+
+    auth_user = extract_auth_user(request)
+    if not auth_user:
+        return unauthorized_response()
+    uid = int(auth_user["id"])
+
+    if not check_rate_limit(cheatsheet_rate_limits, f"cs:{uid}", limit=3, window=600):
+        return web.json_response({"error": "10 daqiqada ko'pi bilan 3 marta yuborish mumkin"}, status=429)
+
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "invalid json"}, status=400)
+
+    title = esc(str(body.get("title") or "Study Lab — 1-Betlik SOS Xatolar Konspekti")[:120])
+    mistakes = body.get("mistakes") or []
+    if not isinstance(mistakes, list) or not mistakes:
+        return web.json_response({"error": "Kamida 1 ta xato yozuvi kerak"}, status=400)
+
+    lines = [f"📌 <b>{title}</b>\n"]
+    for idx, m in enumerate(mistakes[:10], 1):
+        wrong = esc(str((m or {}).get("wrong") or "")[:180])
+        right = esc(str((m or {}).get("right") or "")[:180])
+        reason = esc(str((m or {}).get("reason") or "")[:180])
+        lines.append(f"<b>{idx}.</b> ❌ <i>{wrong}</i>\n    ✅ <b>{right}</b>")
+        if reason:
+            lines.append(f"    💡 {reason}")
+    lines.append("\n🔥 <i>Imtihondan oldin shu 10 ta tuzoqni ko'zdan kechiring!</i>")
+
+    msg_text = "\n".join(lines)[:3900]
+    bot_uname = await _resolve_bot_username()
+    kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="📚 Ilovada mashq qilish", url=f"https://t.me/{bot_uname}?startapp=english")]])
+    try:
+        await bot.send_message(chat_id=uid, text=msg_text, parse_mode="HTML", reply_markup=kb)
+        return web.json_response({"success": True})
+    except Exception as e:
+        return web.json_response({"error": f"Telegramga yuborib bo'lmadi: {e}"}, status=502)
+
+async def api_transcribe(request):
+    if request.method == 'OPTIONS':
+        return web.Response()
+
+    auth_user = extract_auth_user(request)
+    rate_key = str(auth_user.get("id")) if auth_user else f"ip:{get_client_ip(request)}"
+    if not check_rate_limit(transcribe_rate_limits, rate_key, limit=30, window=60):
+        return web.json_response({"error": "Too many requests"}, status=429)
+
+    try:
+        audio_bytes = await request.read()
+    except Exception:
+        return web.json_response({"error": "Invalid audio"}, status=400)
+
+    if not audio_bytes or len(audio_bytes) > 4 * 1024 * 1024:
+        return web.json_response({"error": "Audio empty or too large"}, status=400)
+
+    raw_mime = (request.headers.get("Content-Type") or "audio/webm").split(";")[0].strip().lower()
+    mime = raw_mime if raw_mime in ("audio/webm", "audio/mp4", "audio/x-m4a", "audio/aac", "audio/ogg", "audio/wav", "audio/mpeg") else "audio/webm"
+    ext = "m4a" if ("mp4" in mime or "m4a" in mime or "aac" in mime) else ("ogg" if "ogg" in mime else ("wav" if "wav" in mime else "webm"))
+
+    groq_key = (os.getenv("GROQ_API_KEY") or os.getenv("ENGLISH_GROQ_API_KEY") or os.getenv("VITE_GROQ_API_KEY") or "").strip()
+    gemini_key = (os.getenv("ENGLISH_GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("VITE_GEMINI_API_KEY") or "").strip()
+
+    async with ClientSession() as session:
+        if groq_key:
+            try:
+                form = FormData()
+                form.add_field("file", audio_bytes, filename=f"answer.{ext}", content_type=mime)
+                form.add_field("model", os.getenv("ENGLISH_GROQ_WHISPER_MODEL", "whisper-large-v3-turbo"))
+                form.add_field("language", "en")
+                form.add_field("response_format", "json")
+                form.add_field("temperature", "0")
+                async with session.post(
+                    "https://api.groq.com/openai/v1/audio/transcriptions",
+                    headers={"Authorization": f"Bearer {groq_key}"},
+                    data=form,
+                    timeout=20
+                ) as r:
+                    if r.status == 200:
+                        data = await r.json()
+                        text = str(data.get("text") or "").strip()
+                        if text:
+                            return web.json_response({"text": text})
+            except Exception as e:
+                logging.warning(f"Groq STT error in bot.py: {e}")
+
+        if gemini_key:
+            b64_audio = base64.b64encode(audio_bytes).decode("ascii")
+            for model in ("gemini-2.5-flash", "gemini-2.0-flash"):
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+                    async with session.post(
+                        url,
+                        headers={"x-goog-api-key": gemini_key},
+                        json={
+                            "contents": [{
+                                "parts": [
+                                    {"text": "Transcribe this English speaking-exam answer verbatim. Output only the transcript text. If there is no speech, output nothing."},
+                                    {"inline_data": {"mime_type": mime, "data": b64_audio}},
+                                ]
+                            }],
+                            "generationConfig": {"temperature": 0}
+                        },
+                        timeout=20
+                    ) as r:
+                        if r.status == 200:
+                            data = await r.json()
+                            parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+                            text = "".join(str(p.get("text", "")) for p in parts).strip()
+                            return web.json_response({"text": text})
+                except Exception as e:
+                    logging.warning(f"Gemini STT error ({model}): {e}")
+
+    return web.json_response({"error": "Transcription unavailable"}, status=503)
+
+
+def _build_speaking_eval_prompt(exam_type: str, test_part: str) -> str:
+    if exam_type == "multilevel":
+        return f"""You are a strict, certified UzBMB (Bilim va malakalarni baholash agentligi) CEFR Multilevel Speaking Examiner.
+Evaluate the candidate's ACTUAL spoken answers for Multilevel Speaking ({test_part}) strictly according to official CEFR / UzBMB 75-point Speaking Assessment Criteria.
+
+CRITICAL ANTI-BIAS & HUMAN EXAMINER RULES:
+1. NEVER default to a fixed score! Score the candidate ONLY on what they actually said.
+2. TOPIC RELEVANCE & TOPIC EVASION ("Mavzudan qochish") CHECK:
+   - Compare every answer directly against its specific question.
+   - If the candidate goes off-topic, evades the question ("mavzuni olib qochsa"), or talks about an unrelated topic, you MUST penalize Fluency & Coherence and Pronunciation & Task Achievement heavily (cap totalScore at <= 32/75) and explicitly state in 'improvements' (in Uzbek) WHICH question they evaded and what they talked about instead.
+   - If the candidate simply repeats/reads back the question words without adding their own answer, score totalScore <= 15/75.
+   - If the candidate spoke in Uzbek/Russian instead of English or said gibberish, score 0-10/75.
+3. DO NOT penalize idioms or common phrases if they fit the context naturally.
+4. SHORT / UNDERDEVELOPED ANSWERS:
+   - If answers are 1-2 short sentences when a 1-2 minute speech or full explanation was required, Fluency & Coherence and Task scores must be low (20-42/75).
+5. ACOUSTIC & PRONUNCIATION ANALYSIS:
+   - Use the provided acoustic metrics (voiced seconds, pauses, fluency ratio) together with transcript clarity to evaluate Pronunciation & Task Achievement (max 15) and Fluency & Coherence (max 20).
+6. INDIVIDUALIZED FEEDBACK (IN UZBEK):
+   - Every item in 'strengths' and 'improvements' MUST reference the candidate's actual words/mistakes (quote their exact phrase and show the corrected version). Never output generic boilerplate advice.
+
+Return ONLY valid JSON matching this exact structure:
+{{
+  "fluencyScore": number,
+  "lexicalScore": number,
+  "grammarScore": number,
+  "pronunciationTaskScore": number,
+  "totalScore": number,
+  "cefrLevel": "C1" | "B2" | "B1" | "A2",
+  "isOffTopic": boolean,
+  "strengths": ["2-3 specific strengths in Uzbek quoting candidate's actual good phrases"],
+  "improvements": ["3 specific, actionable corrections in Uzbek quoting candidate's exact mistakes or off-topic parts and how to fix them"],
+  "quotes": ["1-2 exact quotes from candidate's speech"],
+  "vocabularyHighlights": ["notable words/phrases used by candidate"],
+  "grammaticalFeaturesDetected": ["grammar structures or specific grammar errors noticed"]
+}}"""
+
+    return f"""You are a strict, certified Cambridge / IDP / British Council IELTS Speaking Examiner.
+Evaluate the candidate's ACTUAL spoken answers for IELTS Speaking ({test_part}) strictly according to the Official Public IELTS Speaking Band Descriptors (0.0 to 9.0 in 0.5 steps).
+
+CRITICAL ANTI-BIAS & HUMAN EXAMINER RULES:
+1. NEVER default to Band 7.0! Over-scoring is strictly forbidden. Base your scores 100% on the actual evidence in the candidate's transcript and acoustic metrics.
+   - 1-2 short/broken sentences or basic vocabulary = Band 3.5 - 4.5.
+   - Understandable but simple/repetitive with noticeable grammar errors = Band 5.0 - 5.5.
+   - Willing to speak at length, some complex structures but occasional errors or hesitation = Band 6.0 - 6.5.
+   - Flexible, error-free sentences, natural collocations, fully developed ideas = Band 7.0 - 8.5.
+2. TOPIC RELEVANCE & TOPIC EVASION ("Mavzudan qochish") CHECK:
+   - Compare each answer directly against the exact question asked.
+   - If the candidate goes off-topic, evades the question ("mavzuni olib qochsa"), or answers a different topic than asked, cap Fluency & Coherence and Lexical Resource at 4.0 - 4.5, and explicitly explain in 'improvements' (in Uzbek) which question they evaded and why it is off-topic.
+   - If the candidate merely repeats the question back without answering, score 2.0 - 3.0.
+   - If the candidate spoke in Uzbek/Russian or unintelligible words, score 1.0 - 2.0.
+3. DO NOT penalize idioms or set phrases if used in context.
+4. REAL GRAMMAR & LEXICAL CHECK:
+   - Read every sentence carefully. Identify real grammatical errors (wrong tense, subject-verb disagreement, missing articles, awkward phrasing). Quote the exact mistake and give the corrected English phrase inside 'improvements' (explained in Uzbek).
+5. ACOUSTIC & PRONUNCIATION ANALYSIS:
+   - Use the provided acoustic metrics (voiced duration, pauses, fluencyRatio) and phonetic clarity in the transcript to score Pronunciation (0.0 - 9.0, 0.5 increments).
+6. INDIVIDUALIZED FEEDBACK (IN UZBEK):
+   - Every item in 'strengths' and 'improvements' MUST be specific to THIS candidate's exact words. Never give generic pre-written templates!
+
+Return ONLY valid JSON matching this exact structure:
+{{
+  "fluencyScore": number,
+  "lexicalScore": number,
+  "grammarScore": number,
+  "pronunciationScore": number,
+  "isOffTopic": boolean,
+  "strengths": ["2-3 specific strengths in Uzbek quoting candidate's actual good phrases"],
+  "improvements": ["3 specific corrections in Uzbek quoting candidate's exact grammar/lexical errors or off-topic shifts and showing the Band 7.5+ version"],
+  "quotes": ["1-2 exact quotes from candidate's speech"],
+  "vocabularyHighlights": ["notable words/collocations used by candidate"],
+  "grammaticalFeaturesDetected": ["specific grammar structures or errors noticed"]
+}}"""
+
+
+def _extract_json_dict(raw_text: str) -> dict:
+    cleaned = (raw_text or "").strip()
+    m = re.search(r"```(?:json)?\s*([\s\S]*?)```", cleaned, re.IGNORECASE)
+    candidate = m.group(1).strip() if m else cleaned
+    first = candidate.find("{")
+    last = candidate.rfind("}")
+    if first != -1 and last > first:
+        return json.loads(candidate[first:last + 1])
+    return json.loads(candidate)
+
+
+async def api_evaluate_speaking(request):
+    if request.method == 'OPTIONS':
+        return web.Response()
+
+    auth_user = extract_auth_user(request)
+    rate_key = str(auth_user.get("id")) if auth_user else f"ip:{get_client_ip(request)}"
+    if not check_rate_limit(evaluate_speaking_rate_limits, rate_key, limit=20, window=60):
+        return web.json_response({"error": "Too many requests"}, status=429)
+
+    try:
+        body = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON"}, status=400)
+
+    exam_type = "multilevel" if body.get("examType") == "multilevel" else "ielts"
+    test_part = str(body.get("testType") or "part1")[:40]
+    answers = body.get("answers") if isinstance(body.get("answers"), list) else []
+    if not answers:
+        return web.json_response({"error": "Answers required"}, status=400)
+
+    turns = []
+    for idx, item in enumerate(answers[:12]):
+        if not isinstance(item, dict):
+            continue
+        q = str(item.get("question") or "")[:500]
+        a = str(item.get("answer") or "")[:2000]
+        m = item.get("metrics") if isinstance(item.get("metrics"), dict) else None
+        if m:
+            metrics_str = (
+                f"Acoustic Metrics: duration={float(m.get('durationSec', 0)):.1f}s, "
+                f"voiced={float(m.get('voicedSec', 0)):.1f}s, "
+                f"pauses={int(m.get('pauseCount', 0))}, "
+                f"fluencyRatio={int(float(m.get('fluencyRatio', 0)) * 100)}%"
+            )
+        else:
+            metrics_str = "Acoustic Metrics: not provided"
+        turns.append(f"Turn {idx + 1}:\nQuestion: {q}\nCandidate Spoken Transcript: {a}\n{metrics_str}")
+
+    system_prompt = _build_speaking_eval_prompt(exam_type, test_part)
+    user_payload = f"EXAM TYPE: {exam_type.upper()} ({test_part})\n\nCANDIDATE RESPONSES:\n" + "\n\n---\n\n".join(turns)
+
+    gemini_key = (os.getenv("ENGLISH_GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("VITE_GEMINI_API_KEY") or "").strip()
+    groq_key = (os.getenv("GROQ_API_KEY") or os.getenv("ENGLISH_GROQ_API_KEY") or os.getenv("VITE_GROQ_API_KEY") or "").strip()
+
+    async with ClientSession() as session:
+        if gemini_key:
+            for model in ("gemini-2.5-flash", "gemini-2.0-flash"):
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+                    async with session.post(
+                        url,
+                        headers={"x-goog-api-key": gemini_key},
+                        json={
+                            "systemInstruction": {"parts": [{"text": system_prompt}]},
+                            "contents": [{"role": "user", "parts": [{"text": user_payload}]}],
+                            "generationConfig": {"temperature": 0.2, "responseMimeType": "application/json"},
+                        },
+                        timeout=25
+                    ) as r:
+                        if r.status == 200:
+                            data = await r.json()
+                            parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+                            raw_text = "".join(str(p.get("text", "")) for p in parts)
+                            evaluation = _extract_json_dict(raw_text)
+                            return web.json_response({"evaluation": evaluation})
+                except Exception as e:
+                    logging.warning(f"Gemini evaluate_speaking error ({model}): {e}")
+
+        if groq_key:
+            try:
+                async with session.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {groq_key}"},
+                    json={
+                        "model": "llama-3.3-70b-versatile",
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_payload},
+                        ],
+                        "temperature": 0.2,
+                        "response_format": {"type": "json_object"},
+                    },
+                    timeout=25
+                ) as r:
+                    if r.status == 200:
+                        data = await r.json()
+                        raw_text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                        evaluation = _extract_json_dict(raw_text)
+                        return web.json_response({"evaluation": evaluation})
+            except Exception as e:
+                logging.warning(f"Groq evaluate_speaking error: {e}")
+
+    return web.json_response({"error": "AI evaluation unavailable"}, status=503)
 waiting_pool = []
 active_rooms = {}
 
@@ -1365,13 +2389,13 @@ async def on_app_startup(app: web.Application):
             f"{WEBHOOK_URL}/webhook",
             drop_pending_updates=False,
             secret_token=WEBHOOK_SECRET,
-            allowed_updates=["message", "chat_member", "my_chat_member", "callback_query"],
+            allowed_updates=["message", "chat_member", "my_chat_member", "callback_query", "inline_query"],
         )
         logging.info(f"Webhook set to {WEBHOOK_URL}/webhook (secret token enabled)")
     else:
         await bot.delete_webhook(drop_pending_updates=False)
         app['polling_task'] = asyncio.create_task(
-            dp.start_polling(bot, allowed_updates=["message", "chat_member", "my_chat_member", "callback_query"])
+            dp.start_polling(bot, allowed_updates=["message", "chat_member", "my_chat_member", "callback_query", "inline_query"])
         )
         logging.info("Aiogram polling started in background task.")
 
@@ -1401,6 +2425,21 @@ def main():
     app.router.add_post("/api/rate_partner", api_rate_partner)
     app.router.add_options("/api/rate_partner", api_rate_partner)
     app.router.add_post("/api/ai_analyze", api_ai_analyze)
+    app.router.add_options("/api/ai_analyze", api_ai_analyze)
+    app.router.add_post("/api/transcribe", api_transcribe)
+    app.router.add_options("/api/transcribe", api_transcribe)
+    app.router.add_post("/api/evaluate_speaking", api_evaluate_speaking)
+    app.router.add_options("/api/evaluate_speaking", api_evaluate_speaking)
+    app.router.add_post("/api/evaluate_writing", api_evaluate_writing)
+    app.router.add_options("/api/evaluate_writing", api_evaluate_writing)
+    app.router.add_get("/api/daily_challenge", api_daily_challenge)
+    app.router.add_post("/api/daily_challenge", api_daily_challenge)
+    app.router.add_options("/api/daily_challenge", api_daily_challenge)
+    app.router.add_get("/api/duo", api_duo)
+    app.router.add_post("/api/duo", api_duo)
+    app.router.add_options("/api/duo", api_duo)
+    app.router.add_post("/api/send_cheatsheet", api_send_cheatsheet)
+    app.router.add_options("/api/send_cheatsheet", api_send_cheatsheet)
     app.router.add_get("/api/user_status", api_user_status)
     app.router.add_options("/api/user_status", api_user_status)
     app.router.add_get("/api/tts", api_tts)

@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import type { ScreenType, TelegramUser } from './types';
-import { getTelegramWebApp, getTelegramUser } from './utils/telegram';
+import { getTelegramWebApp, getTelegramUser, getTelegramStartParam, getTelegramInitData } from './utils/telegram';
+import { API_BASE_URL } from './config';
+import { saveDuoState } from './utils/shop';
+import { CoinShopModal } from './components/CoinShopModal';
 import { getActiveTasks, getCustomProfile, restoreFromCloud } from './utils/storage';
 import { ScreenHome } from './components/ScreenHome';
 import { ScreenAI } from './components/ScreenAI';
@@ -11,17 +14,29 @@ import { BottomNav } from './components/BottomNav';
 import { EnglishPracticeModule } from './english';
 
 export function App() {
-  const [screen, setScreen] = useState<ScreenType>('home');
+  const [screen, setScreen] = useState<ScreenType>(() =>
+    getTelegramStartParam().startsWith('duo_') ? 'analytics' : 'home'
+  );
   const [appMode, setAppMode] = useState<'hub' | 'todo' | 'english'>(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('module') === 'english' || Boolean(params.get('room'))) {
+      const sp = getTelegramStartParam();
+      if (
+        params.get('module') === 'english' ||
+        Boolean(params.get('room')) ||
+        sp.startsWith('room_') ||
+        sp.startsWith('quiz_') ||
+        ['ielts', 'multilevel', 'listening', 'otm', 'placement'].includes(sp)
+      ) {
         return 'english';
+      }
+      if (params.get('module') === 'todo' || sp.startsWith('duo_')) {
+        return 'todo';
       }
     } catch {
       // ignore
     }
-    return 'todo';
+    return 'hub';
   });
   const [user, setUser] = useState<TelegramUser>({
     id: 1,
@@ -31,9 +46,19 @@ export function App() {
   const [customProfile, setCustomProfile] = useState(() => getCustomProfile());
   const [taskStats, setTaskStats] = useState({ pending: 0, pct: 0 });
   const [englishInitialExam, setEnglishInitialExam] = useState<'ielts' | 'multilevel' | null>(null);
+  const [englishDeepAction, setEnglishDeepAction] = useState<string | null>(() => {
+    const sp = getTelegramStartParam();
+    if (['ielts', 'multilevel', 'listening', 'otm', 'placement'].includes(sp) || sp.startsWith('quiz_')) {
+      return sp;
+    }
+    return null;
+  });
+  const [showShop, setShowShop] = useState<boolean>(() => getTelegramStartParam() === 'shop');
+  const [englishReturnMode, setEnglishReturnMode] = useState<'hub' | 'todo'>('hub');
 
   const handleOpenEnglish = (exam?: 'ielts' | 'multilevel' | null) => {
     setEnglishInitialExam(exam ?? null);
+    setEnglishReturnMode(appMode === 'todo' ? 'todo' : 'hub');
     setAppMode('english');
   };
 
@@ -73,6 +98,42 @@ export function App() {
         updateStatsFromStorage();
       }
     });
+
+    const sp = getTelegramStartParam();
+    if (sp.startsWith('duo_')) {
+      const partnerId = sp.slice(4).trim();
+      const initData = getTelegramInitData();
+      const me = getTelegramUser();
+      if (partnerId && initData && String(me?.id || '') !== partnerId) {
+        fetch(`${API_BASE_URL}/api/duo`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Telegram-Init-Data': initData,
+          },
+          body: JSON.stringify({ action: 'pair', partnerId }),
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((data) => {
+            if (data?.success) {
+              saveDuoState({
+                active: true,
+                partnerId: Number(data.partnerId) || Number(partnerId),
+                partnerName: String(data.partnerName || 'Sherik'),
+                sharedStreak: Number(data.mutualStreak) || 1,
+                partnerActiveToday: true,
+              });
+              setAppMode('todo');
+              setScreen('analytics');
+            }
+          })
+          .catch(() => { /* offline ignore */ });
+      }
+    }
+
+    const openShopHandler = () => setShowShop(true);
+    window.addEventListener('studylab:openShop', openShopHandler);
+    return () => window.removeEventListener('studylab:openShop', openShopHandler);
   }, []);
 
   // Ism va bosh harf (Custom profile ustun turadi)
@@ -83,6 +144,11 @@ export function App() {
     <div className="min-h-screen w-full bg-slate-300 flex flex-col items-center justify-start py-0 md:py-8">
       {/* Phone frame on desktop */}
       <div className="w-full max-w-md min-h-screen md:min-h-[820px] md:max-h-[900px] bg-[#f6f7fb] md:rounded-[2.8rem] shadow-2xl overflow-y-auto overflow-x-hidden relative flex flex-col border-0 md:border-8 md:border-slate-800">
+        <CoinShopModal
+          isOpen={showShop}
+          onClose={() => setShowShop(false)}
+          onInventoryChange={updateStatsFromStorage}
+        />
         {appMode === 'hub' ? (
           <ScreenHub
             userName={currentName}
@@ -90,7 +156,16 @@ export function App() {
             userInitial={userInitial}
             pendingTasks={taskStats.pending}
             progressPct={taskStats.pct}
-            onSelectEnglish={() => setAppMode('english')}
+            onSelectEnglish={() => {
+              setEnglishReturnMode('hub');
+              setAppMode('english');
+            }}
+            onOpenShop={() => setShowShop(true)}
+            onOpenEnglishAction={(action) => {
+              setEnglishDeepAction(action);
+              setEnglishReturnMode('hub');
+              setAppMode('english');
+            }}
             onSelectTodo={() => {
               setScreen('home');
               setAppMode('todo');
@@ -112,9 +187,12 @@ export function App() {
               username: user.username,
             }}
             initialExam={englishInitialExam}
+            initialAction={englishDeepAction}
+            onClearInitialAction={() => setEnglishDeepAction(null)}
             onExit={() => {
               setEnglishInitialExam(null);
-              setAppMode('todo');
+              setEnglishDeepAction(null);
+              setAppMode(englishReturnMode);
             }}
           />
         ) : (
@@ -126,11 +204,12 @@ export function App() {
                   onTasksChange={updateStatsFromStorage}
                   onOpenEnglish={handleOpenEnglish}
                   onBackToHub={() => setAppMode('hub')}
+                  onOpenShop={() => setShowShop(true)}
                 />
               )}
               {screen === 'ai'        && <ScreenAI onTaskCreated={updateStatsFromStorage} />}
               {screen === 'analytics' && <ScreenAnalytics />}
-              {screen === 'profile'   && <ScreenProfile user={user} onProfileUpdate={reloadProfile} />}
+              {screen === 'profile'   && <ScreenProfile user={user} onProfileUpdate={reloadProfile} onOpenShop={() => setShowShop(true)} />}
             </div>
 
             <BottomNav

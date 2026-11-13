@@ -1,17 +1,14 @@
 /**
- * Exam microphone recorder + Real-time Web Audio Acoustic Speech Analyzer.
+ * Exam microphone recorder + Real-time Web Audio Acoustic Speech Analyzer
+ * + Live Web Speech API listener + Remote STT (/api/transcribe).
  *
- * Why this exists: in Telegram's Android WebView every `SpeechRecognition.start()`
- * triggers a fresh "allow microphone?" prompt (and Android auto-stops recognition
- * after a few seconds of silence, causing more restarts and more prompts).
- *
- * Instead we call getUserMedia exactly ONCE per exam part, keep that stream open
- * until the part ends, and record each answer with MediaRecorder on the same
- * stream (no new permission needed) while simultaneously measuring vocal activity,
- * speech duration, syllable bursts, and fluency via Web Audio API.
+ * CRITICAL GUARANTEE:
+ * Never fabricates or injects fake pre-written sentences! Every word returned
+ * comes strictly from the candidate's actual spoken voice (or manual text if typed).
  */
 
 import { getTelegramInitData } from '../../utils/telegram';
+import { API_BASE_URL } from '../../config';
 
 export interface TurnAcousticMetrics {
   durationSec: number;
@@ -33,11 +30,13 @@ export interface ExamRecorder {
   /** Opens the microphone once. Returns false if denied / unsupported. */
   ensureMic: () => Promise<boolean>;
   /** Starts recording one answer on the already-open stream. */
-  startTurn: () => boolean;
+  startTurn: (onLiveSpeech?: (liveText: string) => void) => boolean;
   /** Stops the current answer and resolves with its audio + acoustic metrics. */
   stopTurn: () => Promise<Blob | null>;
   /** Returns the acoustic metrics of the most recently stopped turn. */
   getLastMetrics: () => TurnAcousticMetrics | null;
+  /** Returns live Web Speech API transcript captured during the turn (if browser supported it). */
+  getLastLiveTranscript: () => string;
   isRecording: () => boolean;
   /** Closes the microphone (call when the part / full test ends). */
   release: () => void;
@@ -55,13 +54,26 @@ export const isRecordingSupported = (): boolean =>
   typeof MediaRecorder !== 'undefined';
 
 const blobMetricsMap = new WeakMap<Blob, TurnAcousticMetrics>();
+const blobLiveTextMap = new WeakMap<Blob, string>();
+const turnIndexMetricsMap = new Map<number, TurnAcousticMetrics>();
+
+export const getBlobAcousticMetrics = (blob: Blob | null): TurnAcousticMetrics | null => {
+  if (!blob) return null;
+  return blobMetricsMap.get(blob) || null;
+};
 
 export const createExamRecorder = (): ExamRecorder => {
   let stream: MediaStream | null = null;
   let pendingStream: Promise<MediaStream | null> | null = null;
   let recorder: MediaRecorder | null = null;
   let lastMetrics: TurnAcousticMetrics | null = null;
+  let lastLiveTranscript = '';
   const turnChunks = new WeakMap<MediaRecorder, Blob[]>();
+
+  // Optional parallel Web Speech API recognition for instant live text + zero-latency transcript
+  let recognition: any = null;
+  let currentTurnFinalText = '';
+  let currentTurnInterimText = '';
 
   // Web Audio API analyzer state (shares the same MediaStream -> 0 extra permission prompts)
   let audioCtx: AudioContext | null = null;
@@ -86,6 +98,63 @@ export const createExamRecorder = (): ExamRecorder => {
     if (meterInterval) {
       clearInterval(meterInterval);
       meterInterval = null;
+    }
+  };
+
+  const stopBrowserSpeechRec = () => {
+    if (recognition) {
+      try {
+        recognition.onresult = null;
+        recognition.onerror = null;
+        recognition.onend = null;
+        recognition.stop();
+      } catch {
+        // ignore
+      }
+      recognition = null;
+    }
+  };
+
+  const startBrowserSpeechRec = (onLiveSpeech?: (liveText: string) => void) => {
+    stopBrowserSpeechRec();
+    currentTurnFinalText = '';
+    currentTurnInterimText = '';
+
+    try {
+      const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (!SpeechRec) return;
+
+      const rec = new SpeechRec();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = 'en-US';
+
+      rec.onresult = (event: any) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const piece = event.results[i][0]?.transcript || '';
+          if (event.results[i].isFinal) {
+            currentTurnFinalText = `${currentTurnFinalText} ${piece}`.trim();
+          } else {
+            interim += piece;
+          }
+        }
+        currentTurnInterimText = interim.trim();
+        const combined = `${currentTurnFinalText} ${currentTurnInterimText}`.trim();
+        if (combined) {
+          lastLiveTranscript = combined;
+          onLiveSpeech?.(combined);
+        }
+      };
+
+      rec.onerror = () => {
+        // Ignore browser STT errors silently; MediaRecorder is still recording the raw audio.
+      };
+
+      rec.start();
+      recognition = rec;
+    } catch {
+      // Ignore if WebView does not support SpeechRecognition alongside MediaRecorder
     }
   };
 
@@ -162,7 +231,6 @@ export const createExamRecorder = (): ExamRecorder => {
     const durationSec = Math.max(0.5, (Date.now() - turnStartMs) / 1000);
     let voicedSec = (voicedFrames * 50) / 1000;
 
-    // If Web Audio context was suspended on mobile WebView, infer activity from recorded opus/aac blob size
     if (totalFrames === 0 || (voicedSec < 0.4 && blobSize > 6500)) {
       const approxActiveSec = Math.max(0, Math.min(durationSec * 0.72, (blobSize - 2500) / 3800));
       voicedSec = Math.max(voicedSec, approxActiveSec);
@@ -173,7 +241,6 @@ export const createExamRecorder = (): ExamRecorder => {
 
     const avgRms = totalFrames > 0 ? rmsSum / totalFrames : 0.02;
     const fluencyRatio = durationSec > 0 ? Math.min(1, voicedSec / durationSec) : 0;
-    // English speaking rate: ~2.3 words per voiced second or ~0.68 words per syllable burst
     const rawEstWords = Math.round(voicedSec * 1.9 + syllableBursts * 0.42);
     const estimatedWords = voicedSec < 0.65 ? 0 : Math.max(3, rawEstWords);
 
@@ -205,9 +272,10 @@ export const createExamRecorder = (): ExamRecorder => {
     return streamIsLive();
   };
 
-  const startTurn = (): boolean => {
+  const startTurn = (onLiveSpeech?: (liveText: string) => void): boolean => {
     if (!streamIsLive() || !stream) return false;
     if (recorder && recorder.state === 'recording') return true;
+    lastLiveTranscript = '';
     try {
       const mimeType = pickMimeType();
       const rec = new MediaRecorder(stream, mimeType ? { mimeType, audioBitsPerSecond: 32000 } : undefined);
@@ -219,6 +287,7 @@ export const createExamRecorder = (): ExamRecorder => {
       rec.start(500);
       recorder = rec;
       startMeter();
+      startBrowserSpeechRec(onLiveSpeech);
       return true;
     } catch (err) {
       console.warn('MediaRecorder start failed:', err);
@@ -231,6 +300,9 @@ export const createExamRecorder = (): ExamRecorder => {
     const active = recorder;
     recorder = null;
     stopMeter();
+    stopBrowserSpeechRec();
+    const capturedLive = `${currentTurnFinalText} ${currentTurnInterimText}`.trim() || lastLiveTranscript;
+
     if (!active || active.state === 'inactive') {
       lastMetrics = computeTurnMetrics(0);
       return Promise.resolve(null);
@@ -244,6 +316,9 @@ export const createExamRecorder = (): ExamRecorder => {
         lastMetrics = metrics;
         if (rawBlob && size > 1200) {
           blobMetricsMap.set(rawBlob, metrics);
+          if (capturedLive) {
+            blobLiveTextMap.set(rawBlob, capturedLive);
+          }
           resolve(rawBlob);
         } else {
           resolve(null);
@@ -260,6 +335,7 @@ export const createExamRecorder = (): ExamRecorder => {
 
   const release = () => {
     stopMeter();
+    stopBrowserSpeechRec();
     try {
       if (recorder && recorder.state !== 'inactive') recorder.stop();
     } catch {}
@@ -282,103 +358,40 @@ export const createExamRecorder = (): ExamRecorder => {
     startTurn,
     stopTurn,
     getLastMetrics: () => lastMetrics,
+    getLastLiveTranscript: () => lastLiveTranscript,
     isRecording: () => !!recorder && recorder.state === 'recording',
     release,
   };
 };
 
 /**
- * Builds an acoustically-calibrated English response representation when the remote
- * STT endpoint (/api/transcribe) is unreachable or out of quota, so a candidate who
- * genuinely spoke into the microphone is evaluated on their real vocal duration,
- * fluency, and articulation instead of getting a false 0/75 server error.
+ * Sends one recorded answer to the server (/api/transcribe on Vercel, or Render backend fallback)
+ * and returns the REAL English transcript spoken by the candidate.
+ * NEVER fabricates fake sentences!
  */
-const buildAcousticFallbackTranscript = (
-  metrics: TurnAcousticMetrics,
-  questionText = ''
-): string => {
-  // If the candidate did not actually speak into the microphone, return empty string (0 score).
-  if (metrics.voicedSec < 0.75 || metrics.estimatedWords < 3) {
+export const transcribeAudio = async (blob: Blob, _questionText = '', turnIndex?: number): Promise<string> => {
+  const metrics = blobMetricsMap.get(blob);
+  if (turnIndex !== undefined && metrics) {
+    turnIndexMetricsMap.set(turnIndex, metrics);
+  }
+  const browserLiveText = (blobLiveTextMap.get(blob) || '').trim();
+
+  // If the recording has no voiced speech at all and no live transcript, don't waste a server call
+  if (metrics && metrics.voicedSec < 0.55 && blob.size < 2800 && !browserLiveText) {
     return '';
   }
 
-  const cleanQ = questionText
-    .toLowerCase()
-    .replace(/\[.*?\]/g, ' ')
-    .replace(/[^a-z\s]/g, ' ')
-    .split(/\s+/)
-    .filter((w) => w.length >= 4 && !['what', 'where', 'when', 'which', 'would', 'could', 'should', 'about', 'think', 'describe', 'explain', 'part', 'question'].includes(w));
-
-  const topicWords = Array.from(new Set(cleanQ)).slice(0, 6);
-  const t1 = topicWords[0] || 'topic';
-  const t2 = topicWords[1] || 'experience';
-  const t3 = topicWords[2] || 'situation';
-
-  const targetWordCount = Math.min(180, Math.max(4, metrics.estimatedWords));
-  const highFluency = metrics.fluencyRatio >= 0.52 && metrics.voicedSec >= 10;
-  const midFluency = metrics.fluencyRatio >= 0.35 && metrics.voicedSec >= 5;
-
-  const segments: string[] = [];
-
-  if (highFluency) {
-    segments.push(
-      `Well, from my perspective, ${t1} plays a crucial and significant role in our daily lives.`,
-      `Furthermore, when we take ${t2} into consideration, it is predominantly beneficial because it helps people enhance their perspective and facilitate better outcomes.`,
-      `For instance, in my personal experience with ${t3}, although there are some challenges, I have been able to contemplate effective solutions in order to achieve sustainable results.`,
-      `On the other hand, some people might argue differently; however, I firmly believe that if we had invested more attention in ${t1}, the overall impact would be even more substantial and indispensable in the long run.`,
-      `Consequently, to sum up, ${t1} and ${t2} remain essential cornerstones that shape our modern society.`
-    );
-  } else if (midFluency) {
-    segments.push(
-      `In my opinion, ${t1} is very important for many people today.`,
-      `For example, when we talk about ${t2}, I think it brings several beneficial opportunities and helps us improve our skills.`,
-      `Although ${t3} can sometimes be difficult, people usually enjoy it because it makes life more interesting and convenient.`,
-      `Therefore, I believe that ${t1} will continue to be significant in the future as well.`
-    );
-  } else {
-    segments.push(
-      `I think ${t1} is good and important in my life because I like ${t2} and ${t3} very much.`
-    );
-  }
-
-  const allWords = segments.join(' ').split(/\s+/);
-  const outWords: string[] = [];
-  while (outWords.length < targetWordCount) {
-    for (const w of allWords) {
-      outWords.push(w);
-      if (outWords.length >= targetWordCount) break;
-    }
-  }
-
-  return outWords.join(' ');
-};
-
-/** Sends one recorded answer to the server and returns the English transcript (with acoustic fallback). */
-export const transcribeAudio = async (blob: Blob, questionText = ''): Promise<string> => {
-  const metrics = blobMetricsMap.get(blob) || {
-    durationSec: Math.max(1, blob.size / 4000),
-    voicedSec: blob.size > 4500 ? Math.max(0.9, (blob.size - 2000) / 3800) : 0,
-    syllableBursts: Math.round(Math.max(0, blob.size - 2000) / 1200),
-    pauseCount: 1,
-    avgRms: 0.03,
-    peakRms: 0.08,
-    estimatedWords: blob.size > 4500 ? Math.max(4, Math.round((blob.size - 2000) / 1600)) : 0,
-    fluencyRatio: 0.5,
+  const initData = getTelegramInitData();
+  const headers: Record<string, string> = {
+    'Content-Type': blob.type || 'audio/webm',
+    ...(initData ? { 'X-Telegram-Init-Data': initData } : {}),
   };
 
-  // If the recording has no voiced speech at all, don't waste a server call
-  if (metrics.voicedSec < 0.65 && blob.size < 3200) {
-    return '';
-  }
-
+  // 1. Try same-origin /api/transcribe (Vercel Serverless Function)
   try {
-    const initData = getTelegramInitData();
     const res = await fetch('/api/transcribe', {
       method: 'POST',
-      headers: {
-        'Content-Type': blob.type || 'audio/webm',
-        ...(initData ? { 'X-Telegram-Init-Data': initData } : {}),
-      },
+      headers,
       body: blob,
     });
     if (res.ok) {
@@ -389,19 +402,44 @@ export const transcribeAudio = async (blob: Blob, questionText = ''): Promise<st
       }
     }
   } catch (err) {
-    console.warn('Remote /api/transcribe unavailable, using local acoustic speech evaluation:', err);
+    console.warn('Primary /api/transcribe error:', err);
   }
 
-  // Fallback to local acoustic speech evaluation if server failed or returned empty despite active voice
-  return buildAcousticFallbackTranscript(metrics, questionText);
+  // 2. Try Render backend /api/transcribe if different from current origin
+  if (API_BASE_URL) {
+    try {
+      const res2 = await fetch(`${API_BASE_URL}/api/transcribe`, {
+        method: 'POST',
+        headers,
+        body: blob,
+      });
+      if (res2.ok) {
+        const data2 = await res2.json();
+        const serverText2 = String(data2.text || '').trim();
+        if (serverText2.length > 0) {
+          return serverText2;
+        }
+      }
+    } catch (err2) {
+      console.warn('Secondary backend /api/transcribe error:', err2);
+    }
+  }
+
+  // 3. If remote STT failed, use the real browser SpeechRecognition transcript if captured
+  if (browserLiveText.length > 0) {
+    return browserLiveText;
+  }
+
+  // Never invent fake words! Return empty string if nothing was transcribed.
+  return '';
 };
 
 /** Resolves pending transcriptions into the answer history (keeps placeholders only on true silence). */
 export const resolvePendingAnswers = async (
-  history: { question: string; answer: string }[],
+  history: { question: string; answer: string; metrics?: TurnAcousticMetrics | null }[],
   pending: Map<number, Promise<string>>,
   timeoutMs = 25000
-): Promise<{ history: { question: string; answer: string }[]; failed: number }> => {
+): Promise<{ history: { question: string; answer: string; metrics?: TurnAcousticMetrics | null }[]; failed: number }> => {
   let failed = 0;
   const withTimeout = (p: Promise<string>) =>
     Promise.race([p, new Promise<string>((_, reject) => setTimeout(() => reject(new Error('timeout')), timeoutMs))]);
@@ -409,10 +447,18 @@ export const resolvePendingAnswers = async (
   const filled = await Promise.all(
     history.map(async (item, idx) => {
       const p = pending.get(idx);
-      if (!p) return item;
+      if (!p) {
+        const savedMetrics = turnIndexMetricsMap.get(idx) || item.metrics || null;
+        return savedMetrics ? { ...item, metrics: savedMetrics } : item;
+      }
       try {
         const text = (await withTimeout(p)).trim();
-        return text ? { ...item, answer: text } : item;
+        const savedMetrics = turnIndexMetricsMap.get(idx) || item.metrics || null;
+        return {
+          ...item,
+          answer: text ? text : item.answer,
+          ...(savedMetrics ? { metrics: savedMetrics } : {}),
+        };
       } catch (err) {
         console.warn('Answer transcription error:', err);
         failed += 1;
@@ -421,5 +467,6 @@ export const resolvePendingAnswers = async (
     })
   );
   pending.clear();
+  turnIndexMetricsMap.clear();
   return { history: filled, failed };
 };

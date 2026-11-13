@@ -49,6 +49,25 @@ const isAllowedOrigin = (origin, host) => {
   return false;
 };
 
+const splitTextChunks = (text, maxLen = 190) => {
+  const words = text.split(/\s+/).filter(Boolean);
+  const chunks = [];
+  let current = '';
+  for (const w of words) {
+    if (!current) {
+      current = w.length > maxLen ? w.slice(0, maxLen) : w;
+    } else if (current.length + 1 + w.length <= maxLen) {
+      current += ` ${w}`;
+    } else {
+      chunks.push(current);
+      current = w.length > maxLen ? w.slice(0, maxLen) : w;
+    }
+    if (chunks.length >= 6) break;
+  }
+  if (current && chunks.length < 6) chunks.push(current);
+  return chunks;
+};
+
 export default async function handler(req, res) {
   const origin = req.headers.origin || '';
   const host = req.headers.host || '';
@@ -68,42 +87,47 @@ export default async function handler(req, res) {
   }
 
   const clientIp = getClientIp(req);
-  if (!checkRateLimit(clientIp, 30, 60_000)) {
+  if (!checkRateLimit(clientIp, 40, 60_000)) {
     return res.status(429).json({ error: 'Too many TTS requests, please wait a minute' });
   }
 
-  const { text = '', lang = 'en-GB' } = req.query;
+  const { text = '', lang = 'en-GB', voice = '' } = req.query;
   if (!text) {
     return res.status(400).json({ error: 'Text required' });
   }
-  const safeLang = LANG_RE.test(String(lang)) ? String(lang) : 'en-GB';
+  const voiceStr = String(voice || '');
+  const inferredLang = voiceStr.startsWith('en-US') ? 'en-US' : String(lang);
+  const safeLang = LANG_RE.test(inferredLang) ? inferredLang : 'en-GB';
 
   try {
-    // Replace IELTS acronym with phonetic spelling so TTS pronounces it as a natural single word "Eye-elts" instead of letter by letter
+    // Replace IELTS acronym with phonetic spelling so TTS pronounces it cleanly
     const clean = String(text)
       .replace(/\bIELTS\b/gi, 'Eye-elts')
       .replace(/[\n\r]+/g, ' ')
-      .trim();
-    // Google TTS accepts up to 200 chars per call
-    const chunk = clean.length > 200 ? clean.substring(0, 197) + '...' : clean;
-    const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(safeLang)}&client=tw-ob&q=${encodeURIComponent(chunk)}`;
+      .trim()
+      .slice(0, 950);
 
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    const chunks = splitTextChunks(clean, 190);
+    const buffers = [];
+    for (const chunk of chunks) {
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${encodeURIComponent(safeLang)}&client=tw-ob&q=${encodeURIComponent(chunk)}`;
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`TTS upstream error: ${response.status}`);
       }
-    });
-
-    if (!response.ok) {
-      throw new Error(`TTS upstream error: ${response.status}`);
+      const arrayBuffer = await response.arrayBuffer();
+      buffers.push(Buffer.from(arrayBuffer));
     }
 
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const combined = Buffer.concat(buffers);
 
     res.setHeader('Content-Type', 'audio/mpeg');
     res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
-    return res.send(buffer);
+    return res.send(combined);
   } catch (err) {
     console.error('Vercel TTS error:', err?.message || err);
     return res.status(500).json({ error: 'TTS generation failed' });

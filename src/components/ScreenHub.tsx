@@ -1,8 +1,15 @@
-import React from 'react';
-import { ArrowRight, Sparkles, CheckCircle2, Trophy, Mic, BookOpen, PenTool, Users, ListTodo } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ArrowRight, Sparkles, CheckCircle2, Trophy, Mic, BookOpen, PenTool, Users, ListTodo, Gift, Flame, Calculator } from 'lucide-react';
 import { triggerHaptic } from '../utils/telegram';
 import { recalculateCoins } from '../utils/gamification';
 import { getTestResults } from '../english/utils/storage';
+import {
+  loadInventory,
+  hasClaimedDailyBonusToday,
+  claimDailyBonus,
+  getFrameClasses,
+  getFrameBadge,
+} from '../utils/shop';
 
 interface ScreenHubProps {
   userName: string;
@@ -14,6 +21,8 @@ interface ScreenHubProps {
   onSelectEnglish: () => void;
   onOpenAiCoach: () => void;
   onOpenLeaderboard: () => void;
+  onOpenShop?: () => void;
+  onOpenEnglishAction?: (action: string) => void;
 }
 
 export const ScreenHub: React.FC<ScreenHubProps> = ({
@@ -26,8 +35,36 @@ export const ScreenHub: React.FC<ScreenHubProps> = ({
   onSelectEnglish,
   onOpenAiCoach,
   onOpenLeaderboard,
+  onOpenShop,
+  onOpenEnglishAction,
 }) => {
-  const coins = recalculateCoins();
+  const [coins, setCoins] = useState(() => recalculateCoins());
+  const [inv, setInv] = useState(() => loadInventory());
+  const [dailyClaimed, setDailyClaimed] = useState(() => hasClaimedDailyBonusToday());
+
+  useEffect(() => {
+    const syncHandler = () => {
+      setCoins(recalculateCoins());
+      setInv(loadInventory());
+      setDailyClaimed(hasClaimedDailyBonusToday());
+    };
+    window.addEventListener('studylab:sync', syncHandler);
+    return () => window.removeEventListener('studylab:sync', syncHandler);
+  }, []);
+
+  const handleDailyBonusClick = () => {
+    if (dailyClaimed) {
+      triggerHaptic('light');
+      onOpenShop?.();
+      return;
+    }
+    const res = claimDailyBonus();
+    if (res.claimed) {
+      triggerHaptic('heavy');
+      setCoins(recalculateCoins());
+      setDailyClaimed(true);
+    }
+  };
   const englishResults = getTestResults();
   const lastResult = englishResults[0];
 
@@ -59,11 +96,22 @@ export const ScreenHub: React.FC<ScreenHubProps> = ({
           </div>
 
           <div className="flex items-center space-x-2 shrink-0">
-            <div className="flex items-center space-x-1 bg-amber-500/15 border border-amber-400/30 px-3 py-1.5 rounded-full">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                triggerHaptic('light');
+                onOpenShop?.();
+              }}
+              className="flex items-center space-x-1 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/30 px-3 py-1.5 rounded-full cursor-pointer active:scale-95 transition-all"
+            >
               <span className="text-sm">🪙</span>
               <span className="text-xs font-black text-amber-800">{coins}</span>
+              {getFrameBadge(inv.activeFrame) && (
+                <span className="text-xs">{getFrameBadge(inv.activeFrame)}</span>
+              )}
             </div>
-            <div className="w-10 h-10 rounded-full bg-[#181630] text-[#c4f82a] font-black text-sm flex items-center justify-center overflow-hidden border-2 border-indigo-200 shadow-xs">
+            <div className={`w-10 h-10 rounded-full bg-[#181630] text-[#c4f82a] font-black text-sm flex items-center justify-center overflow-hidden shadow-xs ${inv.activeFrame === 'default' ? 'border-2 border-indigo-200' : getFrameClasses(inv.activeFrame)}`}>
               {userAvatar ? (
                 <img src={userAvatar} alt={userName} className="w-full h-full object-cover" />
               ) : (
@@ -74,6 +122,59 @@ export const ScreenHub: React.FC<ScreenHubProps> = ({
         </div>
 
         {/* ══════════════════════════════════════════════════════════════════ */}
+        {/* ── Kunlik Bonus, Kun Savoli & OTM Tezkor Bar ── */}
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={handleDailyBonusClick}
+            className={`p-2.5 rounded-2xl border text-left transition-all active:scale-95 ${
+              dailyClaimed
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : 'bg-amber-50 border-amber-200 text-amber-900 shadow-xs'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <Gift size={14} className={dailyClaimed ? 'text-emerald-600' : 'text-amber-600'} />
+              <span className="text-[9px] font-black">
+                {dailyClaimed ? 'Do‘kon →' : '+2 🪙'}
+              </span>
+            </div>
+            <p className="text-[11px] font-black leading-tight">
+              {dailyClaimed ? 'Bonus olingan' : 'Kunlik Bonus'}
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic('medium');
+              onOpenEnglishAction?.('quiz_daily');
+            }}
+            className="p-2.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-950 text-left transition-all active:scale-95"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <Flame size={14} className="text-[#7052ff]" />
+              <span className="text-[9px] font-black text-[#7052ff]">+5 🪙</span>
+            </div>
+            <p className="text-[11px] font-black leading-tight">Kun Savoli</p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic('medium');
+              onOpenEnglishAction?.('otm');
+            }}
+            className="p-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-900 text-left transition-all active:scale-95"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <Calculator size={14} className="text-amber-500" />
+              <span className="text-[9px] font-black text-amber-600">189</span>
+            </div>
+            <p className="text-[11px] font-black leading-tight">OTM Ball</p>
+          </button>
+        </div>
+
         {/* 1-YO'NALISH: IELTS & MILLIY MULTILEVEL (CEFR) AKADEMIYASI         */}
         {/* ══════════════════════════════════════════════════════════════════ */}
         <div

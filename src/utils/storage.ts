@@ -1,17 +1,34 @@
 import type { Task, DayStats, TaskCategory, TaskPriority, TaskScope } from '../types';
 import { API_BASE_URL } from '../config';
 import { getTelegramUser, getTelegramInitData } from './telegram';
+import {
+  PROFILE_KEY as EN_PROFILE_KEY,
+  RULES_ACCEPTED_KEY as EN_RULES_KEY,
+  TEST_RESULTS_KEY as EN_RESULTS_KEY,
+  SEEN_QUESTIONS_KEY as EN_SEEN_KEY,
+  getEnglishProfile,
+  getTestResults,
+  getSeenQuestions,
+  isEnglishRulesAccepted,
+  getEnglishActivityIsoDates,
+} from '../english/utils/storage';
+import {
+  INVENTORY_KEY,
+  MISTAKES_KEY,
+  DUO_KEY,
+  localTodayStr,
+  loadInventory,
+  saveInventory,
+  loadMistakes,
+  saveMistakes,
+  loadDuoState,
+  saveDuoState,
+} from './shop';
 
 const TASKS_KEY = 'todo_tasks_v2';
 const STATS_KEY = 'todo_stats_v2';
 
-export const today = (): string => {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+export const today = (): string => localTodayStr(0);
 
 /**
  * Checks whether a YYYY-MM-DD date falls within the current Monday-to-Sunday week
@@ -45,6 +62,7 @@ export const loadTasks = (): Task[] => {
 };
 
 let syncTimeout: any = null;
+let syncListenerAttached = false;
 
 export const triggerCloudSync = () => {
   if (typeof window === 'undefined') return;
@@ -56,6 +74,15 @@ export const triggerCloudSync = () => {
       const initData = getTelegramInitData();
       const allTasks = loadTasks();
       const stats = loadStats();
+      const englishProfile = getEnglishProfile();
+      const englishTestResults = getTestResults();
+      const englishSeenQuestions = getSeenQuestions();
+      const englishRulesAccepted = isEnglishRulesAccepted();
+      const inventory = loadInventory();
+      const mistakes = loadMistakes();
+      const duo = loadDuoState();
+      const customProfile = getCustomProfile();
+
       await fetch(`${API_BASE_URL}/api/sync`, {
         method: 'POST',
         headers: {
@@ -67,6 +94,14 @@ export const triggerCloudSync = () => {
           data: {
             tasks: allTasks,
             stats,
+            customProfile,
+            englishProfile,
+            englishTestResults,
+            englishSeenQuestions,
+            englishRulesAccepted,
+            inventory,
+            mistakes,
+            duo,
             updatedAt: Date.now(),
           },
         }),
@@ -74,8 +109,15 @@ export const triggerCloudSync = () => {
     } catch {
       // Background sync silently ignores network drops
     }
-  }, 2500);
+  }, 2000);
 };
+
+if (typeof window !== 'undefined' && !syncListenerAttached) {
+  syncListenerAttached = true;
+  window.addEventListener('studylab:sync', () => {
+    triggerCloudSync();
+  });
+}
 
 export const restoreFromCloud = async (): Promise<boolean> => {
   try {
@@ -87,16 +129,69 @@ export const restoreFromCloud = async (): Promise<boolean> => {
     });
     const json = await res.json();
     if (json.success && json.data) {
-      if (Array.isArray(json.data.tasks) && json.data.tasks.length > 0) {
-        const localTasks = loadTasks();
-        if (localTasks.length === 0) {
-          localStorage.setItem(TASKS_KEY, JSON.stringify(json.data.tasks));
-          if (json.data.stats) {
-            localStorage.setItem(STATS_KEY, JSON.stringify(json.data.stats));
+      let changed = false;
+      const d = json.data;
+
+      if (Array.isArray(d.tasks) && d.tasks.length > 0 && loadTasks().length === 0) {
+        localStorage.setItem(TASKS_KEY, JSON.stringify(d.tasks));
+        if (d.stats) {
+          localStorage.setItem(STATS_KEY, JSON.stringify(d.stats));
+        }
+        changed = true;
+      }
+
+      if (d.customProfile && !getCustomProfile().displayName) {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(d.customProfile));
+        changed = true;
+      }
+
+      if (d.englishProfile && !getEnglishProfile()) {
+        localStorage.setItem(EN_PROFILE_KEY, JSON.stringify(d.englishProfile));
+        changed = true;
+      }
+
+      if (d.englishRulesAccepted && !isEnglishRulesAccepted()) {
+        localStorage.setItem(EN_RULES_KEY, 'true');
+        changed = true;
+      }
+
+      if (Array.isArray(d.englishTestResults) && d.englishTestResults.length > 0) {
+        const localResults = getTestResults();
+        const seenIds = new Set(localResults.map((r) => r.id));
+        const merged = [...localResults];
+        for (const item of d.englishTestResults) {
+          if (item?.id && !seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            merged.push(item);
+            changed = true;
           }
-          return true;
+        }
+        if (changed) {
+          localStorage.setItem(EN_RESULTS_KEY, JSON.stringify(merged.slice(0, 50)));
         }
       }
+
+      if (Array.isArray(d.englishSeenQuestions) && d.englishSeenQuestions.length > 0) {
+        const mergedSeen = Array.from(new Set([...getSeenQuestions(), ...d.englishSeenQuestions]));
+        localStorage.setItem(EN_SEEN_KEY, JSON.stringify(mergedSeen));
+      }
+
+      if (d.inventory && !localStorage.getItem(INVENTORY_KEY)) {
+        saveInventory(d.inventory, false);
+        changed = true;
+      }
+
+      if (Array.isArray(d.mistakes) && d.mistakes.length > 0 && !localStorage.getItem(MISTAKES_KEY)) {
+        saveMistakes(d.mistakes, false);
+        changed = true;
+      }
+
+      if (d.duo && !localStorage.getItem(DUO_KEY)) {
+        saveDuoState(d.duo, false);
+        changed = true;
+      }
+
+      return changed;
     }
   } catch {}
   return false;
@@ -187,15 +282,59 @@ export const updateStats = () => {
 
 export const getLast7Days = (): DayStats[] => {
   const stats = loadStats();
+  const englishDates = getEnglishActivityIsoDates();
   const result: DayStats[] = [];
   for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().slice(0, 10);
+    const dateStr = localTodayStr(-i);
     const found = stats.find((s) => s.date === dateStr);
-    result.push(found ?? { date: dateStr, total: 0, done: 0 });
+    const hasEnActivity = englishDates.has(dateStr);
+    if (found) {
+      result.push(hasEnActivity && found.done === 0 ? { ...found, done: 1, total: Math.max(1, found.total) } : found);
+    } else {
+      result.push({ date: dateStr, total: hasEnActivity ? 1 : 0, done: hasEnActivity ? 1 : 0 });
+    }
   }
   return result;
+};
+
+/** Single canonical streak calculation shared across Home, Analytics, Profile, Points, Badges, and AI. */
+export const calculateCurrentStreak = (): number => {
+  const stats = loadStats();
+  const doneDates = new Set(stats.filter((s) => s.done > 0).map((s) => s.date));
+  for (const d of getEnglishActivityIsoDates()) {
+    doneDates.add(d);
+  }
+  const inv = loadInventory();
+  const frozenSet = new Set(inv.frozenDates || []);
+
+  // Automatically spend 1 Streak Freeze if yesterday was missed while an older active streak exists
+  const yesterdayStr = localTodayStr(-1);
+  const twoDaysAgoStr = localTodayStr(-2);
+  if (
+    !doneDates.has(yesterdayStr) &&
+    !frozenSet.has(yesterdayStr) &&
+    (doneDates.has(twoDaysAgoStr) || frozenSet.has(twoDaysAgoStr)) &&
+    inv.streakFreezes > 0
+  ) {
+    inv.streakFreezes -= 1;
+    inv.frozenDates = [...frozenSet, yesterdayStr].slice(-30);
+    frozenSet.add(yesterdayStr);
+    saveInventory(inv);
+  }
+
+  let streak = 0;
+  // Count backwards from today (if active today) or yesterday (grace window for ongoing day)
+  const todayStr = localTodayStr(0);
+  const startOffset = doneDates.has(todayStr) || frozenSet.has(todayStr) ? 0 : 1;
+  for (let offset = startOffset; offset < 60; offset++) {
+    const ds = localTodayStr(-offset);
+    if (doneDates.has(ds) || frozenSet.has(ds)) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
 };
 
 export const getCategoryColor = (cat: TaskCategory): string => {
@@ -275,5 +414,6 @@ export const saveCustomProfile = (data: Partial<UserProfileData>) => {
   const current = getCustomProfile();
   const updated = { ...current, ...data };
   localStorage.setItem(PROFILE_KEY, JSON.stringify(updated));
+  triggerCloudSync();
   return updated;
 };

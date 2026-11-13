@@ -1,22 +1,24 @@
-import { loadTasks, getLast7Days } from './storage';
+import { loadTasks, calculateCurrentStreak } from './storage';
+import { getTestResults } from '../english/utils/storage';
 
 export interface ScoreBreakdown {
   totalPoints: number;
   highTasksDone: number;
   medTasksDone: number;
   lowTasksDone: number;
+  englishTestsDone: number;
   streakDays: number;
   streakBonus: number;
 }
 
 // ── Hisoblash Qoidalari ──
-// Yuqori: +3 ball
-// O'rta: +2 ball
-// Past: +1 ball
+// Yuqori: +3 ball | O'rta: +2 ball | Past: +1 ball
+// Har bir IELTS/Multilevel sinovi: +4 ball
 // Har bir streak kuni: +2 ball
 export const calculateUserPoints = (): ScoreBreakdown => {
   const tasks = loadTasks();
   const completedTasks = tasks.filter((t) => t.done);
+  const englishTestsDone = getTestResults().length;
 
   let high = 0;
   let med = 0;
@@ -28,35 +30,30 @@ export const calculateUserPoints = (): ScoreBreakdown => {
     else low++;
   });
 
-  // Kunlik streak
-  const days = getLast7Days();
-  let streak = 0;
-  const sortedDays = [...days].reverse();
-  for (const d of sortedDays) {
-    if (d.done > 0) streak++;
-    else break;
-  }
+  const streak = calculateCurrentStreak();
 
-  // Agar bitta ham vazifa bajarilmagan bo'lsa — ball qat'iy 0 bo'ladi!
-  if (completedTasks.length === 0) {
+  // Agar birorta ham vazifa yoki ingliz tili sinovi bajarilmagan bo'lsa — ball 0
+  if (completedTasks.length === 0 && englishTestsDone === 0) {
     return {
       totalPoints: 0,
       highTasksDone: 0,
       medTasksDone: 0,
       lowTasksDone: 0,
+      englishTestsDone: 0,
       streakDays: 0,
       streakBonus: 0,
     };
   }
 
   const streakBonus = streak * 2;
-  const totalPoints = high * 3 + med * 2 + low * 1 + streakBonus;
+  const totalPoints = high * 3 + med * 2 + low * 1 + englishTestsDone * 4 + streakBonus;
 
   return {
     totalPoints,
     highTasksDone: high,
     medTasksDone: med,
     lowTasksDone: low,
+    englishTestsDone,
     streakDays: streak,
     streakBonus,
   };

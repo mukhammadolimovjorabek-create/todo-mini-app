@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Volume2, VolumeX, Clock, CheckCircle2, RotateCcw, Award, ChevronRight, Sparkles, AlertTriangle, Mic, MicOff } from 'lucide-react';
 import { speakingBank, getRandomPart2Topic, getRandomPart3Topic, type Part1Topic, type Part2CueCard, type Part3Topic } from '../data/speakingBank';
 import { getSeenQuestions, markQuestionSeen, saveTestResult } from '../utils/storage';
-import { evaluateCandidateSpeech, type SpeechEvaluationResult } from '../utils/ieltsScoring';
+import { PostExamActions } from './PostExamActions';
+import { evaluateCandidateSpeechWithAI, type SpeechEvaluationResult } from '../utils/ieltsScoring';
 import { triggerHaptic } from '../../utils/telegram';
 import { speakEnglishText, stopSpeaking } from '../../utils/speechVoice';
 import { createExamRecorder, transcribeAudio, resolvePendingAnswers } from '../utils/examRecorder';
@@ -63,6 +64,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [feedback, setFeedback] = useState<SpeechEvaluationResult | null>(null);
+  const [lastResultId, setLastResultId] = useState<string>('');
   const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
 
   // Answer text refs (manual input fallback writes here)
@@ -177,7 +179,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
     if (!audio) return;
     pendingTranscriptsRef.current.set(
       historyIndex,
-      audio.then((blob) => (blob ? transcribeAudio(blob, questionText) : ''))
+      audio.then((blob) => (blob ? transcribeAudio(blob, questionText, historyIndex) : ''))
     );
   };
 
@@ -228,7 +230,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       return;
     }
 
-    if (!recorderRef.current.startTurn()) {
+    if (!recorderRef.current.startTurn((liveText) => { setLiveTranscript(liveText); currentTurnSpeechRef.current = liveText; })) {
       fallbackToManualInput();
       return;
     }
@@ -409,7 +411,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       ...transcriptHistory,
       { question: currentQ, answer: currentAnswer || "(Nomzod belgilangan vaqtda javob bermadi)" }
     ];
-    if (!currentAnswer) queueTurnTranscription(newHistory.length - 1, currentQ);
+    if (!isManualInput) queueTurnTranscription(newHistory.length - 1, currentQ);
     currentTurnSpeechRef.current = '';
     sessionBaseTextRef.current = '';
     setTranscriptHistory(newHistory);
@@ -452,7 +454,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
         ...transcriptHistory,
         { question: `[Part 1] ${currentQ}`, answer: currentAnswer || "(Part 1 javobi berilmadi)" }
       ];
-      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1, currentQ);
+      if (!isManualInput) queueTurnTranscription(newHistory.length - 1, currentQ);
       currentTurnSpeechRef.current = '';
       sessionBaseTextRef.current = '';
       setTranscriptHistory(newHistory);
@@ -479,7 +481,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
         ...transcriptHistory,
         { question: `[Part 2 Cue Card] ${p2Topic?.cueCard}`, answer: currentAnswer || "(Part 2 nutqi berilmadi)" }
       ];
-      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1, p2Topic?.cueCard || '');
+      if (!isManualInput) queueTurnTranscription(newHistory.length - 1, p2Topic?.cueCard || '');
       currentTurnSpeechRef.current = '';
       sessionBaseTextRef.current = '';
       setTranscriptHistory(newHistory);
@@ -499,7 +501,7 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
         ...transcriptHistory,
         { question: `[Part 3] ${currentQ}`, answer: currentAnswer || "(Part 3 javobi berilmadi)" }
       ];
-      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1, currentQ);
+      if (!isManualInput) queueTurnTranscription(newHistory.length - 1, currentQ);
       currentTurnSpeechRef.current = '';
       sessionBaseTextRef.current = '';
       setTranscriptHistory(newHistory);
@@ -532,7 +534,8 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
       const { history: resolvedHistory } = await resolvePendingAnswers(history, pendingTranscriptsRef.current);
       setTranscriptHistory(resolvedHistory);
 
-      const evalResult = evaluateCandidateSpeech(resolvedHistory, evaluatedType);
+      const evalResult = await evaluateCandidateSpeechWithAI(resolvedHistory, evaluatedType);
+      setLastResultId(`speaking_${Date.now()}`);
       setFeedback(evalResult);
       setIsEvaluating(false);
       setStep('feedback');
@@ -1240,6 +1243,36 @@ export const AISpeakingView: React.FC<Props> = ({ onBack, userName }) => {
             </p>
           </div>
         </div>
+
+        <PostExamActions
+          resultId={lastResultId || `ielts_spk_${feedback.overallBand}`}
+          examType="ielts"
+          moduleName={`IELTS Speaking (${getPartBadgeLabel()})`}
+          headlineScore={`Band ${feedback.overallBand.toFixed(1)}`}
+          subtitle={feedback.topicRelevance === 'off_topic' ? "Mavzudan chetga chiqilgan" : "Rasmiy AI Examiner tahlili"}
+          criteria={[
+            { label: 'Fluency & Coherence', scoreText: feedback.fluencyScore.toFixed(1), ratio: feedback.fluencyScore / 9 },
+            { label: 'Lexical Resource', scoreText: feedback.lexicalScore.toFixed(1), ratio: feedback.lexicalScore / 9 },
+            { label: 'Grammatical Range', scoreText: feedback.grammarScore.toFixed(1), ratio: feedback.grammarScore / 9 },
+            { label: 'Pronunciation', scoreText: feedback.pronunciationScore.toFixed(1), ratio: feedback.pronunciationScore / 9 },
+          ]}
+          weakSkill={
+            [
+              { k: 'fluency' as const, v: feedback.fluencyScore },
+              { k: 'lexical' as const, v: feedback.lexicalScore },
+              { k: 'grammar' as const, v: feedback.grammarScore },
+              { k: 'pronunciation' as const, v: feedback.pronunciationScore },
+            ].sort((a, b) => a.v - b.v)[0].k
+          }
+          mistakesToSave={feedback.improvements.slice(0, 3).map((imp, idx) => ({
+            source: 'speaking' as const,
+            skillTag: 'speaking',
+            title: `IELTS Speaking (${getPartBadgeLabel()})`,
+            userText: feedback.quotes[idx] || "Nutq tahlili",
+            correction: feedback.vocabularyHighlights[idx] ? `Tavsiya etilgan C1 ibora: ${feedback.vocabularyHighlights[idx]}` : imp,
+            explanation: imp,
+          }))}
+        />
 
         <button
           onClick={() => setStep('part_select')}

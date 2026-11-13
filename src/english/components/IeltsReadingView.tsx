@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Clock, Sparkles, ChevronDown, ChevronUp, Search, RotateCcw, BookOpen, Check, X } from 'lucide-react';
 import { triggerHaptic } from '../../utils/telegram';
 import { saveTestResult } from '../utils/storage';
+import { EXTRA_IELTS_PASSAGES, MULTILEVEL_READING_PASSAGES } from '../data/multilevelReadingBank';
+import { PostExamActions } from './PostExamActions';
 import type { TestResultItem } from '../types';
 
 interface Props {
@@ -726,9 +728,13 @@ export const IELTS_READING_SCORE_TABLE = [
 
 export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName, examType = 'ielts' }) => {
   const isMultilevel = examType === 'multilevel';
+  const activePassages = isMultilevel
+    ? MULTILEVEL_READING_PASSAGES
+    : [...READING_PASSAGES, ...EXTRA_IELTS_PASSAGES];
   const [selectedPassageIdx, setSelectedPassageIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submittedResultId, setSubmittedResultId] = useState<string>('');
   const [score, setScore] = useState<number>(0);
   const [scaledRawScore, setScaledRawScore] = useState<number>(0);
   const [bandScore, setBandScore] = useState<number>(0);
@@ -760,7 +766,7 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName,
 
   const questionsSectionRef = useRef<HTMLDivElement>(null);
   const resultsCardRef = useRef<HTMLDivElement>(null);
-  const currentPassage = READING_PASSAGES[selectedPassageIdx];
+  const currentPassage = activePassages[selectedPassageIdx] || activePassages[0];
 
   // Auto-submit when timer expires
   useEffect(() => {
@@ -831,7 +837,8 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName,
 
   const handleSubmit = () => {
     // Check if the user answered questions in multiple passages or chose full mode
-    const passagesAnswered = READING_PASSAGES.filter((p) =>
+    const coreFullPassages = activePassages.slice(0, 3);
+    const passagesAnswered = activePassages.filter((p) =>
       p.questions.some((q) => !!answers[q.id])
     );
     const isSinglePassageEval = readingMode === 'single' && passagesAnswered.length <= 1;
@@ -849,15 +856,15 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName,
       });
       rawScoreForBand = Math.round((totalCorrect / totalQuestions) * 40);
     } else {
-      READING_PASSAGES.forEach((passage) => {
+      totalQuestions = coreFullPassages.reduce((acc, p) => acc + p.questions.length, 0) || 40;
+      coreFullPassages.forEach((passage) => {
         passage.questions.forEach((q) => {
           if (checkIsCorrect(q, answers[q.id])) {
             totalCorrect += 1;
           }
         });
       });
-      totalQuestions = 40;
-      rawScoreForBand = totalCorrect;
+      rawScoreForBand = Math.round((totalCorrect / totalQuestions) * 40);
     }
 
     const band = calculateIeltsReadingBand(rawScoreForBand);
@@ -889,8 +896,11 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName,
     const endTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const dateStr = now.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.');
 
+    const resultId = isMultilevel ? `ml_reading_${Date.now()}` : `reading_${Date.now()}`;
+    setSubmittedResultId(resultId);
+
     const historyItem: TestResultItem = {
-      id: isMultilevel ? `ml_reading_${Date.now()}` : `reading_${Date.now()}`,
+      id: resultId,
       date: dateStr,
       startTime,
       endTime,
@@ -1132,9 +1142,9 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName,
 
       <div className="p-4 sm:p-5 flex-1 max-w-2xl mx-auto w-full space-y-4">
         {/* Passage Switcher Tabs */}
-        <div className="flex bg-slate-200/70 p-1 rounded-2xl space-x-1">
-          {READING_PASSAGES.map((p, idx) => {
-            const rangeStr = idx === 0 ? '1–13' : idx === 1 ? '14–26' : '27–40';
+        <div className="flex bg-slate-200/70 p-1 rounded-2xl space-x-1 overflow-x-auto">
+          {activePassages.map((p, idx) => {
+            const rangeStr = `${p.questions.length} savol`;
             const answeredCount = p.questions.filter((q) => !!answers[q.id]).length;
             return (
               <button
@@ -1144,7 +1154,7 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName,
                   setSelectedPassageIdx(idx);
                   setShowOnlyErrors(false);
                 }}
-                className={`flex-1 py-2 px-1 rounded-xl text-xs font-black transition-all ${
+                className={`flex-1 min-w-[78px] py-2 px-1.5 rounded-xl text-xs font-black transition-all ${
                   selectedPassageIdx === idx
                     ? 'bg-white text-[#7052ff] shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
@@ -1369,6 +1379,36 @@ export const IeltsReadingView: React.FC<Props> = ({ onBack, userName: _userName,
                 <span>📊 Rasmiy IELTS Reading Baholash Jadvalini ko'rish</span>
               </button>
             </div>
+
+            <PostExamActions
+              resultId={submittedResultId}
+              examType={examType}
+              moduleName={isMultilevel ? `Multilevel Reading (${currentPassage.title})` : `IELTS Reading (Passage ${selectedPassageIdx + 1})`}
+              headlineScore={isMultilevel ? `${multilevelScore}/75` : `Band ${bandScore === 0 ? '0' : bandScore.toFixed(1)}`}
+              subtitle={`${score}/${evaluatedTotal} to'g'ri · CEFR ${getCefrFromMultilevelScore(multilevelScore)}`}
+              criteria={[
+                {
+                  label: "To'g'ri javoblar",
+                  scoreText: `${score}/${evaluatedTotal}`,
+                  ratio: evaluatedTotal > 0 ? score / evaluatedTotal : 0,
+                },
+                {
+                  label: '40 talik shkala',
+                  scoreText: `${scaledRawScore}/40`,
+                  ratio: scaledRawScore / 40,
+                },
+              ]}
+              weakSkill="reading"
+              weakDetail={`${wrongQuestions.length} ta xato javob aniqlandi (${currentPassage.title}).`}
+              mistakesToSave={wrongQuestions.slice(0, 8).map((q) => ({
+                source: 'reading' as const,
+                skillTag: q.type,
+                title: currentPassage.title,
+                userText: answers[q.id]?.trim() ? `Mening javobim: ${answers[q.id]}` : "Javob belgilanmadi",
+                correction: `To'g'ri javob: ${q.correctAnswer}`,
+                explanation: `${q.explanation} (${q.paragraphRef}: "${q.evidenceQuote.slice(0, 90)}")`,
+              }))}
+            />
           </div>
         )}
 

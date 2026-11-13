@@ -20,9 +20,11 @@ import {
 } from 'lucide-react';
 import { getLast7Days, loadTasks, getCategoryColor, getCategoryLabel, shortDay, getCustomProfile } from '../utils/storage';
 import { calculateUserPoints, getGlobalRank } from '../utils/points';
+import { DuoChallengeCard } from './DuoChallengeCard';
+import { getTestResults } from '../english/utils/storage';
 import { loadFriends, type InvitedFriend } from '../utils/friends';
 import type { DayStats, TaskCategory } from '../types';
-import { triggerHaptic, getTelegramUser, getTelegramInitData } from '../utils/telegram';
+import { triggerHaptic, getTelegramUser, getTelegramInitData, buildMiniAppUrl } from '../utils/telegram';
 import { API_BASE_URL } from '../config';
 
 const CATEGORIES: TaskCategory[] = ['work', 'personal', 'health', 'learning', 'other'];
@@ -145,6 +147,7 @@ export const ScreenAnalytics: React.FC = () => {
   // Foydalanuvchining real balli (Agar 0 bo'lsa qat'iy 0!)
       const scoreData = calculateUserPoints();
   const myPoints = scoreData.totalPoints;
+  const englishTestsCount = getTestResults().length;
   const globalInfo = getGlobalRank(myPoints);
 
   // Musobaqa ro'yxati (Faqat siz va haqiqatda taklif qilingan do'stlar)
@@ -178,10 +181,11 @@ export const ScreenAnalytics: React.FC = () => {
     triggerHaptic('heavy');
     const shareText = encodeURIComponent(
       myRank && myPoints > 0
-        ? `🔥 Men bu hafta To-Do ilovasida ${myPoints} ball to'pladim va #${myRank}-o'rindaman! Meni o'zib ket 👇`
-        : `🔥 Men To-Do ilovasida vazifalarni bajarishni boshladim! Menga qo'shil va birgalikda musobaqalashamiz 👇`
+        ? `🔥 Men Study Lab ilovasida ${myPoints} ball to'pladim (${englishTestsCount} ta ingliz tili sinovi) va #${myRank}-o'rindaman! Meni o'zib ket 👇`
+        : `🔥 Men Study Lab ilovasida IELTS/Multilevel va kunlik rejalar ustida ishlashni boshladim! Menga qo'shil va musobaqalashamiz 👇`
     );
-    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${shareText}`;
+    const shareTargetUrl = referralLink || buildMiniAppUrl(myTelegramId ? `ref_${myTelegramId}` : undefined);
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareTargetUrl)}&text=${shareText}`;
     window.open(shareUrl, '_blank');
   };
 
@@ -347,6 +351,11 @@ export const ScreenAnalytics: React.FC = () => {
       {/* ══════════════ TAB 2: DO'STLAR REYTINGI ══════════════ */}
       {activeTab === 'leaderboard' && (
         <div className="space-y-4">
+          {/* ── Study Duo (Do'st bilan Streak) ── */}
+          <div className="px-5">
+            <DuoChallengeCard />
+          </div>
+
           {/* ── Sub-tab Switcher: Do'stlarim vs Umumiy Reyting ── */}
           <div className="px-5">
             <div className="bg-slate-200/80 p-1.5 rounded-2xl flex items-center shadow-inner">

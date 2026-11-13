@@ -12,7 +12,8 @@ import {
   type MultilevelPart3,
 } from '../data/multilevelBank';
 import { getSeenQuestions, markQuestionSeen, saveTestResult } from '../utils/storage';
-import { evaluateMultilevelSpeech, type MultilevelEvaluationResult } from '../utils/multilevelScoring';
+import { PostExamActions } from './PostExamActions';
+import { evaluateMultilevelSpeechWithAI, type MultilevelEvaluationResult } from '../utils/multilevelScoring';
 import { triggerHaptic } from '../../utils/telegram';
 import { speakEnglishText, stopSpeaking } from '../../utils/speechVoice';
 import { UzFlagWave } from './UzFlagWave';
@@ -61,6 +62,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
   const [isRecording, setIsRecording] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [feedback, setFeedback] = useState<MultilevelEvaluationResult | null>(null);
+  const [lastResultId, setLastResultId] = useState<string>('');
 
   const currentTurnSpeechRef = useRef<string>('');
   const sessionBaseTextRef = useRef<string>('');
@@ -170,7 +172,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
     if (!audio) return;
     pendingTranscriptsRef.current.set(
       historyIndex,
-      audio.then((blob) => (blob ? transcribeAudio(blob, questionText) : ''))
+      audio.then((blob) => (blob ? transcribeAudio(blob, questionText, historyIndex) : ''))
     );
   };
 
@@ -221,7 +223,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       return;
     }
 
-    if (!recorderRef.current.startTurn()) {
+    if (!recorderRef.current.startTurn((liveText) => { setLiveTranscript(liveText); currentTurnSpeechRef.current = liveText; })) {
       fallbackToManualInput();
       return;
     }
@@ -410,7 +412,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       ...transcriptHistory,
       { question: currentQ, answer: currentAnswer || "(Nomzod belgilangan vaqtda javob bermadi)" }
     ];
-    if (!currentAnswer) queueTurnTranscription(newHistory.length - 1, currentQ);
+    if (!isManualInput) queueTurnTranscription(newHistory.length - 1, currentQ);
     currentTurnSpeechRef.current = '';
     sessionBaseTextRef.current = '';
     setTranscriptHistory(newHistory);
@@ -445,7 +447,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         ...transcriptHistory,
         { question: `[Part 1.1] ${currentQ}`, answer: currentAnswer || "(Part 1.1 javobi berilmadi)" }
       ];
-      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1, currentQ);
+      if (!isManualInput) queueTurnTranscription(newHistory.length - 1, currentQ);
       currentTurnSpeechRef.current = '';
       sessionBaseTextRef.current = '';
       setTranscriptHistory(newHistory);
@@ -478,7 +480,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         ...transcriptHistory,
         { question: `[Part 1.2] ${p1_2Item?.title}`, answer: currentAnswer || "(Part 1.2 nutqi berilmadi)" }
       ];
-      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1, p1_2Item?.title || '');
+      if (!isManualInput) queueTurnTranscription(newHistory.length - 1, p1_2Item?.title || '');
       currentTurnSpeechRef.current = '';
       sessionBaseTextRef.current = '';
       setTranscriptHistory(newHistory);
@@ -501,7 +503,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         ...transcriptHistory,
         { question: `[Part 2] ${p2Item?.title}`, answer: currentAnswer || "(Part 2 nutqi berilmadi)" }
       ];
-      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1, p2Item?.title || '');
+      if (!isManualInput) queueTurnTranscription(newHistory.length - 1, p2Item?.title || '');
       currentTurnSpeechRef.current = '';
       sessionBaseTextRef.current = '';
       setTranscriptHistory(newHistory);
@@ -524,7 +526,7 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
         ...transcriptHistory,
         { question: `[Part 3] ${p3Item?.statement}`, answer: currentAnswer || "(Part 3 nutqi berilmadi)" }
       ];
-      if (!currentAnswer) queueTurnTranscription(newHistory.length - 1, p3Item?.statement || '');
+      if (!isManualInput) queueTurnTranscription(newHistory.length - 1, p3Item?.statement || '');
       currentTurnSpeechRef.current = '';
       sessionBaseTextRef.current = '';
       finishAndEvaluate(newHistory, 'full_mock');
@@ -544,7 +546,8 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
       const { history: resolvedHistory } = await resolvePendingAnswers(history, pendingTranscriptsRef.current);
       setTranscriptHistory(resolvedHistory);
 
-      const evalResult = evaluateMultilevelSpeech(resolvedHistory, evaluatedType);
+      const evalResult = await evaluateMultilevelSpeechWithAI(resolvedHistory, evaluatedType);
+      setLastResultId(`ml_speaking_${Date.now()}`);
       setFeedback(evalResult);
       setIsEvaluating(false);
       setStep('feedback');
@@ -1313,6 +1316,36 @@ export const MultilevelSpeakingView: React.FC<Props> = ({ onBack, userName: _use
             </p>
           </div>
         </div>
+
+        <PostExamActions
+          resultId={lastResultId || `ml_spk_${feedback.totalScore}`}
+          examType="multilevel"
+          moduleName="Milliy Multilevel Speaking (75 ball)"
+          headlineScore={`${feedback.totalScore} / 75`}
+          subtitle={feedback.cefrTitle}
+          criteria={[
+            { label: 'Fluency (20)', scoreText: `${feedback.fluencyScore}/20`, ratio: feedback.fluencyScore / 20 },
+            { label: 'Lexical (20)', scoreText: `${feedback.lexicalScore}/20`, ratio: feedback.lexicalScore / 20 },
+            { label: 'Grammar (20)', scoreText: `${feedback.grammarScore}/20`, ratio: feedback.grammarScore / 20 },
+            { label: 'Pronun/Task (15)', scoreText: `${feedback.pronunciationTaskScore}/15`, ratio: feedback.pronunciationTaskScore / 15 },
+          ]}
+          weakSkill={
+            [
+              { k: 'fluency' as const, r: feedback.fluencyScore / 20 },
+              { k: 'lexical' as const, r: feedback.lexicalScore / 20 },
+              { k: 'grammar' as const, r: feedback.grammarScore / 20 },
+              { k: 'pronunciation' as const, r: feedback.pronunciationTaskScore / 15 },
+            ].sort((a, b) => a.r - b.r)[0].k
+          }
+          mistakesToSave={feedback.improvements.slice(0, 3).map((imp, idx) => ({
+            source: 'speaking' as const,
+            skillTag: 'speaking',
+            title: 'Milliy Multilevel Speaking',
+            userText: feedback.quotes[idx] || "Nutq tahlili",
+            correction: feedback.vocabularyHighlights[idx] ? `Tavsiya etilgan ibora: ${feedback.vocabularyHighlights[idx]}` : imp,
+            explanation: imp,
+          }))}
+        />
 
         <button
           onClick={() => setStep('menu')}
